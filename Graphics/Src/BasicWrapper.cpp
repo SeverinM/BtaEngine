@@ -159,7 +159,18 @@ void BasicWrapper::CreateGraphicPipeline()
 	oDesc.oShaderFilenames = { "./Shader/vert.spv", "./Shader/frag.spv" };
 	oDesc.pWrapper = this;
 	oDesc.pRenderPass = m_pRenderpass;
+	oDesc.iSubPassIndex = 0;
 	m_pPipeline = new Pipeline(oDesc);
+
+	//SkyboxPipeline
+	/*oDesc.iSubPassIndex = 1;
+	oDesc.oShaderFilenames = { "./Shader/Skybox/vert.spv", "./Shader/Skybox/frag.spv" };
+	oDesc.bEnableDepth = false;
+	oDesc.eSample = VK_SAMPLE_COUNT_1_BIT;
+	oDesc.pRenderPass = m_pRenderpass;
+	oDesc.iSubPassIndex = 1;
+	m_pSkyboxPipeline = new Pipeline(oDesc);*/
+
 	
 	DescriptorPool::Desc oDescPool;
 	oDescPool.iImageCount = m_pSwapchain->GetImageViews().size();
@@ -221,6 +232,8 @@ void BasicWrapper::CreateCommandBuffer()
 	oFileDesc.pWrapper = this;
 
 	Image* pImage = Image::CreateFromFile("./Textures/test.png", oFileDesc);
+
+	std::vector<std::string> oTextures = { "./Textures/bkg1_back.png","./Textures/bkg1_bot.png", "./Textures/bkg1_front.png", "./Textures/bkg1_left.png", "./Textures/bkg1_right.png", "./Textures/bkg1_top.png" };
 }
 
 void BasicWrapper::InitVerticesBuffers()

@@ -22,6 +22,7 @@ public:
 		bool bEnableTransparent;
 		bool bEnableDepth;
 		RenderPass* pRenderPass;
+		int iSubPassIndex;
 	};
 	Pipeline(Desc& oDesc);
 	void Create(Desc& oDesc);

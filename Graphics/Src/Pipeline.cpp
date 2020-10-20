@@ -168,7 +168,7 @@ void Pipeline::Create(Desc& oDesc)
 	oPipelineInfo.pColorBlendState = &oColorBlending;
 	oPipelineInfo.layout = m_oPipelineLayout;
 	oPipelineInfo.renderPass = *oDesc.pRenderPass->GetRenderPass();
-	oPipelineInfo.subpass = 0;
+	oPipelineInfo.subpass = oDesc.iSubPassIndex;
 
 	if (vkCreateGraphicsPipelines(*oDesc.pWrapper->GetDevice()->GetLogicalDevice(), VK_NULL_HANDLE, 1, &oPipelineInfo, nullptr, &m_oPipeline) != VK_SUCCESS)
 	{

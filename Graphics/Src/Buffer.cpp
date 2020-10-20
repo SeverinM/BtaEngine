@@ -191,7 +191,7 @@ Image* Image::CreateCubeMap(std::string sFilenames[6], FromFileDesc& oDesc)
 		}
 		iWidth = pImage->GetWidth();
 
-		if (pImage->GetHeight() != iHeight && iHeight != 1)
+		if (pImage->GetHeight() != iHeight && iHeight != -1)
 		{
 			throw std::runtime_error("One of the face does not have the same size");
 		}
@@ -203,29 +203,75 @@ Image* Image::CreateCubeMap(std::string sFilenames[6], FromFileDesc& oDesc)
 	Image::Desc oImgDesc;
 	oImgDesc.eAspect = VK_IMAGE_ASPECT_COLOR_BIT;
 	oImgDesc.eFormat = oDesc.eFormat;
-	oImgDesc.eUsage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+	oImgDesc.eUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 	oImgDesc.eProperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 	oImgDesc.iLayerCount = 6;
-	oImgDesc.iHeight = oImages[0]->GetHeight();
-	oImgDesc.iWidth = oImages[0]->GetWidth();
-	oImgDesc.pWrapper = oImgDesc.pWrapper;
-	oImgDesc.pFactory = oImgDesc.pFactory;
+	oImgDesc.iHeight = iHeight;
+	oImgDesc.iWidth = iWidth;
+	oImgDesc.pWrapper = oDesc.pWrapper;
+	oImgDesc.pFactory = oDesc.pFactory;
 	oImgDesc.bIsCubemap = true;
 
 	Image* pCubemap = new Image(oImgDesc);
-	pCubemap->TransitionLayout(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, oImgDesc.pFactory, 0);
+	pCubemap->TransitionLayout(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, oImgDesc.pFactory, 1);
 
-	/*for (int i = 0; i < 6; i++)
+	VkCommandBuffer oCommandBuffer = oDesc.pFactory->BeginSingleTimeCommands();
+
+	for (int i = 0; i < 6; i++)
 	{
 		VkImageMemoryBarrier oBarrier{};
-		oBarrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+		oBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 		oBarrier.image = *oImages[i]->GetImage();
 		oBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 		oBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-		oBarrier.oldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		oBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 		oBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-		oBarrier.srcAccessMask =
-	}*/
+		oBarrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+		oBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		oBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		oBarrier.subresourceRange.baseMipLevel = 0;
+		oBarrier.subresourceRange.baseArrayLayer = 0;
+		oBarrier.subresourceRange.layerCount = 1;
+		oBarrier.subresourceRange.levelCount = 1;
+
+		vkCmdPipelineBarrier(oCommandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &oBarrier);
+
+		VkImageBlit oBlit{};
+		oBlit.srcOffsets[0] = { 0,0,0 };
+		oBlit.srcOffsets[1] = { iWidth, iHeight, 1 };
+		oBlit.srcSubresource.mipLevel = 0;
+		oBlit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		oBlit.srcSubresource.baseArrayLayer = 0;
+		oBlit.srcSubresource.layerCount = 1;
+
+		oBlit.dstOffsets[0] = { 0, 0, 0 };
+		oBlit.dstOffsets[1] = { iWidth, iHeight, 1 };
+		oBlit.dstSubresource.mipLevel = 0;
+		oBlit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		oBlit.dstSubresource.baseArrayLayer = i;
+		oBlit.dstSubresource.layerCount = 1;
+
+		vkCmdBlitImage(oCommandBuffer, *oImages[i]->GetImage(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, *pCubemap->GetImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &oBlit, VK_FILTER_LINEAR);
+
+		VkImageMemoryBarrier oBarrierAfter{};
+		oBarrierAfter.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+		oBarrierAfter.image = *oImages[i]->GetImage();
+		oBarrierAfter.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		oBarrierAfter.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		oBarrierAfter.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+		oBarrierAfter.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL; 
+		oBarrierAfter.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		oBarrierAfter.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+		oBarrierAfter.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		oBarrierAfter.subresourceRange.baseMipLevel = 0;
+		oBarrierAfter.subresourceRange.baseArrayLayer = 0;
+		oBarrierAfter.subresourceRange.layerCount = 1;
+		oBarrierAfter.subresourceRange.levelCount = 1;
+
+		vkCmdPipelineBarrier(oCommandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &oBarrierAfter);
+	}
+
+	oDesc.pFactory->EndSingleTimeCommands(oCommandBuffer);
 
 	return pCubemap;
 }
@@ -249,6 +295,9 @@ void Image::TransitionLayout(VkImageLayout eOldLayout, VkImageLayout eNewLayout,
 	
 	VkPipelineStageFlags oSourceStage;
 	VkPipelineStageFlags oDestinationStage;
+
+
+
 	if (eOldLayout == VK_IMAGE_LAYOUT_UNDEFINED && eNewLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
 	{
 		oBarrier.srcAccessMask = 0;
@@ -373,7 +422,7 @@ Image::Image(Desc& oDesc)
 	oImageInfo.extent.height = oDesc.iHeight;
 	oImageInfo.extent.depth = 1;
 	oImageInfo.mipLevels = m_iMipLevel;
-	oImageInfo.arrayLayers = 1;
+	oImageInfo.arrayLayers = (uint32_t)oDesc.iLayerCount;
 	oImageInfo.format = oDesc.eFormat;
 	oImageInfo.tiling = oDesc.eTiling;
 	oImageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -455,7 +504,7 @@ void Image::CreateView(Desc& oDesc, VkImageAspectFlags oAspect)
 	oViewInfo.subresourceRange.baseMipLevel = 0;
 	oViewInfo.subresourceRange.levelCount = m_iMipLevel;
 	oViewInfo.subresourceRange.baseArrayLayer = 0;
-	oViewInfo.subresourceRange.layerCount = 1;
+	oViewInfo.subresourceRange.layerCount = oDesc.bIsCubemap ? 6 : 1;
 
 	if (vkCreateImageView(*oDesc.pWrapper->GetDevice()->GetLogicalDevice(), &oViewInfo, nullptr, &m_oImageView) != VK_SUCCESS)
 	{

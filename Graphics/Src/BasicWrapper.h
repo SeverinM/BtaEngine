@@ -52,6 +52,8 @@ protected:
 	CommandFactory* m_pFactory;
 	DescriptorPool* m_pPool;
 	Model* m_pModel;
+	Image* m_pCubemap;
+	Pipeline* m_pSkyboxPipeline;
 	std::vector< DescriptorPool::UpdateSubDesc> m_oInputDatas;
 	std::vector < DescriptorPool::BufferDesc> m_oPrototype;
 	std::vector< Buffer* > m_oAllVertexBuffers;

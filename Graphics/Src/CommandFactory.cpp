@@ -101,7 +101,7 @@ VkCommandBuffer CommandFactory::CreateDrawCommand(DrawDesc& oDesc)
 	oBeginInfo.renderArea.extent = oExtent;
 
 	std::vector<VkClearValue> oClear(1);
-	oClear[0].color = { 0.0f, 0.0f,0.0f, 1.0f };
+	oClear[0].color = { 0.1f, 0.3f,0.8f, 1.0f };
 
 	if ((oDesc.pFramebuffer->E_DEPTH & oDesc.pFramebuffer->GetAttachmentFlags()) != 0)
 	{
