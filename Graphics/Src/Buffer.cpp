@@ -203,7 +203,7 @@ Image* Image::CreateCubeMap(std::string sFilenames[6], FromFileDesc& oDesc)
 	Image::Desc oImgDesc;
 	oImgDesc.eAspect = VK_IMAGE_ASPECT_COLOR_BIT;
 	oImgDesc.eFormat = oDesc.eFormat;
-	oImgDesc.eUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+	oImgDesc.eUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
 	oImgDesc.eProperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 	oImgDesc.iLayerCount = 6;
 	oImgDesc.iHeight = iHeight;
@@ -272,6 +272,8 @@ Image* Image::CreateCubeMap(std::string sFilenames[6], FromFileDesc& oDesc)
 	}
 
 	oDesc.pFactory->EndSingleTimeCommands(oCommandBuffer);
+
+	pCubemap->TransitionLayout( VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL , VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL , oImgDesc.pFactory, 1);
 
 	return pCubemap;
 }

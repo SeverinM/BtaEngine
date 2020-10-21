@@ -30,7 +30,7 @@ void DescriptorPool::Create(Desc& oDesc)
 	oPoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 	oPoolInfo.poolSizeCount = 11;
 	oPoolInfo.pPoolSizes = pPool_sizes;
-	oPoolInfo.maxSets = oDesc.iImageCount;
+	oPoolInfo.maxSets = oDesc.iImageCount * 3;
 
 	if (vkCreateDescriptorPool(*oDesc.pWrapper->GetDevice()->GetLogicalDevice(), &oPoolInfo, nullptr, &m_oPool) != VK_SUCCESS)
 	{
@@ -43,7 +43,7 @@ DescriptorPool::~DescriptorPool()
 	vkDestroyDescriptorPool(*m_pRecreate->pWrapper->GetDevice()->GetLogicalDevice(), m_oPool, nullptr);
 }
 
-void DescriptorPool::WriteDescriptor(std::vector< UpdateSubDesc >& oUpdate, VkDescriptorSetLayout& oDescriptorSetLayout)
+void DescriptorPool::WriteDescriptor(std::vector< UpdateSubDesc >& oUpdate, const VkDescriptorSetLayout& oDescriptorSetLayout)
 {
 	std::vector<VkDescriptorSetLayout> oLayouts(oUpdate.size(), oDescriptorSetLayout);
 	
@@ -91,9 +91,9 @@ void DescriptorPool::WriteDescriptor(std::vector< UpdateSubDesc >& oUpdate, VkDe
 	}
 }
 
-void DescriptorPool::CreateDescriptorSet(std::vector<VkDescriptorSet>& oOutput,int iSize)
+void DescriptorPool::CreateDescriptorSet(std::vector<VkDescriptorSet>& oOutput,int iSize, const VkDescriptorSetLayout& oLayout)
 {
-	std::vector<VkDescriptorSetLayout> oLayouts(iSize, *m_pRecreate->pWrapper->GetPipeline()->GetDescriptorSetLayout());
+	std::vector<VkDescriptorSetLayout> oLayouts(iSize, oLayout);
 	VkDescriptorSetAllocateInfo oAllocInfo{};
 	oAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 	oAllocInfo.descriptorPool = m_oPool;
@@ -107,9 +107,9 @@ void DescriptorPool::CreateDescriptorSet(std::vector<VkDescriptorSet>& oOutput,i
 	}
 }
 
-void DescriptorPool::CreateDescriptorSet(VkDescriptorSet& oOutput)
+void DescriptorPool::CreateDescriptorSet(VkDescriptorSet& oOutput, const VkDescriptorSetLayout& oLayout)
 {
-	std::vector<VkDescriptorSetLayout> oLayouts(1, *m_pRecreate->pWrapper->GetPipeline()->GetDescriptorSetLayout());
+	std::vector<VkDescriptorSetLayout> oLayouts(1, oLayout);
 	VkDescriptorSetAllocateInfo oAllocInfo{};
 	oAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 	oAllocInfo.descriptorPool = m_oPool;

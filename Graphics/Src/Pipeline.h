@@ -13,7 +13,7 @@ class Pipeline : public Resizable
 public:
 	struct Desc
 	{
-		std::vector< DescriptorPool::BufferDesc> oInputDatas;
+		std::vector< std::vector< DescriptorPool::BufferDesc> >oInputDatas;
 		std::vector<std::string> oShaderFilenames;
 		GraphicWrapper* pWrapper;
 		VkVertexInputBindingDescription oBindingDescription;
@@ -35,11 +35,11 @@ public:
 	virtual void Recreate(int iNewWidth, int iNewHeight, void* pData) override;
 
 	VkPipelineLayout* GetPipelineLayout() { return &m_oPipelineLayout; }
-	VkDescriptorSetLayout* GetDescriptorSetLayout() { return &m_oDescriptorSetLayout; }
+	const std::vector< VkDescriptorSetLayout >& GetDescriptorSetLayout() { return m_oDescriptorSetLayout; }
 	VkPipeline* GetPipeline() { return &m_oPipeline; }
 
 private:
-	VkDescriptorSetLayout m_oDescriptorSetLayout;
+	std::vector< VkDescriptorSetLayout > m_oDescriptorSetLayout;
 	VkPipelineLayout m_oPipelineLayout;
 	VkPipeline m_oPipeline;
 	GraphicWrapper* m_pWrapper;

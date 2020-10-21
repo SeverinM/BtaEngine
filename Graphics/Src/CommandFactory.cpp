@@ -114,29 +114,35 @@ VkCommandBuffer CommandFactory::CreateDrawCommand(DrawDesc& oDesc)
 	oBeginInfo.pClearValues = oClear.data();
 
 	vkCmdBeginRenderPass(oCmdBuffer, &oBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-	vkCmdBindPipeline(oCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, *oDesc.pPipeline->GetPipeline());
 
-	VkDeviceSize oOffsets[] = { 0 };
-	BasicBuffer* pBasicBuffer = (BasicBuffer*)oDesc.pVertexData;
-	vkCmdBindVertexBuffers(oCmdBuffer, 0, 1, pBasicBuffer->GetBuffer(), oOffsets);
-
-	if (oDesc.pIndexData != nullptr)
+	for (int i = 0; i < oDesc.oMultipleDraw.size(); i++)
 	{
-		BasicBuffer* pBasicBufferIndex = (BasicBuffer*)oDesc.pIndexData;
-		vkCmdBindIndexBuffer(oCmdBuffer, *pBasicBufferIndex->GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
-	}
+		vkCmdBindPipeline(oCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, *oDesc.oMultipleDraw[i].pPipeline->GetPipeline());
 
-	vkCmdBindDescriptorSets(oCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, *oDesc.pLayout, 0, 1, oDesc.oDescriptorSet.data(), 0, nullptr);
+		VkDeviceSize oOffsets[] = { 0 };
+		BasicBuffer* pBasicBuffer = (BasicBuffer*)oDesc.oMultipleDraw[i].pVertexData;
+		vkCmdBindVertexBuffers(oCmdBuffer, 0, 1, pBasicBuffer->GetBuffer(), oOffsets);
 
-	//TODO
-	if (oDesc.pIndexData != nullptr)
-	{
-		int iUnitCount = oDesc.pIndexData->GetUnitCount();
-		vkCmdDrawIndexed(oCmdBuffer, iUnitCount, 1, 0, 0, 0);
-	}
-	else
-	{
-		vkCmdDraw(oCmdBuffer, oDesc.pVertexData->GetUnitCount(), 1, 0, 0);
+		if (oDesc.oMultipleDraw[i].pIndexData != nullptr)
+		{
+			BasicBuffer* pBasicBufferIndex = (BasicBuffer*)oDesc.oMultipleDraw[i].pIndexData;
+			vkCmdBindIndexBuffer(oCmdBuffer, *pBasicBufferIndex->GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
+		}
+
+		vkCmdBindDescriptorSets(oCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, *oDesc.oMultipleDraw[i].pPipeline->GetPipelineLayout(), 0, 1, &oDesc.oMultipleDraw[i].oDescriptorSet, 0, nullptr);
+
+		if (oDesc.oMultipleDraw[i].pIndexData != nullptr)
+		{
+			int iUnitCount = oDesc.oMultipleDraw[i].pIndexData->GetUnitCount();
+			vkCmdDrawIndexed(oCmdBuffer, iUnitCount, 1, 0, 0, 0);
+		}
+		else
+		{
+			vkCmdDraw(oCmdBuffer, oDesc.oMultipleDraw[i].pVertexData->GetUnitCount(), 1, 0, 0);
+		}
+
+		if ( i != oDesc.oMultipleDraw.size() - 1)
+			vkCmdNextSubpass(oCmdBuffer, VK_SUBPASS_CONTENTS_INLINE);
 	}
 
 	vkCmdEndRenderPass(oCmdBuffer);

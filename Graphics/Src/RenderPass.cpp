@@ -24,7 +24,7 @@ void RenderPass::Create(Desc& oDesc)
 	VkAttachmentDescription oColorAttachment{};
 	oColorAttachment.format = oDesc.pWrapper->GetSwapchain()->GetFormat();
 	oColorAttachment.samples = oDesc.eSample;
-	oColorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	oColorAttachment.loadOp =  VK_ATTACHMENT_LOAD_OP_CLEAR;
 	oColorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 	oColorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 	oColorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -101,8 +101,8 @@ void RenderPass::Create(Desc& oDesc)
 		oSubpasses.push_back(oSubpassInfo);
 
 		VkSubpassDependency oDependency{};
-		oDependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-		oDependency.dstSubpass = 0;
+		oDependency.srcSubpass = ( i == 0 ? VK_SUBPASS_EXTERNAL : i - 1);
+		oDependency.dstSubpass = i;
 
 		oDependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 		oDependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;

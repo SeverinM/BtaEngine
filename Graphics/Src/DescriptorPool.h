@@ -37,9 +37,9 @@ public:
 	void Create(Desc& oDesc);
 	~DescriptorPool();
 
-	void WriteDescriptor(std::vector< UpdateSubDesc >& oUpdate, VkDescriptorSetLayout& oDescriptorSetLayout);
-	void CreateDescriptorSet(std::vector<VkDescriptorSet>& oOutput, int iSize);
-	void CreateDescriptorSet(VkDescriptorSet& oOutput);
+	void WriteDescriptor(std::vector< UpdateSubDesc >& oUpdate, const VkDescriptorSetLayout& oDescriptorSetLayout);
+	void CreateDescriptorSet(std::vector<VkDescriptorSet>& oOutput, int iSize, const VkDescriptorSetLayout& oLayout);
+	void CreateDescriptorSet(VkDescriptorSet& oOutput,const VkDescriptorSetLayout& oLayout);
 
 	virtual void Free() override;
 	virtual void Recreate(int iNewWidth, int iNewHeight, void* pData) override;

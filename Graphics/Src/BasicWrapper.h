@@ -52,16 +52,21 @@ protected:
 	CommandFactory* m_pFactory;
 	DescriptorPool* m_pPool;
 	Model* m_pModel;
-	Image* m_pCubemap;
+	Model* m_pSkyModel;
 	Pipeline* m_pSkyboxPipeline;
 	std::vector< DescriptorPool::UpdateSubDesc> m_oInputDatas;
-	std::vector < DescriptorPool::BufferDesc> m_oPrototype;
+	std::vector< DescriptorPool::UpdateSubDesc> m_oInputDatasSky;
+
+	std::vector < std::vector < DescriptorPool::BufferDesc> > m_oPrototype;
+	std::vector < std::vector < DescriptorPool::BufferDesc> > m_oPrototypeSkybox;
 	std::vector< Buffer* > m_oAllVertexBuffers;
+	std::vector< Buffer*> m_oAllVertexBuffersSky;
 	std::vector< VkCommandBuffer > m_oAllDrawCommands;
 	std::vector< Image* > m_oAllDepths;
 	std::vector<Image*> m_oAllMultisample;
 	std::vector< Framebuffer* > m_oFramebuffers;
 	std::vector< VkDescriptorSet > m_oDescriptors;
+	std::vector<VkDescriptorSet> m_oDescriptorsSky;
 
 	struct MVP
 	{
@@ -70,6 +75,13 @@ protected:
 		glm::mat4 vProjection;
 	};
 	MVP GetMatrices();
+
+	struct MP
+	{
+		glm::mat4 vModel;
+		glm::mat4 vProjection;
+	};
+	MP GetMatricesSky();
 
 	struct Vertex
 	{

@@ -39,6 +39,7 @@ Pipeline::Pipeline(Desc& oDesc)
 void Pipeline::Create(Desc& oDesc)
 {
 	CreateDescriptorLayout(oDesc);
+	CreatePipelineLayout(oDesc);
 
 	VkPipelineShaderStageCreateInfo oVertexInfos{};
 	oVertexInfos.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -139,8 +140,6 @@ void Pipeline::Create(Desc& oDesc)
 	dynamicState.dynamicStateCount = 2;
 	dynamicState.pDynamicStates = oDynamicStates;
 
-	CreatePipelineLayout(oDesc);
-
 	VkPipelineDepthStencilStateCreateInfo oDepthStencil{};
 	oDepthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
 	oDepthStencil.depthTestEnable = oDesc.bEnableDepth ? VK_TRUE : VK_FALSE;
@@ -152,7 +151,6 @@ void Pipeline::Create(Desc& oDesc)
 	oDepthStencil.stencilTestEnable = VK_FALSE;
 	oDepthStencil.minDepthBounds = 0.0f;
 	oDepthStencil.maxDepthBounds = 1.0f;
-	oDepthStencil.stencilTestEnable = VK_FALSE;
 
 	VkGraphicsPipelineCreateInfo oPipelineInfo{};
 	oPipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -184,29 +182,34 @@ Pipeline::~Pipeline()
 
 void Pipeline::CreateDescriptorLayout(Desc& oDesc)
 {
+	m_oDescriptorSetLayout.resize(oDesc.oInputDatas.size());
+
 	m_pWrapper = oDesc.pWrapper;
 
-	std::vector<VkDescriptorSetLayoutBinding> oLayoutBindings;
-	for (int i = 0; i < oDesc.oInputDatas.size(); i++)
+	for (int iSetLayoutIndex = 0; iSetLayoutIndex < oDesc.oInputDatas.size(); iSetLayoutIndex++)
 	{
-		VkDescriptorSetLayoutBinding oBinding{};
-		oBinding.binding = i;
-		oBinding.descriptorCount = 1;
-		oBinding.descriptorType = ( oDesc.oInputDatas[i].eType == DescriptorPool::E_TEXTURE ? VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER : VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER );
-		oBinding.pImmutableSamplers = nullptr;
-		oBinding.stageFlags = ( oDesc.oInputDatas[i].eType != DescriptorPool::E_TEXTURE ? VK_SHADER_STAGE_VERTEX_BIT : VK_SHADER_STAGE_FRAGMENT_BIT );
+		std::vector<VkDescriptorSetLayoutBinding> oLayoutBindings;
+		for (int i = 0; i < oDesc.oInputDatas[iSetLayoutIndex].size(); i++)
+		{
+			VkDescriptorSetLayoutBinding oBinding{};
+			oBinding.binding = i;
+			oBinding.descriptorCount = 1;
+			oBinding.descriptorType = (oDesc.oInputDatas[iSetLayoutIndex][i].eType == DescriptorPool::E_TEXTURE ? VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER : VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+			oBinding.pImmutableSamplers = nullptr;
+			oBinding.stageFlags = (oDesc.oInputDatas[iSetLayoutIndex][i].eType != DescriptorPool::E_TEXTURE ? VK_SHADER_STAGE_VERTEX_BIT : VK_SHADER_STAGE_FRAGMENT_BIT);
 
-		oLayoutBindings.push_back(oBinding);
-	}
+			oLayoutBindings.push_back(oBinding);
+		}
 
-	VkDescriptorSetLayoutCreateInfo oLayoutCreateInfo{};
-	oLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	oLayoutCreateInfo.bindingCount = oLayoutBindings.size();
-	oLayoutCreateInfo.pBindings = oLayoutBindings.data();
+		VkDescriptorSetLayoutCreateInfo oLayoutCreateInfo{};
+		oLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+		oLayoutCreateInfo.bindingCount = oLayoutBindings.size();
+		oLayoutCreateInfo.pBindings = oLayoutBindings.data();
 
-	if (vkCreateDescriptorSetLayout(*oDesc.pWrapper->GetDevice()->GetLogicalDevice(), &oLayoutCreateInfo, nullptr, &m_oDescriptorSetLayout) != VK_SUCCESS)
-	{
-		throw std::runtime_error("Error creating set layout");
+		if (vkCreateDescriptorSetLayout(*oDesc.pWrapper->GetDevice()->GetLogicalDevice(), &oLayoutCreateInfo, nullptr, &m_oDescriptorSetLayout[iSetLayoutIndex]) != VK_SUCCESS)
+		{
+			throw std::runtime_error("Error creating set layout");
+		}
 	}
 }
 
@@ -214,8 +217,8 @@ void Pipeline::CreatePipelineLayout(Desc& oDesc)
 {
 	VkPipelineLayoutCreateInfo oPipelineLayoutInfo{};
 	oPipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	oPipelineLayoutInfo.setLayoutCount = 1;
-	oPipelineLayoutInfo.pSetLayouts = &m_oDescriptorSetLayout;
+	oPipelineLayoutInfo.setLayoutCount = m_oDescriptorSetLayout.size();
+	oPipelineLayoutInfo.pSetLayouts = m_oDescriptorSetLayout.data();
 
 	if (vkCreatePipelineLayout(*oDesc.pWrapper->GetDevice()->GetLogicalDevice(), &oPipelineLayoutInfo, nullptr, &m_oPipelineLayout) != VK_SUCCESS)
 	{

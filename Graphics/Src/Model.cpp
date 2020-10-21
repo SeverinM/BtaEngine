@@ -30,7 +30,7 @@ Model::Model(Desc& oDesc)
 	oTexDesc.pFactory = oDesc.pFactory;
 	oTexDesc.pWrapper = oDesc.pWrapper;
 
-	m_pTexture = Image::CreateFromFile(oDesc.sTexturepath, oTexDesc);
+	m_pTexture = oDesc.sTexturepath.empty() ? nullptr : Image::CreateFromFile(oDesc.sTexturepath, oTexDesc);
 
 	tinyobj::attrib_t oAttrib;
 	std::vector<tinyobj::shape_t> oShapes;
@@ -76,9 +76,10 @@ Model::BuffersVertices Model::ConvertToBuffer(std::unordered_map<eVerticesAttrib
 	oDesc.iUnitSize = oMemoryLayout[E_POSITIONS] + oMemoryLayout[E_NORMALS] + oMemoryLayout[E_COLOR] + oMemoryLayout[E_UV];
 
 	BasicBuffer* pBuffer = new BasicBuffer(oDesc);
-	pBuffer->CopyFromMemory(m_oVertices.data(), pWrapper->GetModifiableDevice());
+	void* pOutput = m_oVertices.data();
 	
-
+	pBuffer->CopyFromMemory(pOutput, pWrapper->GetModifiableDevice());
+	
 	oDesc.eUsage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
 	oDesc.oPropertyFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 

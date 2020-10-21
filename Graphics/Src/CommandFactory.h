@@ -18,15 +18,20 @@ public:
 
 	VkCommandBuffer BeginSingleTimeCommands();
 	void EndSingleTimeCommands(VkCommandBuffer& oCommandBuffer);
+
+	struct SubDrawDesc
+	{
+		Buffer* pVertexData;
+		Buffer* pIndexData;
+		Pipeline* pPipeline;
+		VkDescriptorSet oDescriptorSet;
+	};
+
 	struct DrawDesc
 	{
 		RenderPass* pRenderpass;
 		Framebuffer* pFramebuffer;
-		Pipeline* pPipeline;
-		Buffer* pVertexData;
-		Buffer* pIndexData;
-		std::vector<VkDescriptorSet> oDescriptorSet;
-		VkPipelineLayout* pLayout;
+		std::vector<SubDrawDesc> oMultipleDraw;
 	};
 
 	VkCommandBuffer CreateDrawCommand(DrawDesc& oDesc);

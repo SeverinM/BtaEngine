@@ -106,14 +106,19 @@ void BasicWrapper::CreateRenderPass()
 	RenderPass::SubDesc oSubDesc;
 	oSubDesc.iColorAttachmentIndex = 0;
 	oSubDesc.iDepthStencilAttachmentIndex = 1;
-	oSubDesc.iColorResolveAttachmentIndex = 2;
+	oSubDesc.iColorResolveAttachmentIndex = -1;
+
+	RenderPass::SubDesc oSkyboxDesc;
+	oSkyboxDesc.iColorAttachmentIndex = 0;
+	oSkyboxDesc.iColorResolveAttachmentIndex = -1;
+	oSkyboxDesc.iDepthStencilAttachmentIndex = -1;
 
 	RenderPass::Desc oDesc;
-	oDesc.eSample = VK_SAMPLE_COUNT_4_BIT;
+	oDesc.eSample = VK_SAMPLE_COUNT_1_BIT;
 	oDesc.pWrapper = this;
 	oDesc.bEnableColor = true;
 	oDesc.bEnableDepth = true;
-	oDesc.oSubpasses = { oSubDesc };
+	oDesc.oSubpasses = { oSkyboxDesc, oSubDesc };
 
 	m_pRenderpass = new RenderPass(oDesc);
 
@@ -134,6 +139,21 @@ BasicWrapper::MVP BasicWrapper::GetMatrices()
 	return oOutput;
 }
 
+BasicWrapper::MP BasicWrapper::GetMatricesSky()
+{
+	MP oOutput;
+	
+	glm::mat4 oMat = glm::mat4(1.0f);
+	oOutput.vModel = glm::rotate(oMat, 45.0f, glm::vec3(0.4f, 0.1f, 1.2f));
+
+	int iWidth, iHeight;
+	m_pDevice->GetModifiableRenderSurface()->GetWindowSize(iWidth, iHeight);
+	oOutput.vProjection = glm::perspective(glm::radians(45.0f), iWidth / (float)iHeight, 0.1f, 10.0f);
+	oOutput.vProjection[1][1] *= -1;
+
+	return oOutput;
+}
+
 void BasicWrapper::CreateGraphicPipeline()
 {
 	//Setup inputs
@@ -145,31 +165,46 @@ void BasicWrapper::CreateGraphicPipeline()
 	DescriptorPool::BufferDesc oBufferDesc2;
 	oBufferDesc2.eType = DescriptorPool::E_TEXTURE;
 
-	m_oPrototype.push_back(oBufferDesc);
-	m_oPrototype.push_back(oBufferDesc2);
+	std::vector<DescriptorPool::BufferDesc> oLayout;
+	oLayout.push_back(oBufferDesc);
+	oLayout.push_back(oBufferDesc2);
+
+	m_oPrototype.push_back(oLayout);
+
+	DescriptorPool::BufferDesc oBufferDescSky;
+	oBufferDescSky.eType = DescriptorPool::E_UNIFORM_BUFFER;
+
+	DescriptorPool::BufferDesc oBufferDesc2Sky;
+	oBufferDesc2Sky.eType = DescriptorPool::E_TEXTURE;
+
+	std::vector<DescriptorPool::BufferDesc> oLayoutSky;
+	oLayoutSky.push_back(oBufferDescSky);
+	oLayoutSky.push_back(oBufferDesc2Sky);
+
+	m_oPrototypeSkybox.push_back(oLayout);
 
 	//Create pipeline
 	Pipeline::Desc oDesc;
 	oDesc.oInputDatas = m_oPrototype;
 	oDesc.bEnableDepth = true;
 	oDesc.bEnableTransparent = false;
-	oDesc.eSample = VK_SAMPLE_COUNT_4_BIT;
+	oDesc.eSample = VK_SAMPLE_COUNT_1_BIT;
 	oDesc.oBindingDescription = Vertex::GetBindingDescription();
 	oDesc.oAttributeDescriptions = Vertex::GetAttributeDescriptions();
 	oDesc.oShaderFilenames = { "./Shader/vert.spv", "./Shader/frag.spv" };
 	oDesc.pWrapper = this;
 	oDesc.pRenderPass = m_pRenderpass;
-	oDesc.iSubPassIndex = 0;
+	oDesc.iSubPassIndex = 1;
 	m_pPipeline = new Pipeline(oDesc);
 
 	//SkyboxPipeline
-	/*oDesc.iSubPassIndex = 1;
+	oDesc.iSubPassIndex = 0;
 	oDesc.oShaderFilenames = { "./Shader/Skybox/vert.spv", "./Shader/Skybox/frag.spv" };
 	oDesc.bEnableDepth = false;
 	oDesc.eSample = VK_SAMPLE_COUNT_1_BIT;
-	oDesc.pRenderPass = m_pRenderpass;
-	oDesc.iSubPassIndex = 1;
-	m_pSkyboxPipeline = new Pipeline(oDesc);*/
+	oDesc.iSubPassIndex = 0;
+	oDesc.oInputDatas = m_oPrototypeSkybox;
+	m_pSkyboxPipeline = new Pipeline(oDesc);
 
 	
 	DescriptorPool::Desc oDescPool;
@@ -187,14 +222,15 @@ void BasicWrapper::FillDescriptorsBuffer()
 {
 	int iSwapCount = m_pSwapchain->GetImageViews().size();
 
-	m_pPool->CreateDescriptorSet(m_oDescriptors, iSwapCount);
+	m_pPool->CreateDescriptorSet(m_oDescriptors, iSwapCount, m_pPipeline->GetDescriptorSetLayout()[0]);
+
 	MVP oMatrices = GetMatrices();
 
 	for (int i = 0; i < iSwapCount; i++)
 	{
 		DescriptorPool::UpdateSubDesc oDescriptorSet;
 		oDescriptorSet.pDescriptorSet = &m_oDescriptors[i];
-		oDescriptorSet.oBuffers = m_oPrototype;
+		oDescriptorSet.oBuffers = m_oPrototype[0];
 
 		//0 -> Uniform buffer
 		BasicBuffer::Desc oBuffer;
@@ -212,7 +248,44 @@ void BasicWrapper::FillDescriptorsBuffer()
 
 		m_oInputDatas.push_back(oDescriptorSet);
 	}
-	m_pPool->WriteDescriptor(m_oInputDatas, *m_pPipeline->GetDescriptorSetLayout());
+	m_pPool->WriteDescriptor(m_oInputDatas, m_pPipeline->GetDescriptorSetLayout()[0]);
+
+
+	m_pPool->CreateDescriptorSet(m_oDescriptorsSky, iSwapCount, m_pSkyboxPipeline->GetDescriptorSetLayout()[0]);
+	MP oMatricesSky = GetMatricesSky();
+	for (int i = 0; i < iSwapCount; i++)
+	{
+		DescriptorPool::UpdateSubDesc oDescriptorSet;
+		oDescriptorSet.pDescriptorSet = &m_oDescriptorsSky[i];
+		oDescriptorSet.oBuffers = m_oPrototypeSkybox[0];
+
+		//0 -> Uniform Buffer
+		BasicBuffer::Desc oBuffer;
+		oBuffer.iUnitSize = sizeof(glm::mat4);
+		oBuffer.iUnitCount = 2;
+		oBuffer.pWrapper = this;
+		oBuffer.eUsage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+		oBuffer.oPropertyFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+
+		oDescriptorSet.oBuffers[0].pBuffer = new BasicBuffer(oBuffer);
+		oDescriptorSet.oBuffers[0].pBuffer->CopyFromMemory(&oMatricesSky, GetModifiableDevice());
+
+		//1-> texture
+		Image::FromFileDesc oFileDesc;
+		oFileDesc.bEnableMip = false;
+		oFileDesc.eAspect = VK_IMAGE_ASPECT_COLOR_BIT;
+		oFileDesc.eFormat = VK_FORMAT_R8G8B8A8_SRGB;
+		oFileDesc.eSampleFlag = VK_SAMPLE_COUNT_1_BIT;
+		oFileDesc.eTiling = VK_IMAGE_TILING_OPTIMAL;
+		oFileDesc.pFactory = m_pFactory;
+		oFileDesc.pWrapper = this;
+
+		std::string sFilenames[6] = { "./Textures/bkg1_back.png", "./Textures/bkg1_bot.png", "./Textures/bkg1_front.png", "./Textures/bkg1_left.png", "./Textures/bkg1_right.png", "./Textures/bkg1_top.png" };
+		oDescriptorSet.oBuffers[1].pBuffer = Image::CreateCubeMap(sFilenames, oFileDesc);
+
+		m_oInputDatasSky.push_back(oDescriptorSet);
+	}
+	m_pPool->WriteDescriptor(m_oInputDatasSky, m_pSkyboxPipeline->GetDescriptorSetLayout()[0]);
 
 	std::cout << "matrix buffer created" << std::endl;
 }
@@ -221,19 +294,6 @@ void BasicWrapper::FillDescriptorsBuffer()
 void BasicWrapper::CreateCommandBuffer()
 {
 	InitCommands();
-
-	Image::FromFileDesc oFileDesc;
-	oFileDesc.bEnableMip = false;
-	oFileDesc.eFormat = VK_FORMAT_R8G8B8A8_SRGB;
-	oFileDesc.eAspect = VK_IMAGE_ASPECT_COLOR_BIT;
-	oFileDesc.eSampleFlag = VK_SAMPLE_COUNT_1_BIT;
-	oFileDesc.eTiling = VK_IMAGE_TILING_OPTIMAL;
-	oFileDesc.pFactory = m_pFactory;
-	oFileDesc.pWrapper = this;
-
-	Image* pImage = Image::CreateFromFile("./Textures/test.png", oFileDesc);
-
-	std::vector<std::string> oTextures = { "./Textures/bkg1_back.png","./Textures/bkg1_bot.png", "./Textures/bkg1_front.png", "./Textures/bkg1_left.png", "./Textures/bkg1_right.png", "./Textures/bkg1_top.png" };
 }
 
 void BasicWrapper::InitVerticesBuffers()
@@ -255,6 +315,15 @@ void BasicWrapper::InitVerticesBuffers()
 	m_oAllVertexBuffers.push_back(oOutput.pVertices);
 	m_oAllVertexBuffers.push_back(oOutput.pIndices);
 
+	oDesc.sModelPath = "./Models/viking_room.obj";
+	oDesc.sTexturepath = "";
+	oDesc.bEnableMip = false;
+	m_pSkyModel = new Model(oDesc);
+
+	Model::BuffersVertices oOutput2 = m_pModel->ConvertToBuffer(oInput, this, m_pFactory);
+	m_oAllVertexBuffersSky.push_back(oOutput2.pVertices);
+	m_oAllVertexBuffersSky.push_back(oOutput2.pIndices);
+
 	std::cout << "vertex buffer created" << std::endl;
 }
 
@@ -262,15 +331,20 @@ void BasicWrapper::InitCommands()
 {
 	for (int i = 0; i < m_pSwapchain->GetImageViews().size(); i++)
 	{
-		CommandFactory::DrawDesc oDesc;
-		oDesc.pVertexData = m_oAllVertexBuffers[0];
-		oDesc.pIndexData = m_oAllVertexBuffers[1];
+		CommandFactory::SubDrawDesc oSubSky;
+		oSubSky.oDescriptorSet = m_oDescriptorsSky[i];
+		oSubSky.pPipeline = m_pSkyboxPipeline;
+		oSubSky.pVertexData = m_oAllVertexBuffersSky[0];
+		oSubSky.pIndexData = m_oAllVertexBuffersSky[1];
 
-		std::vector< VkDescriptorSet > oDescriptorSet;
-		oDescriptorSet.push_back(*m_oInputDatas[i].pDescriptorSet);
-		oDesc.oDescriptorSet = oDescriptorSet;
-		oDesc.pLayout = m_pPipeline->GetPipelineLayout();
-		oDesc.pPipeline = m_pPipeline;
+		CommandFactory::SubDrawDesc oSub;
+		oSub.oDescriptorSet = *m_oInputDatas[i].pDescriptorSet;
+		oSub.pPipeline = m_pPipeline;
+		oSub.pVertexData = m_oAllVertexBuffers[0];
+		oSub.pIndexData = m_oAllVertexBuffers[1];
+
+		CommandFactory::DrawDesc oDesc;
+		oDesc.oMultipleDraw = { oSubSky, oSub };
 		oDesc.pRenderpass = m_pRenderpass;
 		oDesc.pFramebuffer = m_oFramebuffers[i];
 
@@ -287,7 +361,7 @@ void BasicWrapper::InitFramebuffer()
 		oImgDesc.bEnableMip = false;
 		oImgDesc.eFormat = VK_FORMAT_D32_SFLOAT;
 		oImgDesc.eProperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-		oImgDesc.eSampleFlag = VK_SAMPLE_COUNT_4_BIT;
+		oImgDesc.eSampleFlag = VK_SAMPLE_COUNT_1_BIT;
 		oImgDesc.eTiling = VK_IMAGE_TILING_OPTIMAL;
 		oImgDesc.eUsage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 		oImgDesc.pWrapper = this;
@@ -304,7 +378,7 @@ void BasicWrapper::InitFramebuffer()
 		Image::Desc oMultisampleDesc;
 		oMultisampleDesc.bEnableMip = false;
 		oMultisampleDesc.eFormat = m_pSwapchain->GetFormat();
-		oMultisampleDesc.eSampleFlag = VK_SAMPLE_COUNT_4_BIT;
+		oMultisampleDesc.eSampleFlag = VK_SAMPLE_COUNT_1_BIT;
 		oMultisampleDesc.eTiling = VK_IMAGE_TILING_OPTIMAL;
 		oMultisampleDesc.eProperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 		oMultisampleDesc.pWrapper = this;
@@ -321,9 +395,9 @@ void BasicWrapper::InitFramebuffer()
 		oDesc.pGraphicDevice = m_pDevice;
 
 		std::vector<VkImageView> oImages;
-		oImages.push_back(*pImgMultisample->GetImageView());
-		oImages.push_back(*pImg->GetImageView());
 		oImages.push_back(m_pSwapchain->GetImageViews()[i]);
+		oImages.push_back(*pImg->GetImageView());
+		//oImages.push_back(*pImgMultisample->GetImageView());
 		oDesc.pImageView = &oImages;
 		oDesc.pRenderPass = m_pRenderpass;
 
