@@ -43,6 +43,14 @@ public :
 	Pipeline* GetPipeline() const { return m_pPipeline; }
 	static BasicWrapper* GetInstance() { return s_pInstance; }
 
+	struct MVP
+	{
+		glm::mat4 vModel;
+		glm::mat4 vView;
+		glm::mat4 vProjection;
+	};
+
+
 protected:
 	static BasicWrapper* s_pInstance;
 
@@ -61,6 +69,8 @@ protected:
 	std::vector < std::vector < DescriptorPool::BufferDesc> > m_oPrototypeSkybox;
 	std::vector< Buffer* > m_oAllVertexBuffers;
 	std::vector< Buffer*> m_oAllVertexBuffersSky;
+	std::vector<BasicBuffer*> m_oAllMatrices;
+
 	std::vector< VkCommandBuffer > m_oAllDrawCommands;
 	std::vector< Image* > m_oAllDepths;
 	std::vector<Image*> m_oAllMultisample;
@@ -68,12 +78,8 @@ protected:
 	std::vector< VkDescriptorSet > m_oDescriptors;
 	std::vector<VkDescriptorSet> m_oDescriptorsSky;
 
-	struct MVP
-	{
-		glm::mat4 vModel;
-		glm::mat4 vView;
-		glm::mat4 vProjection;
-	};
+	void UpdateUniformBuffer(int iImageIndex);
+
 	MVP GetMatrices();
 
 	struct MP

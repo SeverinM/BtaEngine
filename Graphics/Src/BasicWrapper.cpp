@@ -5,6 +5,7 @@
 #include "SyncObjects.h"
 #include <iostream>
 #include "RenderPass.h"
+#include <chrono>
 
 BasicWrapper* BasicWrapper::s_pInstance(nullptr);
 
@@ -239,7 +240,7 @@ void BasicWrapper::FillDescriptorsBuffer()
 		oBuffer.pWrapper = this;
 		oBuffer.eUsage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
 		oBuffer.oPropertyFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-
+		
 		oDescriptorSet.oBuffers[0].pBuffer = new BasicBuffer(oBuffer);
 		oDescriptorSet.oBuffers[0].pBuffer->CopyFromMemory(&oMatrices, GetModifiableDevice());
 
@@ -247,6 +248,7 @@ void BasicWrapper::FillDescriptorsBuffer()
 		oDescriptorSet.oBuffers[1].pBuffer = m_pModel->GetTexture();
 
 		m_oInputDatas.push_back(oDescriptorSet);
+		m_oAllMatrices.push_back((BasicBuffer*)oDescriptorSet.oBuffers[0].pBuffer);
 	}
 	m_pPool->WriteDescriptor(m_oInputDatas, m_pPipeline->GetDescriptorSetLayout()[0]);
 
@@ -315,12 +317,12 @@ void BasicWrapper::InitVerticesBuffers()
 	m_oAllVertexBuffers.push_back(oOutput.pVertices);
 	m_oAllVertexBuffers.push_back(oOutput.pIndices);
 
-	oDesc.sModelPath = "./Models/viking_room.obj";
+	oDesc.sModelPath = "./Models/cube.obj";
 	oDesc.sTexturepath = "";
 	oDesc.bEnableMip = false;
 	m_pSkyModel = new Model(oDesc);
 
-	Model::BuffersVertices oOutput2 = m_pModel->ConvertToBuffer(oInput, this, m_pFactory);
+	Model::BuffersVertices oOutput2 = m_pSkyModel->ConvertToBuffer(oInput, this, m_pFactory);
 	m_oAllVertexBuffersSky.push_back(oOutput2.pVertices);
 	m_oAllVertexBuffersSky.push_back(oOutput2.pIndices);
 
@@ -406,6 +408,24 @@ void BasicWrapper::InitFramebuffer()
 	std::cout << "Framebuffer created" << std::endl;
 }
 
+void BasicWrapper::UpdateUniformBuffer(int iImageIndex)
+{
+	static auto startTime = std::chrono::high_resolution_clock::now();
+	auto currentTime = std::chrono::high_resolution_clock::now();
+	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+
+	MVP oMatrices;
+	oMatrices.vModel = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	oMatrices.vView = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+
+	int iWidth, iHeight;
+	m_pDevice->GetModifiableRenderSurface()->GetWindowSize(iWidth, iHeight);
+	oMatrices.vProjection = glm::perspective(glm::radians(45.0f), iWidth / (float)iHeight, 0.1f, 10.0f);
+	oMatrices.vProjection[1][1] *= -1;
+
+	m_oAllMatrices[iImageIndex]->CopyFromMemory(&oMatrices, m_pDevice);
+}
+
 bool BasicWrapper::Render(SyncObjects* pSync)
 {
 	int iFrame = pSync->GetFrame();
@@ -413,6 +433,8 @@ bool BasicWrapper::Render(SyncObjects* pSync)
 
 	uint32_t iImageIndex;
 	VkResult eResult = vkAcquireNextImageKHR(*GetDevice()->GetLogicalDevice(), *GetSwapchain()->GetSwapchain(), UINT64_MAX, pSync->GetImageAcquiredSemaphore()[iFrame], VK_NULL_HANDLE, &iImageIndex);
+
+	UpdateUniformBuffer(iImageIndex);
 
 	if (eResult == VK_ERROR_OUT_OF_DATE_KHR)
 	{

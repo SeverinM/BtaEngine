@@ -104,11 +104,12 @@ void RenderPass::Create(Desc& oDesc)
 		oDependency.srcSubpass = ( i == 0 ? VK_SUBPASS_EXTERNAL : i - 1);
 		oDependency.dstSubpass = i;
 
+		//Wait being in bottom of the pipe, then set output_bit in the bottom of the pipeline
 		oDependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-		oDependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		oDependency.dstStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 
 		oDependency.srcAccessMask = 0;
-		oDependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+		oDependency.dstAccessMask = 0;
 		oDependencies.push_back(oDependency);
 	}
 
