@@ -38,6 +38,24 @@ void DescriptorPool::Create(Desc& oDesc)
 	}
 }
 
+VkDescriptorType DescriptorPool::GetDescriptorType(EBufferType eType)
+{
+	if (eType == E_STORAGE_BUFFER)
+	{
+		return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+	}
+	
+	if (eType == E_TEXTURE)
+	{
+		return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	}
+
+	if (eType == E_UNIFORM_BUFFER)
+	{
+		return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	}
+}
+
 DescriptorPool::~DescriptorPool()
 {
 	vkDestroyDescriptorPool(*m_pRecreate->pWrapper->GetDevice()->GetLogicalDevice(), m_oPool, nullptr);
@@ -59,7 +77,7 @@ void DescriptorPool::WriteDescriptor(std::vector< UpdateSubDesc >& oUpdate, cons
 			oDescriptorWrite[j].descriptorCount = 1;
 			oDescriptorWrite[j].dstBinding = j;
 
-			if (oUpdate[i].oBuffers[j].pBuffer->GetType() == Buffer::E_IMAGE)
+			if (oUpdate[i].oBuffers[j].eType == E_TEXTURE)
 			{
 				Buffer* pBuffer = oUpdate[i].oBuffers[j].pBuffer;
 				Image* pImage = (Image*)pBuffer;
@@ -72,7 +90,7 @@ void DescriptorPool::WriteDescriptor(std::vector< UpdateSubDesc >& oUpdate, cons
 				oDescriptorWrite[j].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 				oDescriptorWrite[j].pImageInfo = new VkDescriptorImageInfo( oImageInfo );
 			}
-			else
+			else if (oUpdate[i].oBuffers[j].eType == E_UNIFORM_BUFFER)
 			{
 				Buffer* pBuffer = oUpdate[i].oBuffers[j].pBuffer;
 				BasicBuffer* pBasicBuffer = (BasicBuffer*)pBuffer;
@@ -83,6 +101,19 @@ void DescriptorPool::WriteDescriptor(std::vector< UpdateSubDesc >& oUpdate, cons
 				oBufferInfo.offset = 0;
 
 				oDescriptorWrite[j].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+				oDescriptorWrite[j].pBufferInfo = &oBufferInfo;
+			}
+			else
+			{
+				Buffer* pBuffer = oUpdate[i].oBuffers[j].pBuffer;
+				BasicBuffer* pBasicBuffer = (BasicBuffer*)pBuffer;
+
+				VkDescriptorBufferInfo oBufferInfo{};
+				oBufferInfo.buffer = *pBasicBuffer->GetBuffer();
+				oBufferInfo.range = oUpdate[i].oBuffers[j].pBuffer->GetMemorySize();
+				oBufferInfo.offset = 0;
+
+				oDescriptorWrite[j].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 				oDescriptorWrite[j].pBufferInfo = &oBufferInfo;
 			}
 		}

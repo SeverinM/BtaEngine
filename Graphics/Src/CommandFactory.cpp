@@ -134,7 +134,7 @@ VkCommandBuffer CommandFactory::CreateDrawCommand(DrawDesc& oDesc)
 		if (oDesc.oMultipleDraw[i].pIndexData != nullptr)
 		{
 			int iUnitCount = oDesc.oMultipleDraw[i].pIndexData->GetUnitCount();
-			vkCmdDrawIndexed(oCmdBuffer, iUnitCount, 1, 0, 0, 0);
+			vkCmdDrawIndexed(oCmdBuffer, iUnitCount, oDesc.oMultipleDraw[i].iInstanceCount, 0, 0, 0);
 		}
 		else
 		{

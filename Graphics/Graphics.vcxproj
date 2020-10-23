@@ -145,11 +145,13 @@
   <ItemGroup>
     <ClCompile Include="Src\BasicWrapper.cpp" />
     <ClCompile Include="Src\Buffer.cpp" />
+    <ClCompile Include="Src\Camera.cpp" />
     <ClCompile Include="Src\CommandFactory.cpp" />
     <ClCompile Include="Src\DescriptorPool.cpp" />
     <ClCompile Include="Src\Framebuffer.cpp" />
     <ClCompile Include="Src\Globals.cpp" />
     <ClCompile Include="Src\GraphicDevice.cpp" />
+    <ClCompile Include="Src\GraphicObserver.cpp" />
     <ClCompile Include="Src\Main.cpp" />
     <ClCompile Include="Src\Model.cpp" />
     <ClCompile Include="Src\Pipeline.cpp" />
@@ -162,11 +164,13 @@
   <ItemGroup>
     <ClInclude Include="Src\BasicWrapper.h" />
     <ClInclude Include="Src\Buffer.h" />
+    <ClInclude Include="Src\Camera.h" />
     <ClInclude Include="Src\CommandFactory.h" />
     <ClInclude Include="Src\DescriptorPool.h" />
     <ClInclude Include="Src\Framebuffer.h" />
     <ClInclude Include="Src\Globals.h" />
     <ClInclude Include="Src\GraphicDevice.h" />
+    <ClInclude Include="Src\GraphicObserver.h" />
     <ClInclude Include="Src\GraphicWrapper.h" />
     <ClInclude Include="Src\Model.h" />
     <ClInclude Include="Src\Pipeline.h" />
@@ -176,6 +180,7 @@
     <ClInclude Include="Src\Resizable.h" />
     <ClInclude Include="Src\Swapchain.h" />
     <ClInclude Include="Src\SyncObjects.h" />
+    <ClInclude Include="Src\Transform.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

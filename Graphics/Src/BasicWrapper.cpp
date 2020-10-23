@@ -126,18 +126,22 @@ void BasicWrapper::CreateRenderPass()
 	std::cout << "Renderpass created" << std::endl;
 }
 
-BasicWrapper::MVP BasicWrapper::GetMatrices()
+void BasicWrapper::GetMatrices(glm::mat4& vView, glm::mat4& vProjection, std::vector<glm::mat4>& oModels, int iSize)
 {
-	MVP oOutput;
-	oOutput.vModel = glm::mat4(1.0f);
-	oOutput.vView = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	vView = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
 	int iWidth, iHeight;
 	m_pDevice->GetModifiableRenderSurface()->GetWindowSize(iWidth, iHeight);
-	oOutput.vProjection = glm::perspective(glm::radians(45.0f), iWidth / (float)iHeight, 0.1f, 10.0f);
-	oOutput.vProjection[1][1] *= -1;
+	vProjection = glm::perspective(glm::radians(45.0f), iWidth / (float)iHeight, 0.1f, 10.0f);
+	vProjection[1][1] *= -1;
 
-	return oOutput;
+	for (int i = 0; i < iSize; i++)
+	{
+		glm::mat4 vModel = glm::mat4(1.0f);
+		vModel = glm::translate(vModel, glm::vec3(i, 0.0f, 0.0f));
+		oModels.push_back(vModel);
+	}
+
 }
 
 void BasicWrapper::CreateGraphicPipeline()
@@ -151,12 +155,17 @@ void BasicWrapper::CreateGraphicPipeline()
 	DescriptorPool::BufferDesc oBufferDesc2;
 	oBufferDesc2.eType = DescriptorPool::E_TEXTURE;
 
+	DescriptorPool::BufferDesc oBufferDesc3;
+	oBufferDesc3.eType = DescriptorPool::E_STORAGE_BUFFER;
+
 	std::vector<DescriptorPool::BufferDesc> oLayout;
 	oLayout.push_back(oBufferDesc);
+	oLayout.push_back(oBufferDesc3);
 	oLayout.push_back(oBufferDesc2);
 
 	m_oPrototype.push_back(oLayout);
 
+	//Skybox
 	DescriptorPool::BufferDesc oBufferDescSky;
 	oBufferDescSky.eType = DescriptorPool::E_UNIFORM_BUFFER;
 
@@ -167,7 +176,7 @@ void BasicWrapper::CreateGraphicPipeline()
 	oLayoutSky.push_back(oBufferDescSky);
 	oLayoutSky.push_back(oBufferDesc2Sky);
 
-	m_oPrototypeSkybox.push_back(oLayout);
+	m_oPrototypeSkybox.push_back(oLayoutSky);
 
 	//Create pipeline
 	Pipeline::Desc oDesc;
@@ -208,9 +217,13 @@ void BasicWrapper::FillDescriptorsBuffer()
 {
 	int iSwapCount = m_pSwapchain->GetImageViews().size();
 
+	m_iInstanceCount = 10;
 	m_pPool->CreateDescriptorSet(m_oDescriptors, iSwapCount, m_pPipeline->GetDescriptorSetLayout()[0]);
 
-	MVP oMatrices = GetMatrices();
+	glm::mat4 vView;
+	glm::mat4 vProjection;
+	std::vector<glm::mat4> vModels;
+	GetMatrices(vView,vProjection, vModels, m_iInstanceCount);
 
 	for (int i = 0; i < iSwapCount; i++)
 	{
@@ -226,14 +239,26 @@ void BasicWrapper::FillDescriptorsBuffer()
 		oBuffer.eUsage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
 		oBuffer.oPropertyFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 		
+		std::vector<glm::mat4> oMVP{ vModels[0], vView, vProjection };
 		oDescriptorSet.oBuffers[0].pBuffer = new BasicBuffer(oBuffer);
-		oDescriptorSet.oBuffers[0].pBuffer->CopyFromMemory(&oMatrices, GetModifiableDevice());
+		oDescriptorSet.oBuffers[0].pBuffer->CopyFromMemory(oMVP.data(), GetModifiableDevice());
 
-		//1 -> Texture
-		oDescriptorSet.oBuffers[1].pBuffer = m_pModel->GetTexture();
+		//1 -> Storage buffer 
+		BasicBuffer::Desc oStorageBuffer;
+		oStorageBuffer.iUnitSize = sizeof(glm::mat4);
+		oStorageBuffer.iUnitCount = m_iInstanceCount;
+		oStorageBuffer.pWrapper = this;
+		oStorageBuffer.eUsage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+		oStorageBuffer.oPropertyFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+		oDescriptorSet.oBuffers[1].pBuffer = new BasicBuffer(oStorageBuffer);
+		oDescriptorSet.oBuffers[1].pBuffer->CopyFromMemory(vModels.data(), GetModifiableDevice());
+
+		//2 -> Texture
+		oDescriptorSet.oBuffers[2].pBuffer = m_pModel->GetTexture();
 
 		m_oInputDatas.push_back(oDescriptorSet);
 		m_oAllMatrices.push_back((BasicBuffer*)oDescriptorSet.oBuffers[0].pBuffer);
+		m_oAllMatricesInstance.push_back((BasicBuffer*)oDescriptorSet.oBuffers[1].pBuffer);
 	}
 	m_pPool->WriteDescriptor(m_oInputDatas, m_pPipeline->GetDescriptorSetLayout()[0]);
 
@@ -324,12 +349,14 @@ void BasicWrapper::InitCommands()
 		oSubSky.pPipeline = m_pSkyboxPipeline;
 		oSubSky.pVertexData = m_oAllVertexBuffersSky[0];
 		oSubSky.pIndexData = m_oAllVertexBuffersSky[1];
+		oSubSky.iInstanceCount = 1;
 
 		CommandFactory::SubDrawDesc oSub;
 		oSub.oDescriptorSet = *m_oInputDatas[i].pDescriptorSet;
 		oSub.pPipeline = m_pPipeline;
 		oSub.pVertexData = m_oAllVertexBuffers[0];
 		oSub.pIndexData = m_oAllVertexBuffers[1];
+		oSub.iInstanceCount = m_iInstanceCount;
 
 		CommandFactory::DrawDesc oDesc;
 		oDesc.oMultipleDraw = { oSubSky, oSub };
@@ -425,7 +452,16 @@ void BasicWrapper::UpdateUniformBuffer(int iImageIndex)
 	oMatrices.vProjection[1][1] *= -1;
 
 	m_oAllMatrices[iImageIndex]->CopyFromMemory(&oMatrices, m_pDevice);
+
+	std::vector<glm::mat4> oModels;
+	oModels.resize(m_iInstanceCount);
+	for (int i = 0; i < m_iInstanceCount; i++)
+	{
+		oModels[i] = glm::translate(oMatrices.vModel, glm::vec3(time * 0.1f * i, 0.0f, 0.0f));
+	}
+	m_oAllMatricesInstance[iImageIndex]->CopyFromMemory(oModels.data(), m_pDevice);
 	
+	//Skybox
 	MP oOutput;
 
 	oOutput.vModel = glm::mat4(1.0f);

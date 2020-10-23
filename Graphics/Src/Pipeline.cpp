@@ -194,9 +194,9 @@ void Pipeline::CreateDescriptorLayout(Desc& oDesc)
 			VkDescriptorSetLayoutBinding oBinding{};
 			oBinding.binding = i;
 			oBinding.descriptorCount = 1;
-			oBinding.descriptorType = (oDesc.oInputDatas[iSetLayoutIndex][i].eType == DescriptorPool::E_TEXTURE ? VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER : VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+			oBinding.descriptorType = DescriptorPool::GetDescriptorType(oDesc.oInputDatas[iSetLayoutIndex][i].eType);
 			oBinding.pImmutableSamplers = nullptr;
-			oBinding.stageFlags = (oDesc.oInputDatas[iSetLayoutIndex][i].eType != DescriptorPool::E_TEXTURE ? VK_SHADER_STAGE_VERTEX_BIT : VK_SHADER_STAGE_FRAGMENT_BIT);
+			oBinding.stageFlags = (oDesc.oInputDatas[iSetLayoutIndex][i].eType == DescriptorPool::E_TEXTURE ? VK_SHADER_STAGE_FRAGMENT_BIT : VK_SHADER_STAGE_VERTEX_BIT);
 
 			oLayoutBindings.push_back(oBinding);
 		}

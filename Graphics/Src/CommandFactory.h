@@ -25,6 +25,7 @@ public:
 		Buffer* pIndexData;
 		Pipeline* pPipeline;
 		VkDescriptorSet oDescriptorSet;
+		int iInstanceCount;
 	};
 
 	struct DrawDesc

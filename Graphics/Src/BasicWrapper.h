@@ -71,6 +71,7 @@ protected:
 	std::vector< Buffer*> m_oAllVertexBuffersSky;
 	std::vector<BasicBuffer*> m_oAllMatrices;
 	std::vector<BasicBuffer*> m_oAllMatricesSky;
+	std::vector<BasicBuffer* >m_oAllMatricesInstance;
 
 	std::vector< VkCommandBuffer > m_oAllDrawCommands;
 	std::vector< Image* > m_oAllDepths;
@@ -79,9 +80,11 @@ protected:
 	std::vector< VkDescriptorSet > m_oDescriptors;
 	std::vector<VkDescriptorSet> m_oDescriptorsSky;
 
+	int m_iInstanceCount;
+
 	void UpdateUniformBuffer(int iImageIndex);
 
-	MVP GetMatrices();
+	void GetMatrices(glm::mat4& vView, glm::mat4& vProjection, std::vector<glm::mat4>& oModels, int iSize);
 
 	struct MP
 	{

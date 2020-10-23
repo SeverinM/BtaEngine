@@ -18,7 +18,8 @@ public:
 	enum EBufferType
 	{
 		E_TEXTURE,
-		E_UNIFORM_BUFFER
+		E_UNIFORM_BUFFER,
+		E_STORAGE_BUFFER
 	};
 
 	struct BufferDesc
@@ -35,6 +36,7 @@ public:
 
 	DescriptorPool(Desc& oDesc);
 	void Create(Desc& oDesc);
+	static VkDescriptorType GetDescriptorType(EBufferType eType);
 	~DescriptorPool();
 
 	void WriteDescriptor(std::vector< UpdateSubDesc >& oUpdate, const VkDescriptorSetLayout& oDescriptorSetLayout);
