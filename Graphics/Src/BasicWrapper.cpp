@@ -140,21 +140,6 @@ BasicWrapper::MVP BasicWrapper::GetMatrices()
 	return oOutput;
 }
 
-BasicWrapper::MP BasicWrapper::GetMatricesSky()
-{
-	MP oOutput;
-	
-	glm::mat4 oMat = glm::mat4(1.0f);
-	oOutput.vModel = glm::rotate(oMat, 45.0f, glm::vec3(0.4f, 0.1f, 1.2f));
-
-	int iWidth, iHeight;
-	m_pDevice->GetModifiableRenderSurface()->GetWindowSize(iWidth, iHeight);
-	oOutput.vProjection = glm::perspective(glm::radians(45.0f), iWidth / (float)iHeight, 0.1f, 10.0f);
-	oOutput.vProjection[1][1] *= -1;
-
-	return oOutput;
-}
-
 void BasicWrapper::CreateGraphicPipeline()
 {
 	//Setup inputs
@@ -286,6 +271,7 @@ void BasicWrapper::FillDescriptorsBuffer()
 		oDescriptorSet.oBuffers[1].pBuffer = Image::CreateCubeMap(sFilenames, oFileDesc);
 
 		m_oInputDatasSky.push_back(oDescriptorSet);
+		m_oAllMatricesSky.push_back((BasicBuffer*)oDescriptorSet.oBuffers[0].pBuffer);
 	}
 	m_pPool->WriteDescriptor(m_oInputDatasSky, m_pSkyboxPipeline->GetDescriptorSetLayout()[0]);
 
@@ -408,6 +394,21 @@ void BasicWrapper::InitFramebuffer()
 	std::cout << "Framebuffer created" << std::endl;
 }
 
+BasicWrapper::MP BasicWrapper::GetMatricesSky()
+{
+	MP oOutput;
+
+	oOutput.vModel = glm::mat4(1.0f);
+
+	int iWidth, iHeight;
+	m_pDevice->GetModifiableRenderSurface()->GetWindowSize(iWidth, iHeight);
+	oOutput.vProjection = glm::perspective(glm::radians(45.0f), iWidth / (float)iHeight, 0.1f, 10.0f);
+	oOutput.vProjection[1][1] *= -1;
+
+	return oOutput;
+}
+
+
 void BasicWrapper::UpdateUniformBuffer(int iImageIndex)
 {
 	static auto startTime = std::chrono::high_resolution_clock::now();
@@ -416,7 +417,7 @@ void BasicWrapper::UpdateUniformBuffer(int iImageIndex)
 
 	MVP oMatrices;
 	oMatrices.vModel = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	oMatrices.vView = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	oMatrices.vView = glm::lookAt(glm::vec3(5.0f, 5.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
 	int iWidth, iHeight;
 	m_pDevice->GetModifiableRenderSurface()->GetWindowSize(iWidth, iHeight);
@@ -424,6 +425,16 @@ void BasicWrapper::UpdateUniformBuffer(int iImageIndex)
 	oMatrices.vProjection[1][1] *= -1;
 
 	m_oAllMatrices[iImageIndex]->CopyFromMemory(&oMatrices, m_pDevice);
+	
+	MP oOutput;
+
+	oOutput.vModel = glm::mat4(1.0f);
+	oOutput.vModel = glm::rotate(oOutput.vModel, time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+
+	oOutput.vProjection = glm::perspective(glm::radians(45.0f), iWidth / (float)iHeight, 0.1f, 10.0f);
+	oOutput.vProjection[1][1] *= -1;
+
+	m_oAllMatricesSky[iImageIndex]->CopyFromMemory(&oOutput, m_pDevice);
 }
 
 bool BasicWrapper::Render(SyncObjects* pSync)

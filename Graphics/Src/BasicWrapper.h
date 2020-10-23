@@ -70,6 +70,7 @@ protected:
 	std::vector< Buffer* > m_oAllVertexBuffers;
 	std::vector< Buffer*> m_oAllVertexBuffersSky;
 	std::vector<BasicBuffer*> m_oAllMatrices;
+	std::vector<BasicBuffer*> m_oAllMatricesSky;
 
 	std::vector< VkCommandBuffer > m_oAllDrawCommands;
 	std::vector< Image* > m_oAllDepths;
