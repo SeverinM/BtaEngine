@@ -142,23 +142,6 @@ Swapchain::~Swapchain()
 	vkDestroySwapchainKHR(*m_pRecreate->pGraphicWrapper->GetDevice()->GetLogicalDevice(), m_oSwapchain, nullptr);
 }
 
-void Swapchain::Free()
-{
-	m_oImages.clear();
-	for (VkImageView& oImageView : m_oViews)
-	{
-		vkDestroyImageView(*m_pRecreate->pGraphicWrapper->GetDevice()->GetLogicalDevice(), oImageView, nullptr);
-	}
-	m_oViews.clear();
-
-	vkDestroySwapchainKHR(*m_pRecreate->pGraphicWrapper->GetDevice()->GetLogicalDevice(), m_oSwapchain, nullptr);
-}
-
-void Swapchain::Recreate(int iNewWidth, int iNewHeight, void* pData)
-{
-	Create(*m_pRecreate);
-}
-
 void Swapchain::CreateViews(Desc& oDesc)
 {
 	m_oViews.resize(m_oImages.size());

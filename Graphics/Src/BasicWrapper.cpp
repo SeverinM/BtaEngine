@@ -6,6 +6,7 @@
 #include <iostream>
 #include "RenderPass.h"
 #include <chrono>
+#include "GLM/glm.hpp"
 
 BasicWrapper* BasicWrapper::s_pInstance(nullptr);
 
@@ -86,6 +87,14 @@ void BasicWrapper::CreateGraphicDevice()
 	oFactoryDesc.pWrapper = this;
 
 	m_pFactory = new CommandFactory(oFactoryDesc);
+
+	Camera::Desc oCamDesc;
+	oCamDesc.fAngleDegree = 45.0f;
+	oCamDesc.fRatio = 1.0f;
+	oCamDesc.fNearPlane = 0.1f;
+	oCamDesc.fFarPlane = 10.0f;
+
+	m_pCamera = new Camera(oCamDesc);
 }
 
 void BasicWrapper::CreateSwapChain()
@@ -217,13 +226,8 @@ void BasicWrapper::FillDescriptorsBuffer()
 {
 	int iSwapCount = m_pSwapchain->GetImageViews().size();
 
-	m_iInstanceCount = 10;
+	m_iInstanceCount = 2;
 	m_pPool->CreateDescriptorSet(m_oDescriptors, iSwapCount, m_pPipeline->GetDescriptorSetLayout()[0]);
-
-	glm::mat4 vView;
-	glm::mat4 vProjection;
-	std::vector<glm::mat4> vModels;
-	GetMatrices(vView,vProjection, vModels, m_iInstanceCount);
 
 	for (int i = 0; i < iSwapCount; i++)
 	{
@@ -234,30 +238,23 @@ void BasicWrapper::FillDescriptorsBuffer()
 		//0 -> Uniform buffer
 		BasicBuffer::Desc oBuffer;
 		oBuffer.iUnitSize = sizeof(glm::mat4);
-		oBuffer.iUnitCount = 3;
+		oBuffer.iUnitCount = 2;
 		oBuffer.pWrapper = this;
 		oBuffer.eUsage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
 		oBuffer.oPropertyFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 		
-		std::vector<glm::mat4> oMVP{ vModels[0], vView, vProjection };
+		std::vector<glm::mat4> oMVP{ m_pCamera->GetViewMatrix(), m_pCamera->GetProjectionMatrix() };
 		oDescriptorSet.oBuffers[0].pBuffer = new BasicBuffer(oBuffer);
 		oDescriptorSet.oBuffers[0].pBuffer->CopyFromMemory(oMVP.data(), GetModifiableDevice());
 
 		//1 -> Storage buffer 
-		BasicBuffer::Desc oStorageBuffer;
-		oStorageBuffer.iUnitSize = sizeof(glm::mat4);
-		oStorageBuffer.iUnitCount = m_iInstanceCount;
-		oStorageBuffer.pWrapper = this;
-		oStorageBuffer.eUsage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-		oStorageBuffer.oPropertyFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-		oDescriptorSet.oBuffers[1].pBuffer = new BasicBuffer(oStorageBuffer);
-		oDescriptorSet.oBuffers[1].pBuffer->CopyFromMemory(vModels.data(), GetModifiableDevice());
+		oDescriptorSet.oBuffers[1].pBuffer = m_pRenderModel->GetModelMatrices();
 
 		//2 -> Texture
-		oDescriptorSet.oBuffers[2].pBuffer = m_pModel->GetTexture();
+		oDescriptorSet.oBuffers[2].pBuffer = m_pRenderModel->GetTextures()[0];
 
 		m_oInputDatas.push_back(oDescriptorSet);
-		m_oAllMatrices.push_back((BasicBuffer*)oDescriptorSet.oBuffers[0].pBuffer);
+		m_oMPMatrices.push_back((BasicBuffer*)oDescriptorSet.oBuffers[0].pBuffer);
 		m_oAllMatricesInstance.push_back((BasicBuffer*)oDescriptorSet.oBuffers[1].pBuffer);
 	}
 	m_pPool->WriteDescriptor(m_oInputDatas, m_pPipeline->GetDescriptorSetLayout()[0]);
@@ -311,31 +308,27 @@ void BasicWrapper::CreateCommandBuffer()
 
 void BasicWrapper::InitVerticesBuffers()
 {
-	Model::Desc oDesc;
+	RenderModel::Desc oDesc;
 	oDesc.pFactory = m_pFactory;
 	oDesc.pWrapper = this;
-	oDesc.sModelPath = "./Models/viking_room.obj";
-	oDesc.sTexturepath = "./Textures/viking_room.png";
-	m_pModel = new Model(oDesc);
-	
-	std::unordered_map<Model::eVerticesAttributes, size_t> oInput;
-	oInput[Model::E_POSITIONS] = sizeof(glm::vec3);
-	oInput[Model::E_UV] = sizeof(glm::vec2);
-	oInput[Model::E_COLOR] = 0;
-	oInput[Model::E_NORMALS] = 0;
+	oDesc.sFilenameModel = "./Models/viking_room.obj";
+	oDesc.oFilenamesTextures = { "./Textures/viking_room.png" };
+	oDesc.oModels = { new Transform(),new Transform() };
+	oDesc.eFlag = RenderModel::eVerticesAttributes::E_UV | RenderModel::eVerticesAttributes::E_POSITIONS;
 
-	Model::BuffersVertices oOutput = m_pModel->ConvertToBuffer(oInput, this, m_pFactory);
-	m_oAllVertexBuffers.push_back(oOutput.pVertices);
-	m_oAllVertexBuffers.push_back(oOutput.pIndices);
+	m_pRenderModel = new RenderModel(oDesc);
+	m_pRenderModel->ConvertToBuffer(m_pRenderModel->GetBufferFlags(), true, oDesc.pWrapper);
 
-	oDesc.sModelPath = "./Models/cube.obj";
-	oDesc.sTexturepath = "";
-	oDesc.bEnableMip = false;
-	m_pSkyModel = new Model(oDesc);
+	m_oAllVertexBuffers.push_back(m_pRenderModel->GetVerticesBuffer());
+	m_oAllVertexBuffers.push_back(m_pRenderModel->GetIndexesBuffer());
 
-	Model::BuffersVertices oOutput2 = m_pSkyModel->ConvertToBuffer(oInput, this, m_pFactory);
-	m_oAllVertexBuffersSky.push_back(oOutput2.pVertices);
-	m_oAllVertexBuffersSky.push_back(oOutput2.pIndices);
+	oDesc.oFilenamesTextures = {};
+	oDesc.sFilenameModel = { "./Models/cube.obj" };
+	m_pRenderModelSky = new RenderModel(oDesc);
+	m_pRenderModelSky->ConvertToBuffer(m_pRenderModelSky->GetBufferFlags(), true, oDesc.pWrapper);
+
+	m_oAllVertexBuffersSky.push_back(m_pRenderModelSky->GetVerticesBuffer());
+	m_oAllVertexBuffersSky.push_back(m_pRenderModelSky->GetIndexesBuffer());
 
 	std::cout << "vertex buffer created" << std::endl;
 }
@@ -442,35 +435,23 @@ void BasicWrapper::UpdateUniformBuffer(int iImageIndex)
 	auto currentTime = std::chrono::high_resolution_clock::now();
 	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
-	MVP oMatrices;
-	oMatrices.vModel = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	oMatrices.vView = glm::lookAt(glm::vec3(5.0f, 5.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-
-	int iWidth, iHeight;
-	m_pDevice->GetModifiableRenderSurface()->GetWindowSize(iWidth, iHeight);
-	oMatrices.vProjection = glm::perspective(glm::radians(45.0f), iWidth / (float)iHeight, 0.1f, 10.0f);
-	oMatrices.vProjection[1][1] *= -1;
-
-	m_oAllMatrices[iImageIndex]->CopyFromMemory(&oMatrices, m_pDevice);
-
 	std::vector<glm::mat4> oModels;
 	oModels.resize(m_iInstanceCount);
 	for (int i = 0; i < m_iInstanceCount; i++)
 	{
-		oModels[i] = glm::translate(oMatrices.vModel, glm::vec3(time * 0.1f * i, 0.0f, 0.0f));
+		glm::vec3 vTranslate(0.0001f * ( i + 1 ), 0, 0);
+		m_pRenderModel->GetModels()[i]->SetPosition(vTranslate, true);
+		oModels[i] = m_pRenderModel->GetModels()[i]->GetModelMatrix();
 	}
-	m_oAllMatricesInstance[iImageIndex]->CopyFromMemory(oModels.data(), m_pDevice);
-	
-	//Skybox
-	MP oOutput;
 
-	oOutput.vModel = glm::mat4(1.0f);
-	oOutput.vModel = glm::rotate(oOutput.vModel, time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	glm::mat4 mView = m_pCamera->GetViewMatrix();
+	mView = glm::translate(mView, glm::vec3(0, 0, 0.1f * time));
 
-	oOutput.vProjection = glm::perspective(glm::radians(45.0f), iWidth / (float)iHeight, 0.1f, 10.0f);
-	oOutput.vProjection[1][1] *= -1;
+	glm::mat4 mProj = m_pCamera->GetProjectionMatrix();
+	std::vector<glm::mat4> oMat = { mView, mProj };
+	m_oMPMatrices[iImageIndex]->CopyFromMemory(oMat.data(), m_pDevice);
 
-	m_oAllMatricesSky[iImageIndex]->CopyFromMemory(&oOutput, m_pDevice);
+	m_pRenderModel->GetModelMatrices()->CopyFromMemory(oModels.data(), m_pDevice);
 }
 
 bool BasicWrapper::Render(SyncObjects* pSync)
@@ -541,60 +522,6 @@ bool BasicWrapper::Render(SyncObjects* pSync)
 
 void BasicWrapper::ResizeWindow()
 {
-	int iWidth, iHeight;
-	GetModifiableDevice()->GetModifiableRenderSurface()->GetWindowSize(iWidth, iHeight);
-	while (iWidth == 0 || iHeight == 0)
-	{
-		GetModifiableDevice()->GetModifiableRenderSurface()->GetWindowSize(iWidth, iHeight);
-		glfwWaitEvents();
-	}
-	vkDeviceWaitIdle(*GetDevice()->GetLogicalDevice());
-
-	for (Image* pImage : m_oAllDepths)
-	{
-		delete pImage;
-	}
-	m_oAllDepths.clear();
-
-	for (Image* pImage : m_oAllMultisample)
-	{
-		delete pImage;
-	}
-	m_oAllMultisample.clear();
-
-	for (Framebuffer* pFramebuffer : m_oFramebuffers)
-	{
-		delete pFramebuffer;
-	}
-	m_oFramebuffers.clear();
-
-	vkFreeCommandBuffers(*GetDevice()->GetLogicalDevice(), *m_pFactory->GetCommandPool(), m_oAllDrawCommands.size(), m_oAllDrawCommands.data());
-
-	std::vector<Resizable*> oAllResizable = { m_pPipeline, m_pRenderpass, m_pSwapchain, m_pPool };
-
-	for (DescriptorPool::UpdateSubDesc& oUpdate : m_oInputDatas)
-	{
-		for (DescriptorPool::BufferDesc oBuffer : oUpdate.oBuffers)
-		{
-			delete oBuffer.pBuffer;
-		}
-		oUpdate.oBuffers.clear();
-	}
-	m_oInputDatas.clear();
-
-	for (Resizable* pResizable : oAllResizable)
-	{
-		pResizable->Free();
-	}
-
-	m_pSwapchain->Recreate(iWidth, iHeight, nullptr);
-	m_pRenderpass->Recreate(iWidth, iHeight, nullptr);
-	InitFramebuffer();
-	m_pPool->Recreate(iWidth, iHeight, nullptr);
-	FillDescriptorsBuffer();
-	m_pPipeline->Recreate(iWidth, iHeight, nullptr);
-	m_oAllDrawCommands.clear();
-	CreateCommandBuffer();
 }
 
 BasicWrapper::~BasicWrapper()

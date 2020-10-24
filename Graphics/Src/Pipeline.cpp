@@ -225,13 +225,3 @@ void Pipeline::CreatePipelineLayout(Desc& oDesc)
 		throw std::runtime_error("Cannot create layout");
 	}
 }
-
-void Pipeline::Free()
-{
-	vkDestroyPipeline(*m_pWrapper->GetDevice()->GetLogicalDevice(), m_oPipeline, nullptr);
-}
-
-void Pipeline::Recreate(int iNewWidth, int iNewHeight, void* pData)
-{
-	Create(*m_pRecreate);
-}

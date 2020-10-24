@@ -10,6 +10,7 @@
 #include "DescriptorPool.h"
 #include "Framebuffer.h"
 #include "Model.h"
+#include "Camera.h"
 
 class Pipeline;
 class CommandFactory;
@@ -43,24 +44,17 @@ public :
 	Pipeline* GetPipeline() const { return m_pPipeline; }
 	static BasicWrapper* GetInstance() { return s_pInstance; }
 
-	struct MVP
-	{
-		glm::mat4 vModel;
-		glm::mat4 vView;
-		glm::mat4 vProjection;
-	};
-
-
 protected:
 	static BasicWrapper* s_pInstance;
 
+	Camera* m_pCamera;
 	Swapchain* m_pSwapchain;
 	RenderPass* m_pRenderpass;
 	Pipeline* m_pPipeline;
 	CommandFactory* m_pFactory;
 	DescriptorPool* m_pPool;
-	Model* m_pModel;
-	Model* m_pSkyModel;
+	RenderModel* m_pRenderModel;
+	RenderModel* m_pRenderModelSky;
 	Pipeline* m_pSkyboxPipeline;
 	std::vector< DescriptorPool::UpdateSubDesc> m_oInputDatas;
 	std::vector< DescriptorPool::UpdateSubDesc> m_oInputDatasSky;
@@ -69,7 +63,7 @@ protected:
 	std::vector < std::vector < DescriptorPool::BufferDesc> > m_oPrototypeSkybox;
 	std::vector< Buffer* > m_oAllVertexBuffers;
 	std::vector< Buffer*> m_oAllVertexBuffersSky;
-	std::vector<BasicBuffer*> m_oAllMatrices;
+	std::vector<BasicBuffer*> m_oMPMatrices;
 	std::vector<BasicBuffer*> m_oAllMatricesSky;
 	std::vector<BasicBuffer* >m_oAllMatricesInstance;
 

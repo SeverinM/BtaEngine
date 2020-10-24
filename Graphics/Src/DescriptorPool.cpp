@@ -152,13 +152,3 @@ void DescriptorPool::CreateDescriptorSet(VkDescriptorSet& oOutput, const VkDescr
 		throw std::runtime_error("Failed to allocate descriptor sets");
 	}
 }
-
-void DescriptorPool::Free()
-{
-	vkDestroyDescriptorPool(*m_pRecreate->pWrapper->GetDevice()->GetLogicalDevice(), m_oPool, nullptr);
-}
-
-void DescriptorPool::Recreate(int iNewWidth, int iNewHeight, void* pData)
-{
-	Create(*m_pRecreate);
-}

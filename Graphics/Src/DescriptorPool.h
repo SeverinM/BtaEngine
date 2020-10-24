@@ -1,11 +1,10 @@
 #ifndef H_DESCRIPTOR
 #define H_DESCRIPTOR
 #include "Buffer.h"
-#include "Resizable.h"
 
 class BasicWrapper;
 
-class DescriptorPool : public Resizable
+class DescriptorPool
 {
 public:
 	struct Desc
@@ -42,9 +41,6 @@ public:
 	void WriteDescriptor(std::vector< UpdateSubDesc >& oUpdate, const VkDescriptorSetLayout& oDescriptorSetLayout);
 	void CreateDescriptorSet(std::vector<VkDescriptorSet>& oOutput, int iSize, const VkDescriptorSetLayout& oLayout);
 	void CreateDescriptorSet(VkDescriptorSet& oOutput,const VkDescriptorSetLayout& oLayout);
-
-	virtual void Free() override;
-	virtual void Recreate(int iNewWidth, int iNewHeight, void* pData) override;
 
 private:
 	VkDescriptorPool m_oPool;

@@ -1,10 +1,9 @@
 #ifndef H_SWAP_CHAIN
 #define H_SWAP_CHAIN
-#include "Resizable.h"
 #include "GraphicDevice.h"
 #include "GraphicWrapper.h"
 
-class Swapchain : public Resizable
+class Swapchain
 {
 public:
 	struct Desc
@@ -19,8 +18,6 @@ public:
 	Swapchain(Desc& oDesc);
 	void Create(Desc& oDesc);
 	~Swapchain();
-	void Free() override;
-	virtual void Recreate(int iNewWidth, int iNewHeight, void* pData) override;
 	int GetNumberImages() const { return m_oImages.size(); }
 	const VkSwapchainKHR* GetSwapchain() const { return &m_oSwapchain; }
 	VkFormat GetFormat() const { return m_eFormat; }

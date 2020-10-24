@@ -1,11 +1,10 @@
 #ifndef H_BUFFER
 #define H_BUFFER
 #include "GraphicWrapper.h"
-#include "Resizable.h"
 
 class CommandFactory;
 
-class Buffer : public Resizable
+class Buffer
 {
 public:
 
@@ -27,9 +26,6 @@ protected:
 	VkDeviceMemory m_oMemory;
 	VkDeviceSize m_iSizeUnit;
 	uint32_t m_iUnitCount;
-
-	virtual void Free() override;
-	virtual void Recreate(int iNewWidth, int iNewHeight, void* pData) override;
 };
 
 class BasicBuffer : public Buffer

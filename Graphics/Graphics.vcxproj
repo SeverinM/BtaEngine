@@ -155,11 +155,13 @@
     <ClCompile Include="Src\Main.cpp" />
     <ClCompile Include="Src\Model.cpp" />
     <ClCompile Include="Src\Pipeline.cpp" />
+    <ClCompile Include="Src\PipelinePrepare.cpp" />
     <ClCompile Include="Src\RenderLayer.cpp" />
     <ClCompile Include="Src\RenderPass.cpp" />
     <ClCompile Include="Src\RenderSurface.cpp" />
     <ClCompile Include="Src\Swapchain.cpp" />
     <ClCompile Include="Src\SyncObjects.cpp" />
+    <ClCompile Include="Src\Transform.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Src\BasicWrapper.h" />
@@ -174,10 +176,10 @@
     <ClInclude Include="Src\GraphicWrapper.h" />
     <ClInclude Include="Src\Model.h" />
     <ClInclude Include="Src\Pipeline.h" />
+    <ClInclude Include="Src\PipelinePrepare.h" />
     <ClInclude Include="Src\RenderLayer.h" />
     <ClInclude Include="Src\RenderPass.h" />
     <ClInclude Include="Src\RenderSurface.h" />
-    <ClInclude Include="Src\Resizable.h" />
     <ClInclude Include="Src\Swapchain.h" />
     <ClInclude Include="Src\SyncObjects.h" />
     <ClInclude Include="Src\Transform.h" />

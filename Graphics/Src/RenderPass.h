@@ -1,15 +1,12 @@
 #ifndef H_RENDER_PASS
 #define H_RENDER_PASS
 #include "vulkan/vulkan_core.h"
-#include "Resizable.h"
 #include <vector>
 #include "BasicWrapper.h"
 
-class RenderPass : public Resizable
+class RenderPass
 {
 public :
-	virtual void Free() override;
-	virtual void Recreate(int iNewWidth, int iNewHeight, void* pData) override;
 
 	struct SubDesc
 	{

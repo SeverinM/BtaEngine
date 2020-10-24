@@ -4,11 +4,10 @@
 #include <vector>
 #include <string>
 #include "BasicWrapper.h"
-#include "Resizable.h"
 
 static VkShaderModule* CompileShader(std::string sFilename, GraphicDevice& oDevice);
 
-class Pipeline : public Resizable
+class Pipeline
 {
 public:
 	struct Desc
@@ -30,9 +29,6 @@ public:
 
 	void CreateDescriptorLayout(Desc& oDesc);
 	void CreatePipelineLayout(Desc& oDesc);
-
-	virtual void Free() override;
-	virtual void Recreate(int iNewWidth, int iNewHeight, void* pData) override;
 
 	VkPipelineLayout* GetPipelineLayout() { return &m_oPipelineLayout; }
 	const std::vector< VkDescriptorSetLayout >& GetDescriptorSetLayout() { return m_oDescriptorSetLayout; }

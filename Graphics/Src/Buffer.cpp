@@ -23,14 +23,6 @@ uint32_t Buffer::FindMemoryType(GraphicWrapper* pWrapper, uint32_t iTypeFilter, 
 	return -1;
 }
 
-void Buffer::Free()
-{
-}
-
-void Buffer::Recreate(int iNewWidth, int iNewHeight, void* pData)
-{
-}
-
 BasicBuffer::~BasicBuffer()
 {
 	vkDestroyBuffer(*m_pDevice->GetLogicalDevice(), m_oBuffer, nullptr);

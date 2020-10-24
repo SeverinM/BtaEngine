@@ -1,16 +1,6 @@
 #include "RenderPass.h"
 #include <iostream>
 
-void RenderPass::Free()
-{
-	vkDestroyRenderPass(*m_pWrapper->GetDevice()->GetLogicalDevice(), m_oRenderpass, nullptr);
-}
-
-void RenderPass::Recreate(int iNewWidth, int iNewHeight, void* pData)
-{
-	Create(*m_pRecreate);
-}
-
 RenderPass::RenderPass(Desc& oDesc)
 {
 	m_pRecreate = new Desc(oDesc);

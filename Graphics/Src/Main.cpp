@@ -1,6 +1,8 @@
 #include "BasicWrapper.h"
 #include "Globals.h"
 #include "SyncObjects.h"
+#include <bitset>
+#include <cstdlib>
 
 int main()
 {
@@ -17,7 +19,7 @@ int main()
 	SyncObjects* pSyncObj = new SyncObjects(oSyncDesc);
 
 	bool bExit = true;
-	while ( bExit && !glfwWindowShouldClose(oWrapper.GetModifiableDevice()->GetModifiableRenderSurface()->GetModifiableWindow() ) )
+	while (bExit && !glfwWindowShouldClose(oWrapper.GetModifiableDevice()->GetModifiableRenderSurface()->GetModifiableWindow()))
 	{
 		glfwPollEvents();
 		bExit = oWrapper.Render(pSyncObj);

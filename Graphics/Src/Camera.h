@@ -11,14 +11,13 @@ public:
 		float fFarPlane;
 		float fAngleDegree;
 		float fRatio;
-		Transform* pTransform;
 	};
 	Camera(Desc& oDesc);
 	inline glm::mat4 GetProjectionMatrix() { return m_mProjectionMatrix; }
-	inline glm::mat4 GetViewMatrix() { return m_pTransform->GetModelMatrix(); }
+	inline glm::mat4 GetViewMatrix() { return m_mViewMatrix; }
 
 private:
-	Transform* m_pTransform;
+	glm::mat4 m_mViewMatrix;
 	glm::mat4 m_mProjectionMatrix;
 };
 
