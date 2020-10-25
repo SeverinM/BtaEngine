@@ -21,8 +21,8 @@ public:
 
 	struct SubDrawDesc
 	{
-		Buffer* pVertexData;
-		Buffer* pIndexData;
+		std::shared_ptr< Buffer> xVertexData;
+		std::shared_ptr< Buffer > xIndexData;
 		Pipeline* pPipeline;
 		VkDescriptorSet oDescriptorSet;
 		int iInstanceCount;

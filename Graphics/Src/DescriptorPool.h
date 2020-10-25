@@ -23,18 +23,21 @@ public:
 
 	struct BufferDesc
 	{
-		Buffer* pBuffer;
+		std::shared_ptr<Buffer> xBuffer;
 		EBufferType eType;
 	};
 
 	struct UpdateSubDesc
 	{
 		std::vector<BufferDesc> oBuffers;
-		VkDescriptorSet* pDescriptorSet;
+		std::shared_ptr< VkDescriptorSet > xDescriptorSet;
 	};
 
 	DescriptorPool(Desc& oDesc);
 	void Create(Desc& oDesc);
+
+	VkDescriptorPool& GetPool() { return m_oPool; }
+
 	static VkDescriptorType GetDescriptorType(EBufferType eType);
 	~DescriptorPool();
 

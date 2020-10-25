@@ -5,6 +5,7 @@
 #include <vector>
 #include <GLFW/glfw3.h>
 #include "GraphicDevice.h"
+#include <memory>
 
 class SyncObjects;
 

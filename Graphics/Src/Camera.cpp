@@ -13,5 +13,21 @@ Camera::Camera(Desc& oDesc)
 
 	m_mProjectionMatrix = glm::perspective(glm::radians(oDesc.fAngleDegree), oDesc.fRatio, oDesc.fNearPlane, oDesc.fFarPlane);
 	m_mProjectionMatrix[1][1] *= -1;
+
+	BasicBuffer::Desc oBufferDesc;
+	oBufferDesc.eUsage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+	oBufferDesc.iUnitSize = sizeof(glm::mat4);
+	oBufferDesc.iUnitCount = 2;
+	oBufferDesc.pWrapper = oDesc.pWrapper;
+	oBufferDesc.oPropertyFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
+	m_pMatriceBuffer = new BasicBuffer(oBufferDesc);
+
+	std::vector<glm::mat4> oVP = { m_mViewMatrix, m_mProjectionMatrix };
+	m_pMatriceBuffer->CopyFromMemory(oVP.data(), oDesc.pWrapper->GetModifiableDevice());
+}
+
+Camera::~Camera()
+{
+	delete m_pMatriceBuffer;
 }
 

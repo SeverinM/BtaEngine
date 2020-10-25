@@ -25,8 +25,8 @@ uint32_t Buffer::FindMemoryType(GraphicWrapper* pWrapper, uint32_t iTypeFilter, 
 
 BasicBuffer::~BasicBuffer()
 {
-	vkDestroyBuffer(*m_pDevice->GetLogicalDevice(), m_oBuffer, nullptr);
-	vkFreeMemory(*m_pDevice->GetLogicalDevice(), m_oMemory, nullptr);
+	vkFreeMemory(*m_pDevice->GetLogicalDevice(), *m_pMemory, nullptr);
+	vkDestroyBuffer(*m_pDevice->GetLogicalDevice(), *m_pBuffer, nullptr);
 }
 
 BasicBuffer::BasicBuffer(Desc& oDesc)
@@ -41,33 +41,35 @@ BasicBuffer::BasicBuffer(Desc& oDesc)
 	oBufferInfo.usage = oDesc.eUsage;
 	oBufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-	if (vkCreateBuffer(*oDesc.pWrapper->GetDevice()->GetLogicalDevice(), &oBufferInfo, nullptr, &m_oBuffer) != VK_SUCCESS)
+	m_pBuffer = new VkBuffer();
+	if (vkCreateBuffer(*oDesc.pWrapper->GetDevice()->GetLogicalDevice(), &oBufferInfo, nullptr, m_pBuffer) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to create buffer");
 	}
 
 	VkMemoryRequirements oMemoryRequirements;
-	vkGetBufferMemoryRequirements(*oDesc.pWrapper->GetDevice()->GetLogicalDevice(), m_oBuffer, &oMemoryRequirements);
+	vkGetBufferMemoryRequirements(*oDesc.pWrapper->GetDevice()->GetLogicalDevice(), *m_pBuffer, &oMemoryRequirements);
 
 	VkMemoryAllocateInfo oAllocInfo{};
 	oAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 	oAllocInfo.allocationSize = oMemoryRequirements.size;
 	oAllocInfo.memoryTypeIndex = FindMemoryType(oDesc.pWrapper, oMemoryRequirements.memoryTypeBits, oDesc.oPropertyFlags);
 
-	if (vkAllocateMemory(*oDesc.pWrapper->GetDevice()->GetLogicalDevice(), &oAllocInfo, nullptr, &m_oMemory) != VK_SUCCESS)
+	m_pMemory = new VkDeviceMemory();
+	if (vkAllocateMemory(*oDesc.pWrapper->GetDevice()->GetLogicalDevice(), &oAllocInfo, nullptr, m_pMemory) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to allocate buffer");
 	}
 
-	vkBindBufferMemory(*oDesc.pWrapper->GetDevice()->GetLogicalDevice(), m_oBuffer, m_oMemory, 0);
+	vkBindBufferMemory(*oDesc.pWrapper->GetDevice()->GetLogicalDevice(), *m_pBuffer, *m_pMemory, 0);
 }
 
 void Buffer::CopyFromMemory(void* pData, GraphicDevice* pDevice)
 {
 	void* pGpuData;
-	vkMapMemory(*pDevice->GetLogicalDevice(), m_oMemory, 0, GetMemorySize(), 0, &pGpuData);
+	vkMapMemory(*pDevice->GetLogicalDevice(), *m_pMemory, 0, GetMemorySize(), 0, &pGpuData);
 	memcpy(pGpuData, pData, (size_t)GetMemorySize());
-	vkUnmapMemory(*pDevice->GetLogicalDevice(), m_oMemory);
+	vkUnmapMemory(*pDevice->GetLogicalDevice(), *m_pMemory);
 }
 
 void Image::SendCopyCommand(BasicBuffer* pBuffer, CommandFactory* pFactory)
@@ -113,7 +115,7 @@ void BasicBuffer::SendCopyCommand(BasicBuffer* pDst, CommandFactory* pFactory)
 	oCopyRegion.dstOffset = 0;
 	oCopyRegion.size = GetMemorySize();
 
-	vkCmdCopyBuffer(oCommandBuffer, m_oBuffer, *pDst->GetBuffer(), 1, &oCopyRegion);
+	vkCmdCopyBuffer(oCommandBuffer, *m_pBuffer, *pDst->GetBuffer(), 1, &oCopyRegion);
 
 	pFactory->EndSingleTimeCommands(oCommandBuffer);
 }
@@ -438,12 +440,13 @@ Image::Image(Desc& oDesc)
 	oAllocInfo.allocationSize = oMemRequirements.size;
 	oAllocInfo.memoryTypeIndex = FindMemoryType(oDesc.pWrapper, oMemRequirements.memoryTypeBits, oDesc.eProperties);
 
-	if (vkAllocateMemory(*oDesc.pWrapper->GetDevice()->GetLogicalDevice(), &oAllocInfo, nullptr, &m_oMemory) != VK_SUCCESS)
+	m_pMemory = new VkDeviceMemory();
+	if (vkAllocateMemory(*oDesc.pWrapper->GetDevice()->GetLogicalDevice(), &oAllocInfo, nullptr, m_pMemory) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to allocate image memory");
 	}
 
-	vkBindImageMemory(*oDesc.pWrapper->GetDevice()->GetLogicalDevice(), m_oImage, m_oMemory, 0);
+	vkBindImageMemory(*oDesc.pWrapper->GetDevice()->GetLogicalDevice(), m_oImage, *m_pMemory, 0);
 
 	CreateSampler(oDesc);
 	CreateView(oDesc, oDesc.eAspect);
@@ -453,7 +456,7 @@ Image::~Image()
 {
 	vkDestroyImageView(*m_pDevice->GetLogicalDevice(), m_oImageView, nullptr);
 	vkDestroyImage(*m_pDevice->GetLogicalDevice(), m_oImage, nullptr);
-	vkFreeMemory(*m_pDevice->GetLogicalDevice(), m_oMemory, nullptr);
+	vkFreeMemory(*m_pDevice->GetLogicalDevice(), *m_pMemory, nullptr);
 }
 
 void Image::CreateSampler(Desc& oDesc)

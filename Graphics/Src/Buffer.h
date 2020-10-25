@@ -14,7 +14,7 @@ public:
 		E_VERTEX
 	};
 
-	const VkDeviceMemory* GetMemory() { return &m_oMemory; }
+	const VkDeviceMemory* GetMemory() { return m_pMemory; }
 	VkDeviceSize GetMemorySize() { return m_iSizeUnit * (VkDeviceSize)m_iUnitCount; }
 	VkDeviceSize GetSizeUnit() { return m_iSizeUnit; }
 	int GetUnitCount() { return m_iUnitCount; }
@@ -23,7 +23,7 @@ public:
 
 protected:
 	uint32_t FindMemoryType(GraphicWrapper* pWrapper, uint32_t iTypeFilter, VkMemoryPropertyFlags oProperties);
-	VkDeviceMemory m_oMemory;
+	VkDeviceMemory* m_pMemory;
 	VkDeviceSize m_iSizeUnit;
 	uint32_t m_iUnitCount;
 };
@@ -42,14 +42,14 @@ public:
 	};
 	virtual ~BasicBuffer();
 
-	const VkBuffer* GetBuffer() { return &m_oBuffer; };
+	const VkBuffer* GetBuffer() { return m_pBuffer; };
 	BasicBuffer(Desc& oDesc);
 	TypeBuffer GetType() { return E_VERTEX; }
 	void SendCopyCommand(BasicBuffer* pDst, CommandFactory* pFactory);
 	GraphicDevice* m_pDevice;
 
 protected:
-	VkBuffer m_oBuffer;
+	VkBuffer* m_pBuffer;
 };
 
 class Image : public Buffer

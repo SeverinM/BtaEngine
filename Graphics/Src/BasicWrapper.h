@@ -26,7 +26,6 @@ public :
 	void CreateRenderPass() override;
 	void CreateCommandBuffer() override;
 	void InitVerticesBuffers();
-	void InitCommands();
 	void InitFramebuffer();
 	void FillDescriptorsBuffer();
 
@@ -42,10 +41,8 @@ public :
 
 	const Swapchain* const GetSwapchain() const { return m_pSwapchain; }
 	Pipeline* GetPipeline() const { return m_pPipeline; }
-	static BasicWrapper* GetInstance() { return s_pInstance; }
 
 protected:
-	static BasicWrapper* s_pInstance;
 
 	Camera* m_pCamera;
 	Swapchain* m_pSwapchain;
@@ -61,31 +58,13 @@ protected:
 
 	std::vector < std::vector < DescriptorPool::BufferDesc> > m_oPrototype;
 	std::vector < std::vector < DescriptorPool::BufferDesc> > m_oPrototypeSkybox;
-	std::vector< Buffer* > m_oAllVertexBuffers;
-	std::vector< Buffer*> m_oAllVertexBuffersSky;
-	std::vector<BasicBuffer*> m_oMPMatrices;
-	std::vector<BasicBuffer*> m_oAllMatricesSky;
-	std::vector<BasicBuffer* >m_oAllMatricesInstance;
 
 	std::vector< VkCommandBuffer > m_oAllDrawCommands;
-	std::vector< Image* > m_oAllDepths;
-	std::vector<Image*> m_oAllMultisample;
+	std::vector< std::shared_ptr<Image> > m_oAllDepths;
+	std::vector< std::shared_ptr<Image> > m_oAllMultisample;
 	std::vector< Framebuffer* > m_oFramebuffers;
-	std::vector< VkDescriptorSet > m_oDescriptors;
-	std::vector<VkDescriptorSet> m_oDescriptorsSky;
-
-	int m_iInstanceCount;
 
 	void UpdateUniformBuffer(int iImageIndex);
-
-	void GetMatrices(glm::mat4& vView, glm::mat4& vProjection, std::vector<glm::mat4>& oModels, int iSize);
-
-	struct MP
-	{
-		glm::mat4 vModel;
-		glm::mat4 vProjection;
-	};
-	MP GetMatricesSky();
 
 	struct Vertex
 	{

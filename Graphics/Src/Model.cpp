@@ -7,9 +7,6 @@
 
 RenderModel::RenderModel(Desc& oDesc)
 {
-	m_pAllModelMatrices = nullptr;
-	m_pCachedIndexesBuffer = nullptr;
-	m_pCachedVerticesBuffer = nullptr;
 	m_iInstanceCount = oDesc.oModels.size();
 	m_oModels = oDesc.oModels;
 
@@ -25,7 +22,7 @@ RenderModel::RenderModel(Desc& oDesc)
 
 	for (std::string& sFilename : oDesc.oFilenamesTextures)
 	{
-		m_oTextures.push_back(Image::CreateFromFile(sFilename, oTexDesc));
+		m_oTextures.push_back(std::shared_ptr<Image>(Image::CreateFromFile(sFilename, oTexDesc)));
 		m_oTextures[m_oTextures.size() - 1]->TransitionLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, oDesc.pFactory, 1);
 	}
 
@@ -65,29 +62,28 @@ RenderModel::RenderModel(Desc& oDesc)
 	oBufferDesc.oPropertyFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
 
 	std::vector<glm::mat4> oMatrices;
-	for (Transform* pTransform : oDesc.oModels)
+	for (std::shared_ptr< Transform > xTransform : oDesc.oModels)
 	{
-		oMatrices.push_back(pTransform->GetModelMatrix());
+		oMatrices.push_back(xTransform->GetModelMatrix());
 	}
 
-	m_pAllModelMatrices = new BasicBuffer(oBufferDesc);
-	m_pAllModelMatrices->CopyFromMemory(oMatrices.data(), oDesc.pWrapper->GetModifiableDevice());
+	m_xAllModelMatrices = std::shared_ptr<Buffer>( new BasicBuffer(oBufferDesc) );
+	m_xAllModelMatrices->CopyFromMemory(oMatrices.data(), oDesc.pWrapper->GetModifiableDevice());
+}
+
+RenderModel::~RenderModel()
+{
+	m_oColors.clear();
+	m_oIndexes.clear();
+	m_oNormals.clear();
+	m_oUVs.clear();
+	m_oPositions.clear();
+	m_oModels.clear();
+	m_oTextures.clear();
 }
 
 void RenderModel::ConvertToBuffer(BufferElementsFlag eFlags, bool bIncludeIndexes, GraphicWrapper* pWrapper)
 {
-	if (m_pCachedVerticesBuffer != nullptr)
-	{
-		delete m_pCachedVerticesBuffer;
-		m_pCachedVerticesBuffer = nullptr;
-	}
-
-	if (m_pCachedIndexesBuffer != nullptr)
-	{
-		delete m_pCachedIndexesBuffer;
-		m_pCachedIndexesBuffer = nullptr;
-	}
-
 	std::vector<uint8_t> oBytes;
 	int iUnitSize = 0;
 
@@ -148,8 +144,8 @@ void RenderModel::ConvertToBuffer(BufferElementsFlag eFlags, bool bIncludeIndexe
 	oDesc.oPropertyFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 	oDesc.pWrapper = pWrapper;
 
-	m_pCachedVerticesBuffer = new BasicBuffer(oDesc);
-	m_pCachedVerticesBuffer->CopyFromMemory(oBytes.data(), pWrapper->GetModifiableDevice());
+	m_xCachedVerticesBuffer = std::shared_ptr<Buffer>( new BasicBuffer(oDesc) );
+	m_xCachedVerticesBuffer->CopyFromMemory(oBytes.data(), pWrapper->GetModifiableDevice());
 
 	if (bIncludeIndexes)
 	{
@@ -160,8 +156,8 @@ void RenderModel::ConvertToBuffer(BufferElementsFlag eFlags, bool bIncludeIndexe
 		oDescIndex.eUsage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
 		oDescIndex.oPropertyFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 
-		m_pCachedIndexesBuffer = new BasicBuffer(oDescIndex);
-		m_pCachedIndexesBuffer->CopyFromMemory(m_oIndexes.data(), pWrapper->GetModifiableDevice());
+		m_xCachedIndexesBuffer = std::shared_ptr<Buffer>( new BasicBuffer(oDescIndex) );
+		m_xCachedIndexesBuffer->CopyFromMemory(m_oIndexes.data(), pWrapper->GetModifiableDevice());
 	}
 }
 

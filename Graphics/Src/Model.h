@@ -32,18 +32,21 @@ public:
 		std::vector< uint32_t > oIndexes;
 		std::vector<std::string> oFilenamesTextures;
 		std::string sFilenameModel;
-		std::vector<Transform*> oModels;
+		std::vector< std::shared_ptr< Transform >> oModels;
 		GraphicWrapper* pWrapper;
 		CommandFactory* pFactory;
 		BufferElementsFlag eFlag;
 	};
+
 	RenderModel(Desc& oDesc);
+	~RenderModel();
+
 	void ConvertToBuffer(BufferElementsFlag eFlags, bool bIncludeIndexes, GraphicWrapper* pWrapper);
-	inline Buffer* GetVerticesBuffer() { return m_pCachedVerticesBuffer; }
-	inline Buffer* GetIndexesBuffer() { return m_pCachedIndexesBuffer; }
-	inline Buffer* GetModelMatrices() { return m_pAllModelMatrices; }
-	inline std::vector<Image*>& GetTextures() { return m_oTextures; }
-	inline std::vector<Transform*> GetModels() { return m_oModels; }
+	inline std::shared_ptr<Buffer> GetVerticesBuffer() { return m_xCachedVerticesBuffer; }
+	inline std::shared_ptr<Buffer> GetIndexesBuffer() { return m_xCachedIndexesBuffer; }
+	inline std::shared_ptr<Buffer> GetModelMatrices() { return m_xAllModelMatrices; }
+	inline std::vector< std::shared_ptr<Image>>& GetTextures() { return m_oTextures; }
+	inline std::vector< std::shared_ptr<Transform>>& GetModels() { return m_oModels; }
 	BufferElementsFlag GetBufferFlags();
 
 	protected:
@@ -53,14 +56,14 @@ public:
 		std::vector<glm::vec2> m_oUVs;
 		std::vector<glm::vec3> m_oNormals;
 		std::vector <uint32_t> m_oIndexes;
-		std::vector<Image*> m_oTextures;
+		std::vector< std::shared_ptr< Image >> m_oTextures;
 
-		std::vector<Transform*> m_oModels;
-		Buffer* m_pAllModelMatrices;
+		std::vector< std::shared_ptr<Transform>> m_oModels;
+		std::shared_ptr< Buffer > m_xAllModelMatrices;
 		int m_iInstanceCount;
 
-		Buffer* m_pCachedVerticesBuffer;
-		Buffer* m_pCachedIndexesBuffer;
+		std::shared_ptr<Buffer> m_xCachedVerticesBuffer;
+		std::shared_ptr<Buffer> m_xCachedIndexesBuffer;
 };
 
 #endif H_MODEL
