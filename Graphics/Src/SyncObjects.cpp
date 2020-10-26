@@ -8,6 +8,7 @@ SyncObjects::SyncObjects(Desc& oDesc)
 
 	m_oImageAcquiredSemaphores.resize(oDesc.iNumberImages);
 	m_oRenderFinishedSemaphores.resize(oDesc.iNumberImages);
+	m_oRenderFinishSemaphoresImGUI.resize(oDesc.iNumberImages);
 	m_oInFlightFences.resize(oDesc.iNumberImages);
 
 	m_oSwapChainImages.resize(oDesc.iNumberImages);
@@ -23,7 +24,8 @@ SyncObjects::SyncObjects(Desc& oDesc)
 	{
 		if (vkCreateSemaphore(*oDesc.pWrapper->GetDevice()->GetLogicalDevice(), &oSemaphore, nullptr, &m_oImageAcquiredSemaphores[i]) != VK_SUCCESS ||
 			vkCreateSemaphore(*oDesc.pWrapper->GetDevice()->GetLogicalDevice(), &oSemaphore, nullptr, &m_oRenderFinishedSemaphores[i]) != VK_SUCCESS ||
-			vkCreateFence(*oDesc.pWrapper->GetDevice()->GetLogicalDevice(), &oFenceInfo, nullptr, &m_oInFlightFences[i]) != VK_SUCCESS)
+			vkCreateFence(*oDesc.pWrapper->GetDevice()->GetLogicalDevice(), &oFenceInfo, nullptr, &m_oInFlightFences[i]) != VK_SUCCESS ||
+			vkCreateSemaphore(*oDesc.pWrapper->GetDevice()->GetLogicalDevice(), &oSemaphore, nullptr, &m_oRenderFinishSemaphoresImGUI[i] ) )
 		{
 			throw std::runtime_error("Failed to create semaphore");
 		}

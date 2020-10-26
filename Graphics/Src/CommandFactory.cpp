@@ -9,7 +9,7 @@ CommandFactory::CommandFactory(Desc& oDesc)
 	VkCommandPoolCreateInfo oPoolInfo{};
 	oPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 	oPoolInfo.queueFamilyIndex = oDesc.pWrapper->GetDevice()->GetGraphicQueueIndex();
-	oPoolInfo.flags = 0;
+	oPoolInfo.flags = oDesc.bResettable ? 0 : VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
 	if (vkCreateCommandPool(*oDesc.pWrapper->GetDevice()->GetLogicalDevice(), &oPoolInfo, nullptr, &m_oCommandPool) != VK_SUCCESS)
 	{

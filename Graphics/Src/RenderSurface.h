@@ -21,7 +21,7 @@ namespace Window
 		RenderSurface(Desc& oDesc);
 
 		void GetWindowSize (int& iWidth, int& iHeight);
-		const GLFWwindow* const GetWindow() const { return m_pWindow; }
+		GLFWwindow* const GetWindow() const { return m_pWindow; }
 		GLFWwindow* GetModifiableWindow() { return m_pWindow; }
 		const VkSurfaceKHR* const GetSurface() const { return m_pSurface; }
 		static void Init();

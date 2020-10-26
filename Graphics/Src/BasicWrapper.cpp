@@ -126,6 +126,9 @@ void BasicWrapper::CreateRenderPass()
 	oDesc.bEnableColor = true;
 	oDesc.bEnableDepth = true;
 	oDesc.oSubpasses = { oSkyboxDesc, oSubDesc };
+	oDesc.eInitialLayoutColorAttachment = VK_IMAGE_LAYOUT_UNDEFINED;
+	oDesc.bClearColorAttachmentAtBegin = true;
+	oDesc.bPresentable = false;
 
 	m_pRenderpass = new RenderPass(oDesc);
 
@@ -278,6 +281,15 @@ void BasicWrapper::FillDescriptorsBuffer()
 }
 
 
+void BasicWrapper::InitImGui()
+{
+	ImGuiWrapper::Desc oDesc;
+	oDesc.iImageIndex = 0;
+	oDesc.pWrapper = this;
+
+	m_pImGui = new ImGuiWrapper(oDesc);
+}
+
 void BasicWrapper::CreateCommandBuffer()
 {
 	for (int i = 0; i < m_pSwapchain->GetImageViews().size(); i++)
@@ -304,6 +316,7 @@ void BasicWrapper::CreateCommandBuffer()
 		m_oAllDrawCommands.push_back(m_pFactory->CreateDrawCommand(oDesc));
 	}
 	std::cout << "Draw commands created" << std::endl;
+	InitImGui();
 }
 
 void BasicWrapper::InitVerticesBuffers()
@@ -430,14 +443,19 @@ bool BasicWrapper::Render(SyncObjects* pSync)
 	}
 	pSync->GetSwapChainImagesFences()[iImageIndex] = pSync->GetInFlightFences()[pSync->GetFrame()];
 
+	ImGuiWrapper::Desc oDesc;
+	oDesc.iImageIndex = iImageIndex;
+	oDesc.pWrapper = this;
+
 	VkSubmitInfo oSubmit{};
 	oSubmit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 	oSubmit.waitSemaphoreCount = 1;
 	oSubmit.pWaitSemaphores = &pSync->GetImageAcquiredSemaphore()[pSync->GetFrame()];
 	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+	std::vector<VkCommandBuffer> oCmds = { m_oAllDrawCommands[iImageIndex], m_pImGui->GetDrawCommand(oDesc) };
 	oSubmit.pWaitDstStageMask = waitStages;
-	oSubmit.commandBufferCount = 1;
-	oSubmit.pCommandBuffers = &m_oAllDrawCommands[iImageIndex];
+	oSubmit.commandBufferCount = oCmds.size();
+	oSubmit.pCommandBuffers = oCmds.data();
 	oSubmit.signalSemaphoreCount = 1;
 	oSubmit.pSignalSemaphores = &pSync->GetRenderFinishedSemaphore()[pSync->GetFrame()];
 

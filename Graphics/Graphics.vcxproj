@@ -143,6 +143,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Include\imgui.cpp" />
+    <ClCompile Include="Include\imgui_demo.cpp" />
+    <ClCompile Include="Include\imgui_draw.cpp" />
+    <ClCompile Include="Include\imgui_impl_glfw.cpp" />
+    <ClCompile Include="Include\imgui_impl_vulkan.cpp" />
+    <ClCompile Include="Include\imgui_widgets.cpp" />
     <ClCompile Include="Src\BasicWrapper.cpp" />
     <ClCompile Include="Src\Buffer.cpp" />
     <ClCompile Include="Src\Camera.cpp" />
@@ -151,6 +157,7 @@
     <ClCompile Include="Src\Framebuffer.cpp" />
     <ClCompile Include="Src\Globals.cpp" />
     <ClCompile Include="Src\GraphicDevice.cpp" />
+    <ClCompile Include="Src\ImGuiWrapper.cpp" />
     <ClCompile Include="Src\Main.cpp" />
     <ClCompile Include="Src\Model.cpp" />
     <ClCompile Include="Src\Pipeline.cpp" />
@@ -163,6 +170,14 @@
     <ClCompile Include="Src\Transform.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Include\imconfig.h" />
+    <ClInclude Include="Include\imgui.h" />
+    <ClInclude Include="Include\imgui_impl_glfw.h" />
+    <ClInclude Include="Include\imgui_impl_vulkan.h" />
+    <ClInclude Include="Include\imgui_internal.h" />
+    <ClInclude Include="Include\imstb_rectpack.h" />
+    <ClInclude Include="Include\imstb_textedit.h" />
+    <ClInclude Include="Include\imstb_truetype.h" />
     <ClInclude Include="Src\BasicWrapper.h" />
     <ClInclude Include="Src\Buffer.h" />
     <ClInclude Include="Src\Camera.h" />
@@ -172,6 +187,7 @@
     <ClInclude Include="Src\Globals.h" />
     <ClInclude Include="Src\GraphicDevice.h" />
     <ClInclude Include="Src\GraphicWrapper.h" />
+    <ClInclude Include="Src\ImGuiWrapper.h" />
     <ClInclude Include="Src\Model.h" />
     <ClInclude Include="Src\Pipeline.h" />
     <ClInclude Include="Src\PipelinePrepare.h" />

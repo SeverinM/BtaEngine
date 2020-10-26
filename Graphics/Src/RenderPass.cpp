@@ -14,12 +14,12 @@ void RenderPass::Create(Desc& oDesc)
 	VkAttachmentDescription oColorAttachment{};
 	oColorAttachment.format = oDesc.pWrapper->GetSwapchain()->GetFormat();
 	oColorAttachment.samples = oDesc.eSample;
-	oColorAttachment.loadOp =  VK_ATTACHMENT_LOAD_OP_CLEAR;
+	oColorAttachment.loadOp = oDesc.bClearColorAttachmentAtBegin ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_LOAD;
 	oColorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 	oColorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 	oColorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	oColorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	oColorAttachment.finalLayout = (oDesc.eSample != VK_SAMPLE_COUNT_1_BIT ? VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+	oColorAttachment.initialLayout = oDesc.eInitialLayoutColorAttachment;
+	oColorAttachment.finalLayout = (oDesc.eSample != VK_SAMPLE_COUNT_1_BIT || !oDesc.bPresentable ? VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
 	VkAttachmentDescription oColorAttachmentResolve{};
 	if (oDesc.eSample != VK_SAMPLE_COUNT_1_BIT)
@@ -90,17 +90,24 @@ void RenderPass::Create(Desc& oDesc)
 
 		oSubpasses.push_back(oSubpassInfo);
 
-		VkSubpassDependency oDependency{};
-		oDependency.srcSubpass = ( i == 0 ? VK_SUBPASS_EXTERNAL : i - 1);
-		oDependency.dstSubpass = i;
+		if (oDesc.oSubpasses[i].pDependency != nullptr)
+		{
+			oDependencies.push_back(*oDesc.oSubpasses[i].pDependency);
+		}
+		else
+		{
+			VkSubpassDependency oDependency{};
+			oDependency.srcSubpass = (i == 0 ? VK_SUBPASS_EXTERNAL : i - 1);
+			oDependency.dstSubpass = i;
 
-		//Wait being in bottom of the pipe, then set output_bit in the bottom of the pipeline
-		oDependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-		oDependency.dstStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+			//Wait being in bottom of the pipe, then set output_bit in the bottom of the pipeline
+			oDependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+			oDependency.dstStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 
-		oDependency.srcAccessMask = 0;
-		oDependency.dstAccessMask = 0;
-		oDependencies.push_back(oDependency);
+			oDependency.srcAccessMask = 0;
+			oDependency.dstAccessMask = 0;
+			oDependencies.push_back(oDependency);
+		}
 	}
 
 	VkRenderPassCreateInfo oRenderPassInfo{};

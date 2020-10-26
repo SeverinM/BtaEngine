@@ -11,7 +11,9 @@ class CommandFactory
 public:
 	struct Desc
 	{
+		Desc() : bResettable(false) {};
 		GraphicWrapper* pWrapper;
+		bool bResettable;
 	};
 	CommandFactory(Desc& oDesc);
 	~CommandFactory();

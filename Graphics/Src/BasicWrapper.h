@@ -11,6 +11,7 @@
 #include "Framebuffer.h"
 #include "Model.h"
 #include "Camera.h"
+#include "ImGuiWrapper.h"
 
 class Pipeline;
 class CommandFactory;
@@ -18,6 +19,8 @@ class RenderPass;
 
 class BasicWrapper : public GraphicWrapper
 {
+	friend class ImGuiWrapper;
+
 public :
 	void CreateInstance() override;
 	void CreateGraphicDevice() override;
@@ -28,6 +31,7 @@ public :
 	void InitVerticesBuffers();
 	void InitFramebuffer();
 	void FillDescriptorsBuffer();
+	void InitImGui();
 
 	bool Render(SyncObjects* pSync) override;
 	void ResizeWindow();
@@ -53,6 +57,7 @@ protected:
 	RenderModel* m_pRenderModel;
 	RenderModel* m_pRenderModelSky;
 	Pipeline* m_pSkyboxPipeline;
+	ImGuiWrapper* m_pImGui;
 	std::vector< DescriptorPool::UpdateSubDesc> m_oInputDatas;
 	std::vector< DescriptorPool::UpdateSubDesc> m_oInputDatasSky;
 

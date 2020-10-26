@@ -10,9 +10,11 @@ public :
 
 	struct SubDesc
 	{
+		SubDesc() : pDependency(nullptr) {}
 		int iColorAttachmentIndex;
 		int iDepthStencilAttachmentIndex;
 		int iColorResolveAttachmentIndex;
+		VkSubpassDependency* pDependency;
 	};
 
 	struct Desc
@@ -22,6 +24,9 @@ public :
 		std::vector<SubDesc> oSubpasses;
 		BasicWrapper* pWrapper;
 		VkSampleCountFlagBits eSample;
+		VkImageLayout eInitialLayoutColorAttachment;
+		bool bClearColorAttachmentAtBegin;
+		bool bPresentable;
 	};
 
 	const VkRenderPass* const GetRenderPass() { return &m_oRenderpass; }

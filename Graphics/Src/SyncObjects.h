@@ -22,6 +22,7 @@ public:
 	std::vector<VkSemaphore>& GetRenderFinishedSemaphore() { return m_oRenderFinishedSemaphores; };
 	std::vector<VkFence>& GetInFlightFences() { return m_oInFlightFences; };
 	std::vector<VkFence>& GetSwapChainImagesFences() { return m_oSwapChainImages; };
+	std::vector<VkSemaphore>& GetRenderFinishedSemaphoreImGui() { return m_oRenderFinishSemaphoresImGUI; };
 
 protected:
 	int m_iCurrentFrame;
@@ -30,6 +31,7 @@ protected:
 	//Semaphores
 	std::vector<VkSemaphore> m_oImageAcquiredSemaphores;
 	std::vector<VkSemaphore> m_oRenderFinishedSemaphores;
+	std::vector<VkSemaphore> m_oRenderFinishSemaphoresImGUI;
 
 	std::vector<VkFence> m_oInFlightFences;
 	std::vector<VkFence> m_oSwapChainImages;
