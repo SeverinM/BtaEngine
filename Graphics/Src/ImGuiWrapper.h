@@ -11,7 +11,7 @@ public:
 		int iImageIndex;
 	};
 	ImGuiWrapper(Desc& oDesc);
-	VkCommandBuffer GetDrawCommand(Desc& oDesc);
+	VkCommandBuffer* GetDrawCommand(Desc& oDesc);
 	void Recreate(Desc& oDesc, int iMinImage);
 	static void CheckError(VkResult eResult);
 

@@ -12,7 +12,7 @@ RenderModel::RenderModel(Desc& oDesc)
 
 	//Load textures
 	Image::FromFileDesc oTexDesc;
-	oTexDesc.bEnableMip = false;
+	oTexDesc.bEnableMip = true;
 	oTexDesc.eAspect = VK_IMAGE_ASPECT_COLOR_BIT;
 	oTexDesc.eFormat = VK_FORMAT_R8G8B8A8_SRGB;
 	oTexDesc.eSampleFlag = VK_SAMPLE_COUNT_1_BIT;
@@ -22,8 +22,21 @@ RenderModel::RenderModel(Desc& oDesc)
 
 	for (std::string& sFilename : oDesc.oFilenamesTextures)
 	{
-		m_oTextures.push_back(std::shared_ptr<Image>(Image::CreateFromFile(sFilename, oTexDesc)));
-		m_oTextures[m_oTextures.size() - 1]->TransitionLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, oDesc.pFactory, 1);
+		Image* pImage = Image::CreateFromFile(sFilename, oTexDesc);
+		m_oTextures.push_back(std::shared_ptr<Image>(pImage));
+
+		Image::MipDesc oMipDesc;
+		oMipDesc.eFormat = oTexDesc.eFormat;
+		oMipDesc.pWrapper = oDesc.pWrapper;
+		oMipDesc.pFactory = oDesc.pFactory;
+		if (oTexDesc.bEnableMip)
+		{
+			pImage->GenerateMipsInterface(oMipDesc);
+		}
+		else
+		{
+			pImage->TransitionLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, oDesc.pFactory, 1);
+		}
 	}
 
 	//Load vertices

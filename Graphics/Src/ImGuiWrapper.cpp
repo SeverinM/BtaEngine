@@ -29,7 +29,7 @@ ImGuiWrapper::ImGuiWrapper(Desc& oDesc)
 	oPassDesc.bEnableColor = true;
 	oPassDesc.bEnableDepth = false;
 	oPassDesc.eSample = VK_SAMPLE_COUNT_1_BIT;
-	oPassDesc.eInitialLayoutColorAttachment = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	oPassDesc.eInitialLayoutColorAttachment = VK_IMAGE_LAYOUT_UNDEFINED; //VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 	oPassDesc.bClearColorAttachmentAtBegin = false;
 	oPassDesc.oSubpasses = { oSubDesc };
 	oPassDesc.bPresentable = true;
@@ -85,7 +85,7 @@ ImGuiWrapper::ImGuiWrapper(Desc& oDesc)
 	}
 }
 
-VkCommandBuffer ImGuiWrapper::GetDrawCommand(Desc& oDesc)
+VkCommandBuffer* ImGuiWrapper::GetDrawCommand(Desc& oDesc)
 {
 	ImGui_ImplVulkan_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
@@ -114,9 +114,9 @@ VkCommandBuffer ImGuiWrapper::GetDrawCommand(Desc& oDesc)
 	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), m_oCommandBuffer[oDesc.iImageIndex]);
 	vkCmdEndRenderPass(m_oCommandBuffer[oDesc.iImageIndex]);
 
-	m_pFactory->EndSingleTimeCommands(m_oCommandBuffer[oDesc.iImageIndex]);
+	vkEndCommandBuffer(m_oCommandBuffer[oDesc.iImageIndex]);
 
-	return m_oCommandBuffer[oDesc.iImageIndex];
+	return &m_oCommandBuffer[oDesc.iImageIndex];
 }
 
 

@@ -292,8 +292,6 @@ void Image::TransitionLayout(VkImageLayout eOldLayout, VkImageLayout eNewLayout,
 	VkPipelineStageFlags oSourceStage;
 	VkPipelineStageFlags oDestinationStage;
 
-
-
 	if (eOldLayout == VK_IMAGE_LAYOUT_UNDEFINED && eNewLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
 	{
 		oBarrier.srcAccessMask = 0;

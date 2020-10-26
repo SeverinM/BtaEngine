@@ -326,7 +326,7 @@ void BasicWrapper::InitVerticesBuffers()
 	oDesc.pWrapper = this;
 	oDesc.sFilenameModel = "./Models/viking_room.obj";
 	oDesc.oFilenamesTextures = { "./Textures/viking_room.png" };
-	oDesc.oModels = { std::shared_ptr<Transform>( new Transform() ), std::shared_ptr<Transform>( new Transform() ) };
+	oDesc.oModels = { std::shared_ptr<Transform>( new Transform() ) };
 	oDesc.eFlag = RenderModel::eVerticesAttributes::E_UV | RenderModel::eVerticesAttributes::E_POSITIONS;
 
 	m_pRenderModel = new RenderModel(oDesc);
@@ -403,7 +403,7 @@ void BasicWrapper::UpdateUniformBuffer(int iImageIndex)
 	oModels.resize(m_pRenderModel->GetModels().size());
 	for (int i = 0; i < m_pRenderModel->GetModels().size(); i++)
 	{
-		glm::vec3 vTranslate(0.0001f * ( i + 1 ), 0, 0);
+		glm::vec3 vTranslate(0, 0, 0);
 		m_pRenderModel->GetModels()[i]->SetPosition(vTranslate, true);
 		oModels[i] = m_pRenderModel->GetModels()[i]->GetModelMatrix();
 	}
@@ -452,7 +452,7 @@ bool BasicWrapper::Render(SyncObjects* pSync)
 	oSubmit.waitSemaphoreCount = 1;
 	oSubmit.pWaitSemaphores = &pSync->GetImageAcquiredSemaphore()[pSync->GetFrame()];
 	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-	std::vector<VkCommandBuffer> oCmds = { m_oAllDrawCommands[iImageIndex], m_pImGui->GetDrawCommand(oDesc) };
+	std::vector<VkCommandBuffer> oCmds = { m_oAllDrawCommands[iImageIndex], *m_pImGui->GetDrawCommand(oDesc) };
 	oSubmit.pWaitDstStageMask = waitStages;
 	oSubmit.commandBufferCount = oCmds.size();
 	oSubmit.pCommandBuffers = oCmds.data();
