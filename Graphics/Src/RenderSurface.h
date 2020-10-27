@@ -6,8 +6,6 @@
 
 namespace Window
 {
-	typedef void (*ResizeCallback)(GLFWwindow*, int, int);
-
 	class RenderSurface
 	{
 	public:
@@ -17,6 +15,7 @@ namespace Window
 			int iHeight;
 			const char* sWindowName;
 			VkInstance* pInstance;
+			GLFWframebuffersizefun pCallback;
 		};
 		RenderSurface(Desc& oDesc);
 

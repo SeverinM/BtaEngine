@@ -22,6 +22,7 @@ namespace Window
 			Init();
 
 		m_pWindow = glfwCreateWindow(oDesc.iWidth, oDesc.iHeight, oDesc.sWindowName, nullptr, nullptr);
+		glfwSetFramebufferSizeCallback(m_pWindow, oDesc.pCallback);
 
 		m_pSurface = new VkSurfaceKHR();
 		if (glfwCreateWindowSurface(*oDesc.pInstance, m_pWindow, nullptr, m_pSurface))

@@ -34,7 +34,8 @@ public :
 	void InitImGui();
 
 	bool Render(SyncObjects* pSync) override;
-	void ResizeWindow();
+	static void ResizeWindow(GLFWwindow* pWindow, int iWidth , int iHeight);
+	void RecreateSwapChain();
 
 	BasicWrapper(GraphicWrapper::Desc& oDesc)
 	{
@@ -58,6 +59,7 @@ protected:
 	RenderModel* m_pRenderModelSky;
 	Pipeline* m_pSkyboxPipeline;
 	ImGuiWrapper* m_pImGui;
+	static bool s_bFramebufferResized;
 	std::vector< DescriptorPool::UpdateSubDesc> m_oInputDatas;
 	std::vector< DescriptorPool::UpdateSubDesc> m_oInputDatasSky;
 

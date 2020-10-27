@@ -11,14 +11,17 @@ public:
 		int iImageIndex;
 	};
 	ImGuiWrapper(Desc& oDesc);
+	~ImGuiWrapper();
 	VkCommandBuffer* GetDrawCommand(Desc& oDesc);
 	void Recreate(Desc& oDesc, int iMinImage);
 	static void CheckError(VkResult eResult);
+	inline CommandFactory* GetFactory() { return m_pFactory; }
 
 protected:
 	RenderPass* m_pRenderpass;
 	CommandFactory* m_pFactory;
-	std::vector<Framebuffer*> m_pFramebuffer;
+	BasicWrapper* m_pWrapper;
+	std::vector<Framebuffer*> m_oFramebuffer;
 	std::vector<VkCommandBuffer> m_oCommandBuffer;
 };
 

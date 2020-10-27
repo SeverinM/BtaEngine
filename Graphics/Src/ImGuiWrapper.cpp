@@ -8,6 +8,7 @@
 
 ImGuiWrapper::ImGuiWrapper(Desc& oDesc)
 {
+	m_pWrapper = oDesc.pWrapper;
 	m_oCommandBuffer.resize(oDesc.pWrapper->m_pSwapchain->GetImageViews().size());
 
 	VkSubpassDependency oDependency{};
@@ -81,8 +82,26 @@ ImGuiWrapper::ImGuiWrapper(Desc& oDesc)
 		oView.push_back(oDesc.pWrapper->m_pSwapchain->GetImageViews()[i]);
 		oFramebufferDesc.pImageView = &oView;
 		
-		m_pFramebuffer.push_back(new Framebuffer(oFramebufferDesc));
+		m_oFramebuffer.push_back(new Framebuffer(oFramebufferDesc));
 	}
+}
+
+ImGuiWrapper::~ImGuiWrapper()
+{
+	for (Framebuffer* pFramebuffer : m_oFramebuffer)
+	{
+		delete pFramebuffer;
+	}
+	m_oFramebuffer.clear();
+
+	delete m_pRenderpass;
+
+	vkFreeCommandBuffers(*m_pWrapper->GetDevice()->GetLogicalDevice(), *m_pFactory->GetCommandPool(), m_oCommandBuffer.size(), m_oCommandBuffer.data());
+	delete m_pFactory;
+
+	ImGui_ImplVulkan_Shutdown();
+	ImGui_ImplGlfw_Shutdown();
+	ImGui::DestroyContext();
 }
 
 VkCommandBuffer* ImGuiWrapper::GetDrawCommand(Desc& oDesc)
@@ -96,12 +115,13 @@ VkCommandBuffer* ImGuiWrapper::GetDrawCommand(Desc& oDesc)
 	int iWidth, iHeight;
 	oDesc.pWrapper->m_pDevice->GetModifiableRenderSurface()->GetWindowSize(iWidth, iHeight);
 
+	vkFreeCommandBuffers(*oDesc.pWrapper->GetDevice()->GetLogicalDevice(), *m_pFactory->GetCommandPool(), 1, &m_oCommandBuffer[oDesc.iImageIndex]);
 	m_oCommandBuffer[oDesc.iImageIndex] = m_pFactory->BeginSingleTimeCommands();
 
 	VkRenderPassBeginInfo oBegin{};
 	oBegin.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 	oBegin.renderPass = *m_pRenderpass->GetRenderPass();
-	oBegin.framebuffer = *m_pFramebuffer[oDesc.iImageIndex]->GetFramebuffer();
+	oBegin.framebuffer = *m_oFramebuffer[oDesc.iImageIndex]->GetFramebuffer();
 	oBegin.renderArea.extent.width = iWidth;
 	oBegin.renderArea.extent.height = iHeight;
 

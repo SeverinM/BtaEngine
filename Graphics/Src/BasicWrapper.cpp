@@ -8,6 +8,8 @@
 #include <chrono>
 #include "GLM/glm.hpp"
 
+bool BasicWrapper::s_bFramebufferResized(false);
+
 void BasicWrapper::CreateInstance()
 {
 	Window::RenderSurface::Init();
@@ -64,6 +66,7 @@ void BasicWrapper::CreateInstance()
 	oDesc.iWidth = 1000;
 	oDesc.sWindowName = "Bta";
 	oDesc.pInstance = &Graphics::Globals::s_oInstance;
+	oDesc.pCallback = BasicWrapper::ResizeWindow;
 	m_pDesc->pSurface = new Window::RenderSurface(oDesc);
 	std::cout << "Instance created" << std::endl;
 }
@@ -113,15 +116,15 @@ void BasicWrapper::CreateRenderPass()
 	RenderPass::SubDesc oSubDesc;
 	oSubDesc.iColorAttachmentIndex = 0;
 	oSubDesc.iDepthStencilAttachmentIndex = 1;
-	oSubDesc.iColorResolveAttachmentIndex = -1;
+	oSubDesc.iColorResolveAttachmentIndex = 2;
 
 	RenderPass::SubDesc oSkyboxDesc;
 	oSkyboxDesc.iColorAttachmentIndex = 0;
-	oSkyboxDesc.iColorResolveAttachmentIndex = -1;
+	oSkyboxDesc.iColorResolveAttachmentIndex = 2;
 	oSkyboxDesc.iDepthStencilAttachmentIndex = -1;
 
 	RenderPass::Desc oDesc;
-	oDesc.eSample = VK_SAMPLE_COUNT_1_BIT;
+	oDesc.eSample = VK_SAMPLE_COUNT_8_BIT;
 	oDesc.pWrapper = this;
 	oDesc.bEnableColor = true;
 	oDesc.bEnableDepth = true;
@@ -174,7 +177,7 @@ void BasicWrapper::CreateGraphicPipeline()
 	oDesc.oInputDatas = m_oPrototype;
 	oDesc.bEnableDepth = true;
 	oDesc.bEnableTransparent = false;
-	oDesc.eSample = VK_SAMPLE_COUNT_1_BIT;
+	oDesc.eSample = VK_SAMPLE_COUNT_8_BIT;
 	oDesc.oBindingDescription = Vertex::GetBindingDescription();
 	oDesc.oAttributeDescriptions = Vertex::GetAttributeDescriptions();
 	oDesc.oShaderFilenames = { "./Shader/vert.spv", "./Shader/frag.spv" };
@@ -187,7 +190,7 @@ void BasicWrapper::CreateGraphicPipeline()
 	oDesc.iSubPassIndex = 0;
 	oDesc.oShaderFilenames = { "./Shader/Skybox/vert.spv", "./Shader/Skybox/frag.spv" };
 	oDesc.bEnableDepth = false;
-	oDesc.eSample = VK_SAMPLE_COUNT_1_BIT;
+	oDesc.eSample = VK_SAMPLE_COUNT_8_BIT;
 	oDesc.iSubPassIndex = 0;
 	oDesc.oInputDatas = m_oPrototypeSkybox;
 	m_pSkyboxPipeline = new Pipeline(oDesc);
@@ -240,6 +243,19 @@ void BasicWrapper::FillDescriptorsBuffer()
 	m_pPool->WriteDescriptor(m_oInputDatas, m_pPipeline->GetDescriptorSetLayout()[0]);
 
 	std::vector<glm::mat4> oMPMatrices = { glm::mat4(1.0f), m_pCamera->GetProjectionMatrix() };
+
+	Image::FromFileDesc oFileDesc;
+	oFileDesc.bEnableMip = false;
+	oFileDesc.eAspect = VK_IMAGE_ASPECT_COLOR_BIT;
+	oFileDesc.eFormat = VK_FORMAT_R8G8B8A8_SRGB;
+	oFileDesc.eSampleFlag = VK_SAMPLE_COUNT_1_BIT;
+	oFileDesc.eTiling = VK_IMAGE_TILING_OPTIMAL;
+	oFileDesc.pFactory = m_pFactory;
+	oFileDesc.pWrapper = this;
+	std::string sFilenames[6] = { "./Textures/bkg1_back.png", "./Textures/bkg1_bot.png", "./Textures/bkg1_front.png", "./Textures/bkg1_left.png", "./Textures/bkg1_right.png", "./Textures/bkg1_top.png" };
+	Image* pImage = Image::CreateCubeMap(sFilenames, oFileDesc);
+	std::shared_ptr<Image> xImage = std::shared_ptr<Image>(pImage);
+
 	for (int i = 0; i < iSwapCount; i++)
 	{
 		VkDescriptorSet* pDescriptorSet = new VkDescriptorSet();
@@ -270,12 +286,14 @@ void BasicWrapper::FillDescriptorsBuffer()
 		oFileDesc.pFactory = m_pFactory;
 		oFileDesc.pWrapper = this;
 
-		std::string sFilenames[6] = { "./Textures/bkg1_back.png", "./Textures/bkg1_bot.png", "./Textures/bkg1_front.png", "./Textures/bkg1_left.png", "./Textures/bkg1_right.png", "./Textures/bkg1_top.png" };
-		oDescriptorSet.oBuffers[1].xBuffer = std::shared_ptr<Buffer>( Image::CreateCubeMap(sFilenames, oFileDesc) );
+		oDescriptorSet.oBuffers[1].xBuffer = std::static_pointer_cast<Buffer>(xImage);
 
 		m_oInputDatasSky.push_back(oDescriptorSet);
 	}
 	m_pPool->WriteDescriptor(m_oInputDatasSky, m_pSkyboxPipeline->GetDescriptorSetLayout()[0]);
+
+	m_oPrototype.clear();
+	m_oPrototypeSkybox.clear();
 
 	std::cout << "matrix buffer created" << std::endl;
 }
@@ -348,7 +366,7 @@ void BasicWrapper::InitFramebuffer()
 		oImgDesc.bEnableMip = false;
 		oImgDesc.eFormat = VK_FORMAT_D32_SFLOAT;
 		oImgDesc.eProperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-		oImgDesc.eSampleFlag = VK_SAMPLE_COUNT_1_BIT;
+		oImgDesc.eSampleFlag = VK_SAMPLE_COUNT_8_BIT;
 		oImgDesc.eTiling = VK_IMAGE_TILING_OPTIMAL;
 		oImgDesc.eUsage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 		oImgDesc.pWrapper = this;
@@ -365,7 +383,7 @@ void BasicWrapper::InitFramebuffer()
 		Image::Desc oMultisampleDesc;
 		oMultisampleDesc.bEnableMip = false;
 		oMultisampleDesc.eFormat = m_pSwapchain->GetFormat();
-		oMultisampleDesc.eSampleFlag = VK_SAMPLE_COUNT_1_BIT;
+		oMultisampleDesc.eSampleFlag = VK_SAMPLE_COUNT_8_BIT;
 		oMultisampleDesc.eTiling = VK_IMAGE_TILING_OPTIMAL;
 		oMultisampleDesc.eProperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 		oMultisampleDesc.pWrapper = this;
@@ -382,9 +400,9 @@ void BasicWrapper::InitFramebuffer()
 		oDesc.pGraphicDevice = m_pDevice;
 
 		std::vector<VkImageView> oImages;
-		oImages.push_back(m_pSwapchain->GetImageViews()[i]);
+		oImages.push_back(*pImgMultisample->GetImageView());
 		oImages.push_back(*pImg->GetImageView());
-		//oImages.push_back(*pImgMultisample->GetImageView());
+		oImages.push_back(m_pSwapchain->GetImageViews()[i]);
 		oDesc.pImageView = &oImages;
 		oDesc.pRenderPass = m_pRenderpass;
 
@@ -419,65 +437,72 @@ void BasicWrapper::UpdateUniformBuffer(int iImageIndex)
 
 bool BasicWrapper::Render(SyncObjects* pSync)
 {
-	int iFrame = pSync->GetFrame();
-	vkWaitForFences(*GetDevice()->GetLogicalDevice(), 1, &pSync->GetInFlightFences()[iFrame], VK_TRUE, UINT64_MAX);
-
-	uint32_t iImageIndex;
-	VkResult eResult = vkAcquireNextImageKHR(*GetDevice()->GetLogicalDevice(), *GetSwapchain()->GetSwapchain(), UINT64_MAX, pSync->GetImageAcquiredSemaphore()[iFrame], VK_NULL_HANDLE, &iImageIndex);
-
-	UpdateUniformBuffer(iImageIndex);
-
-	if (eResult == VK_ERROR_OUT_OF_DATE_KHR)
+	VkResult eResult = VK_SUCCESS;
+	if (!s_bFramebufferResized)
 	{
-		ResizeWindow();
-		return true;
+
+		int iFrame = pSync->GetFrame();
+		vkWaitForFences(*GetDevice()->GetLogicalDevice(), 1, &pSync->GetInFlightFences()[iFrame], VK_TRUE, UINT64_MAX);
+
+		uint32_t iImageIndex;
+		eResult = vkAcquireNextImageKHR(*GetDevice()->GetLogicalDevice(), *GetSwapchain()->GetSwapchain(), UINT64_MAX, pSync->GetImageAcquiredSemaphore()[iFrame], VK_NULL_HANDLE, &iImageIndex);
+
+		if (eResult == VK_ERROR_OUT_OF_DATE_KHR)
+		{
+			RecreateSwapChain();
+			return true;
+		}
+		else if (eResult != VK_SUCCESS && eResult != VK_SUBOPTIMAL_KHR)
+		{
+			throw std::runtime_error("Failed to acquire swap chain images");
+		}
+
+		UpdateUniformBuffer(iImageIndex);
+		if (pSync->GetSwapChainImagesFences()[iImageIndex] != VK_NULL_HANDLE)
+		{
+			vkWaitForFences(*GetDevice()->GetLogicalDevice(), 1, &pSync->GetSwapChainImagesFences()[iImageIndex], VK_TRUE, UINT64_MAX);
+		}
+		pSync->GetSwapChainImagesFences()[iImageIndex] = pSync->GetInFlightFences()[pSync->GetFrame()];
+
+		ImGuiWrapper::Desc oDesc;
+		oDesc.iImageIndex = iImageIndex;
+		oDesc.pWrapper = this;
+
+		VkSubmitInfo oSubmit{};
+		oSubmit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+		oSubmit.waitSemaphoreCount = 1;
+		oSubmit.pWaitSemaphores = &pSync->GetImageAcquiredSemaphore()[pSync->GetFrame()];
+		VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+
+		std::vector<VkCommandBuffer> oCmds = { m_oAllDrawCommands[iImageIndex], *m_pImGui->GetDrawCommand(oDesc) };
+		oSubmit.pWaitDstStageMask = waitStages;
+		oSubmit.commandBufferCount = oCmds.size();
+		oSubmit.pCommandBuffers = oCmds.data();
+		oSubmit.signalSemaphoreCount = 1;
+		oSubmit.pSignalSemaphores = &pSync->GetRenderFinishedSemaphore()[pSync->GetFrame()];
+
+		vkResetFences(*GetDevice()->GetLogicalDevice(), 1, &pSync->GetInFlightFences()[pSync->GetFrame()]);
+		if (vkQueueSubmit(*GetDevice()->GetGraphicQueue(), 1, &oSubmit, pSync->GetInFlightFences()[pSync->GetFrame()]) != VK_SUCCESS)
+		{
+			return false;
+		}
+
+		VkPresentInfoKHR oPresentInfo{};
+		oPresentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+		oPresentInfo.swapchainCount = 1;
+		oPresentInfo.pSwapchains = GetSwapchain()->GetSwapchain();
+		oPresentInfo.pResults = nullptr;
+		oPresentInfo.pImageIndices = &iImageIndex;
+		oPresentInfo.waitSemaphoreCount = 1;
+		oPresentInfo.pWaitSemaphores = &pSync->GetRenderFinishedSemaphore()[pSync->GetFrame()];
+
+		eResult = vkQueuePresentKHR(*GetDevice()->GetPresentQueue(), &oPresentInfo);
 	}
-	else if (eResult != VK_SUCCESS && eResult != VK_SUBOPTIMAL_KHR)
+
+	if (eResult == VK_ERROR_OUT_OF_DATE_KHR || eResult == VK_SUBOPTIMAL_KHR || s_bFramebufferResized)
 	{
-		throw std::runtime_error("Failed to acquire swap chain images");
-	}
-
-	if (pSync->GetSwapChainImagesFences()[iImageIndex] != VK_NULL_HANDLE)
-	{
-		vkWaitForFences(*GetDevice()->GetLogicalDevice(), 1, &pSync->GetSwapChainImagesFences()[iImageIndex], VK_TRUE, UINT64_MAX);
-	}
-	pSync->GetSwapChainImagesFences()[iImageIndex] = pSync->GetInFlightFences()[pSync->GetFrame()];
-
-	ImGuiWrapper::Desc oDesc;
-	oDesc.iImageIndex = iImageIndex;
-	oDesc.pWrapper = this;
-
-	VkSubmitInfo oSubmit{};
-	oSubmit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	oSubmit.waitSemaphoreCount = 1;
-	oSubmit.pWaitSemaphores = &pSync->GetImageAcquiredSemaphore()[pSync->GetFrame()];
-	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-	std::vector<VkCommandBuffer> oCmds = { m_oAllDrawCommands[iImageIndex], *m_pImGui->GetDrawCommand(oDesc) };
-	oSubmit.pWaitDstStageMask = waitStages;
-	oSubmit.commandBufferCount = oCmds.size();
-	oSubmit.pCommandBuffers = oCmds.data();
-	oSubmit.signalSemaphoreCount = 1;
-	oSubmit.pSignalSemaphores = &pSync->GetRenderFinishedSemaphore()[pSync->GetFrame()];
-
-	vkResetFences(*GetDevice()->GetLogicalDevice(), 1, &pSync->GetInFlightFences()[pSync->GetFrame()]);
-	if (vkQueueSubmit( *GetDevice()->GetGraphicQueue(), 1, &oSubmit, pSync->GetInFlightFences()[pSync->GetFrame()]) != VK_SUCCESS )
-	{
-		return false;
-	}
-
-	VkPresentInfoKHR oPresentInfo{};
-	oPresentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-	oPresentInfo.swapchainCount = 1;
-	oPresentInfo.pSwapchains = GetSwapchain()->GetSwapchain();
-	oPresentInfo.pResults = nullptr;
-	oPresentInfo.pImageIndices = &iImageIndex;
-	oPresentInfo.waitSemaphoreCount = 1;
-	oPresentInfo.pWaitSemaphores = &pSync->GetRenderFinishedSemaphore()[pSync->GetFrame()];
-
-	eResult = vkQueuePresentKHR(*GetDevice()->GetPresentQueue(), &oPresentInfo);
-	if (eResult == VK_ERROR_OUT_OF_DATE_KHR || eResult == VK_SUBOPTIMAL_KHR)
-	{
-		ResizeWindow();
+		s_bFramebufferResized = false;
+		RecreateSwapChain();
 	}
 	else if (eResult != VK_SUCCESS)
 	{
@@ -488,8 +513,49 @@ bool BasicWrapper::Render(SyncObjects* pSync)
 	return true;
 }
 
-void BasicWrapper::ResizeWindow()
+void BasicWrapper::ResizeWindow(GLFWwindow* pWindow, int iWidth , int iHeight)
 {
+	s_bFramebufferResized = true;
+}
+
+void BasicWrapper::RecreateSwapChain()
+{
+	int iWidth, iHeight;
+	m_pDevice->GetModifiableRenderSurface()->GetWindowSize(iWidth, iHeight);
+
+	if (iHeight == 0 || iWidth == 0)
+	{
+		glfwWaitEvents();
+	}
+
+	vkDeviceWaitIdle(*m_pDevice->GetLogicalDevice());
+
+	m_oAllDepths.clear();
+	m_oAllMultisample.clear();
+
+	for (Framebuffer* pFramebuffer : m_oFramebuffers)
+	{
+		delete pFramebuffer;
+	}
+	m_oFramebuffers.clear();
+
+	vkFreeCommandBuffers(*m_pDevice->GetLogicalDevice(), *m_pFactory->GetCommandPool(), m_oAllDrawCommands.size(), m_oAllDrawCommands.data());
+	m_oAllDrawCommands.clear();
+
+	delete m_pPipeline;
+	delete m_pSkyboxPipeline;
+	delete m_pRenderpass;
+	delete m_pSwapchain;
+
+	m_oInputDatas.clear();
+	m_oInputDatasSky.clear();
+	delete m_pPool;
+	delete m_pImGui;
+
+	CreateSwapChain();
+	CreateRenderPass();
+	CreateGraphicPipeline();
+	CreateCommandBuffer();
 }
 
 BasicWrapper::~BasicWrapper()
@@ -529,5 +595,7 @@ BasicWrapper::~BasicWrapper()
 		delete pFramebuffer;
 	}
 	m_oFramebuffers.clear();
+
+	delete m_pImGui;
 	delete m_pDevice;
 }

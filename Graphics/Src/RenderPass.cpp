@@ -31,7 +31,7 @@ void RenderPass::Create(Desc& oDesc)
 		oColorAttachmentResolve.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 		oColorAttachmentResolve.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 		oColorAttachmentResolve.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		oColorAttachmentResolve.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+		oColorAttachmentResolve.finalLayout = (oDesc.bPresentable ? VK_IMAGE_LAYOUT_PRESENT_SRC_KHR : VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 	}
 
 	VkAttachmentDescription oDepthAttachment{};
