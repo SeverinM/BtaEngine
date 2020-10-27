@@ -5,6 +5,7 @@
 #include "Globals.h"
 #include "RenderPass.h"
 #include "CommandFactory.h"
+#include <chrono>
 
 ImGuiWrapper::ImGuiWrapper(Desc& oDesc)
 {
@@ -109,7 +110,10 @@ VkCommandBuffer* ImGuiWrapper::GetDrawCommand(Desc& oDesc)
 	ImGui_ImplVulkan_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
-	ImGui::ShowDemoWindow();
+	ImGui::Begin("Bta Debug");
+	ImGui::Text("FPS : %f", 1.0f / oDesc.pWrapper->m_fElapsed);
+	ImGui::End();
+	//ImGui::ShowDemoWindow();
 	ImGui::Render();
 
 	int iWidth, iHeight;

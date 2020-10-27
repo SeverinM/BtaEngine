@@ -1,6 +1,7 @@
 #include "Camera.h"
 #include "GLM/ext/matrix_clip_space.hpp"
 #include <iostream>
+#include "GLM/gtx/string_cast.hpp"
 
 Camera::Camera(Desc& oDesc)
 {
@@ -29,5 +30,30 @@ Camera::Camera(Desc& oDesc)
 Camera::~Camera()
 {
 	delete m_pMatriceBuffer;
+}
+
+glm::vec3 Camera::GetForward()
+{
+	return glm::vec3(m_mViewMatrix[0][2], m_mViewMatrix[1][2], m_mViewMatrix[2][2]);
+}
+
+glm::vec3 Camera::GetRight()
+{
+	return glm::vec3(m_mViewMatrix[0][0], m_mViewMatrix[1][0], m_mViewMatrix[2][0]);
+}
+
+glm::vec3 Camera::GetUp()
+{
+	return glm::vec3(m_mViewMatrix[0][1], m_mViewMatrix[1][1], m_mViewMatrix[2][1]);
+}
+
+void Camera::Translate(glm::vec3 vNewPos)
+{
+	m_mViewMatrix = glm::translate(m_mViewMatrix, vNewPos);
+}
+
+void Camera::Rotate(glm::vec3 vAxis, float fDegreeAngle)
+{
+	m_mViewMatrix = glm::rotate(m_mViewMatrix, glm::radians(fDegreeAngle), vAxis);
 }
 

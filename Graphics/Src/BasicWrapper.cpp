@@ -7,6 +7,8 @@
 #include "RenderPass.h"
 #include <chrono>
 #include "GLM/glm.hpp"
+#include "InputHandling.h"
+#include "glm/gtx/string_cast.hpp"
 
 bool BasicWrapper::s_bFramebufferResized(false);
 
@@ -95,6 +97,11 @@ void BasicWrapper::CreateGraphicDevice()
 	oCamDesc.pWrapper = this;
 
 	m_pCamera = new Camera(oCamDesc);
+
+	InputHandling::Desc oInputDesc;
+	oInputDesc.pWrapper = this;
+
+	m_pHandling = new InputHandling(oInputDesc);
 }
 
 void BasicWrapper::CreateSwapChain()
@@ -229,7 +236,7 @@ void BasicWrapper::FillDescriptorsBuffer()
 		oBuffer.oPropertyFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 		
 		std::vector<glm::mat4> oMVP{ m_pCamera->GetViewMatrix(), m_pCamera->GetProjectionMatrix() };
-		oDescriptorSet.oBuffers[0].xBuffer = std::shared_ptr<Buffer>( new BasicBuffer(oBuffer) );
+		oDescriptorSet.oBuffers[0].xBuffer = std::shared_ptr<Buffer>( m_pCamera->GetVPMatriceBuffer() );
 		oDescriptorSet.oBuffers[0].xBuffer->CopyFromMemory(oMVP.data(), GetModifiableDevice());
 
 		//1 -> Storage buffer 
@@ -344,7 +351,8 @@ void BasicWrapper::InitVerticesBuffers()
 	oDesc.pWrapper = this;
 	oDesc.sFilenameModel = "./Models/viking_room.obj";
 	oDesc.oFilenamesTextures = { "./Textures/viking_room.png" };
-	oDesc.oModels = { std::shared_ptr<Transform>( new Transform() ) };
+	oDesc.oModels = { std::shared_ptr<Transform>( new Transform() ), std::shared_ptr<Transform>(new Transform()) };
+	oDesc.oModels[1]->SetPosition(glm::vec3(1, 0, 0), true);
 	oDesc.eFlag = RenderModel::eVerticesAttributes::E_UV | RenderModel::eVerticesAttributes::E_POSITIONS;
 
 	m_pRenderModel = new RenderModel(oDesc);
@@ -428,8 +436,6 @@ void BasicWrapper::UpdateUniformBuffer(int iImageIndex)
 	m_pRenderModel->GetModelMatrices()->CopyFromMemory(oModels.data(), m_pDevice);
 
 	glm::mat4 mView = m_pCamera->GetViewMatrix();
-	mView = glm::translate(mView, glm::vec3(0, 0, 0.1f * time));
-
 	glm::mat4 mProj = m_pCamera->GetProjectionMatrix();
 	std::vector<glm::mat4> oMat = { mView, mProj };
 	m_pCamera->GetVPMatriceBuffer()->CopyFromMemory(oMat.data(), m_pDevice);
@@ -437,6 +443,7 @@ void BasicWrapper::UpdateUniformBuffer(int iImageIndex)
 
 bool BasicWrapper::Render(SyncObjects* pSync)
 {
+	auto start = std::chrono::system_clock::now();
 	VkResult eResult = VK_SUCCESS;
 	if (!s_bFramebufferResized)
 	{
@@ -510,6 +517,8 @@ bool BasicWrapper::Render(SyncObjects* pSync)
 	}
 
 	pSync->NextFrame();
+	auto end = std::chrono::system_clock::now();
+	m_fElapsed = std::chrono::duration<float>(end - start).count();
 	return true;
 }
 

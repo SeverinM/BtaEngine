@@ -93,6 +93,9 @@
     <ClCompile Include="Include\imgui_impl_glfw.cpp">
       <Filter>ImGui</Filter>
     </ClCompile>
+    <ClCompile Include="Src\InputHandling.cpp">
+      <Filter>Fichiers sources</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Src\BasicWrapper.h">
@@ -175,6 +178,9 @@
     </ClInclude>
     <ClInclude Include="Include\imgui_impl_glfw.h">
       <Filter>ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\InputHandling.h">
+      <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

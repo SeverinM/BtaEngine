@@ -16,9 +16,11 @@
 class Pipeline;
 class CommandFactory;
 class RenderPass;
+class InputHandling;
 
 class BasicWrapper : public GraphicWrapper
 {
+	friend class InputHandling;
 	friend class ImGuiWrapper;
 
 public :
@@ -59,6 +61,9 @@ protected:
 	RenderModel* m_pRenderModelSky;
 	Pipeline* m_pSkyboxPipeline;
 	ImGuiWrapper* m_pImGui;
+	InputHandling* m_pHandling;
+	float m_fElapsed;
+
 	static bool s_bFramebufferResized;
 	std::vector< DescriptorPool::UpdateSubDesc> m_oInputDatas;
 	std::vector< DescriptorPool::UpdateSubDesc> m_oInputDatasSky;

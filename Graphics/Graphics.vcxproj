@@ -158,6 +158,7 @@
     <ClCompile Include="Src\Globals.cpp" />
     <ClCompile Include="Src\GraphicDevice.cpp" />
     <ClCompile Include="Src\ImGuiWrapper.cpp" />
+    <ClCompile Include="Src\InputHandling.cpp" />
     <ClCompile Include="Src\Main.cpp" />
     <ClCompile Include="Src\Model.cpp" />
     <ClCompile Include="Src\Pipeline.cpp" />
@@ -188,6 +189,7 @@
     <ClInclude Include="Src\GraphicDevice.h" />
     <ClInclude Include="Src\GraphicWrapper.h" />
     <ClInclude Include="Src\ImGuiWrapper.h" />
+    <ClInclude Include="Src\InputHandling.h" />
     <ClInclude Include="Src\Model.h" />
     <ClInclude Include="Src\Pipeline.h" />
     <ClInclude Include="Src\PipelinePrepare.h" />
