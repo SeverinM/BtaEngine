@@ -17,7 +17,7 @@ public:
 	glm::vec3 GetUp() const;
 	glm::vec3 GetRight() const;
 	glm::vec3 GetPosition() const;
-	inline const glm::mat4 GetModelMatrix(){ return m_mModel;}
+	inline glm::mat4 GetModelMatrix(){ return m_mModel;}
 };
 
 

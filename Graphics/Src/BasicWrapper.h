@@ -12,6 +12,7 @@
 #include "Model.h"
 #include "Camera.h"
 #include "ImGuiWrapper.h"
+#include <queue>
 
 class Pipeline;
 class CommandFactory;
@@ -24,6 +25,7 @@ class BasicWrapper : public GraphicWrapper
 	friend class ImGuiWrapper;
 
 public :
+
 	void CreateInstance() override;
 	void CreateGraphicDevice() override;
 	void CreateSwapChain() override;
@@ -48,9 +50,11 @@ public :
 
 	const Swapchain* const GetSwapchain() const { return m_pSwapchain; }
 	Pipeline* GetPipeline() const { return m_pPipeline; }
+	void PushBufferUpdate(Updatable* pUpd) { m_oUpdates.push(pUpd); }
 
 protected:
 
+	std::queue<Updatable*> m_oUpdates;
 	Camera* m_pCamera;
 	Swapchain* m_pSwapchain;
 	RenderPass* m_pRenderpass;

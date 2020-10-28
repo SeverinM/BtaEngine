@@ -26,3 +26,9 @@ Camera::Camera(Desc& oDesc)
 	std::vector<glm::mat4> oVP = { m_pTransform->GetModelMatrix(), m_mProjectionMatrix };
 	m_xMatriceBuffer->CopyFromMemory(oVP.data(), oDesc.pWrapper->GetModifiableDevice());
 }
+
+void Camera::UpdateToGpu(GraphicDevice* pDevice)
+{
+	std::vector<glm::mat4> oMatrices = { m_pTransform->GetModelMatrix(), m_mProjectionMatrix };
+	m_xMatriceBuffer->CopyFromMemory(oMatrices.data(), pDevice);
+}

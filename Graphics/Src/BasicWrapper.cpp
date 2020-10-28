@@ -434,24 +434,12 @@ void BasicWrapper::InitFramebuffer()
 
 void BasicWrapper::UpdateUniformBuffer(int iImageIndex)
 {
-	static auto startTime = std::chrono::high_resolution_clock::now();
-	auto currentTime = std::chrono::high_resolution_clock::now();
-	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-
-	std::vector<glm::mat4> oModels;
-	oModels.resize(m_pRenderModel->GetModels().size());
-	for (int i = 0; i < m_pRenderModel->GetModels().size(); i++)
+	while (!m_oUpdates.empty())
 	{
-		glm::vec3 vTranslate(0, 0, 0);
-		m_pRenderModel->GetModels()[i]->SetPosition(vTranslate, true);
-		oModels[i] = m_pRenderModel->GetModels()[i]->GetModelMatrix();
+		Updatable* pUpdt = m_oUpdates.back();
+		pUpdt->UpdateToGpu(m_pDevice);
+		m_oUpdates.pop();
 	}
-	m_pRenderModel->GetModelMatrices()->CopyFromMemory(oModels.data(), m_pDevice);
-
-	glm::mat4 mView = m_pCamera->GetViewMatrix();
-	glm::mat4 mProj = m_pCamera->GetProjectionMatrix();
-	std::vector<glm::mat4> oMat = { mView, mProj };
-	m_pCamera->GetVPMatriceBuffer()->CopyFromMemory(oMat.data(), m_pDevice);
 }
 
 bool BasicWrapper::Render(SyncObjects* pSync)
