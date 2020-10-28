@@ -63,6 +63,8 @@ protected:
 	ImGuiWrapper* m_pImGui;
 	InputHandling* m_pHandling;
 	float m_fElapsed;
+	int m_iVerticesCount;
+	int m_iInstanceCount;
 
 	static bool s_bFramebufferResized;
 	std::vector< DescriptorPool::UpdateSubDesc> m_oInputDatas;

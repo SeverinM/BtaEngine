@@ -107,11 +107,18 @@ ImGuiWrapper::~ImGuiWrapper()
 
 VkCommandBuffer* ImGuiWrapper::GetDrawCommand(Desc& oDesc)
 {
+	glm::vec3 vPos = oDesc.pWrapper->m_pCamera->GetPosition();
+	glm::vec3 vForward = oDesc.pWrapper->m_pCamera->GetForward();
+
 	ImGui_ImplVulkan_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
 	ImGui::Begin("Bta Debug");
-	ImGui::Text("FPS : %f", 1.0f / oDesc.pWrapper->m_fElapsed);
+	ImGui::Text("FPS : %i", (int)(1.0f / oDesc.pWrapper->m_fElapsed));
+	ImGui::Text("Instances rendered : %i", oDesc.pWrapper->m_iInstanceCount);
+	ImGui::Text("Vertices count : %i", oDesc.pWrapper->m_iVerticesCount);
+	ImGui::Text("Camera position : %f / %f / %f", vPos.x, vPos.y, vPos.z);
+	ImGui::Text("Camera forward : %f / %f / %f", vForward.x, vForward.y, vForward.z);
 	ImGui::End();
 	//ImGui::ShowDemoWindow();
 	ImGui::Render();

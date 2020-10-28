@@ -27,6 +27,8 @@ BasicBuffer::~BasicBuffer()
 {
 	vkFreeMemory(*m_pDevice->GetLogicalDevice(), *m_pMemory, nullptr);
 	vkDestroyBuffer(*m_pDevice->GetLogicalDevice(), *m_pBuffer, nullptr);
+	m_pMemory = nullptr;
+	m_pBuffer = nullptr;
 }
 
 BasicBuffer::BasicBuffer(Desc& oDesc)

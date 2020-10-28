@@ -47,9 +47,11 @@ public:
 	inline std::shared_ptr<Buffer> GetModelMatrices() { return m_xAllModelMatrices; }
 	inline std::vector< std::shared_ptr<Image>>& GetTextures() { return m_oTextures; }
 	inline std::vector< std::shared_ptr<Transform>>& GetModels() { return m_oModels; }
+	inline uint64_t GetVerticeCount() { return m_iVerticesCount; }
 	BufferElementsFlag GetBufferFlags();
 
 	protected:
+		uint64_t m_iVerticesCount;
 		void LoadModel(Desc& oDesc);
 		std::vector<glm::vec4> m_oColors;
 		std::vector<glm::vec3> m_oPositions;

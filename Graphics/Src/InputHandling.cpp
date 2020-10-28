@@ -8,7 +8,7 @@ InputHandling::InputHandling(Desc& oDesc)
 	glfwSetCursorPosCallback(oDesc.pWrapper->m_pDevice->GetModifiableRenderSurface()->GetWindow(), InputHandling::ProcessMouse);
 	glfwSetMouseButtonCallback(oDesc.pWrapper->m_pDevice->GetModifiableRenderSurface()->GetWindow(), InputHandling::ProcessMouseButtons);
 	glfwSetWindowUserPointer(oDesc.pWrapper->m_pDevice->GetModifiableRenderSurface()->GetWindow(), this);
-	m_fSpeed = 0.1f;
+	m_fSpeed = 0.01f;
 	m_fRotateSpeed = 0.1f;
 	m_pWrapper = oDesc.pWrapper;
 	m_fPreviousY = m_fPreviousX = -1.0f;

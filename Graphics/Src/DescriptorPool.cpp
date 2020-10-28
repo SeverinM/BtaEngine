@@ -74,7 +74,7 @@ void DescriptorPool::WriteDescriptor(std::vector< UpdateSubDesc >& oUpdate, cons
 		for (int j = 0; j < oUpdate[i].oBuffers.size(); j++)
 		{
 			oDescriptorWrite[j].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			oDescriptorWrite[j].dstSet = *oUpdate[i].xDescriptorSet;
+			oDescriptorWrite[j].dstSet = *oUpdate[i].pDescriptorSet;
 			oDescriptorWrite[j].dstArrayElement = 0;
 			oDescriptorWrite[j].descriptorCount = 1;
 			oDescriptorWrite[j].dstBinding = j;

@@ -227,4 +227,5 @@ void RenderModel::LoadModel(Desc& oDesc)
 			m_oIndexes.push_back(oUniqueVertices[iHash]);
 		}
 	}
+	m_iVerticesCount = oUniqueVertices.size();
 }

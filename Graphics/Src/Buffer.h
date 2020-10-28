@@ -18,7 +18,6 @@ public:
 	VkDeviceSize GetMemorySize() { return m_iSizeUnit * (VkDeviceSize)m_iUnitCount; }
 	VkDeviceSize GetSizeUnit() { return m_iSizeUnit; }
 	int GetUnitCount() { return m_iUnitCount; }
-	virtual TypeBuffer GetType() = 0;
 	void CopyFromMemory(void* pData, GraphicDevice* pDevice);
 
 protected:
@@ -44,7 +43,6 @@ public:
 
 	const VkBuffer* GetBuffer() { return m_pBuffer; };
 	BasicBuffer(Desc& oDesc);
-	TypeBuffer GetType() { return E_VERTEX; }
 	void SendCopyCommand(BasicBuffer* pDst, CommandFactory* pFactory);
 	GraphicDevice* m_pDevice;
 
@@ -105,7 +103,6 @@ public:
 	int GetMipLevel() { return m_iMipLevel; }
 	int GetHeight() { return m_iHeight; };
 	int GetWidth() { return m_iWidth; };
-	TypeBuffer GetType() { return E_IMAGE; }
 	const VkImage* GetImage() { return &m_oImage; }
 
 

@@ -14,6 +14,8 @@ bool BasicWrapper::s_bFramebufferResized(false);
 
 void BasicWrapper::CreateInstance()
 {
+	m_iInstanceCount = m_iVerticesCount = 0;
+
 	Window::RenderSurface::Init();
 
 	VkApplicationInfo oAppInfo{};
@@ -218,13 +220,17 @@ void BasicWrapper::FillDescriptorsBuffer()
 {
 	int iSwapCount = m_pSwapchain->GetImageViews().size();
 
+	std::vector<glm::mat4> oMVP{ m_pCamera->GetViewMatrix(), m_pCamera->GetProjectionMatrix() };
+	std::shared_ptr<Buffer> xVPMatrice(m_pCamera->GetVPMatriceBuffer());
+	xVPMatrice->CopyFromMemory(oMVP.data(), GetModifiableDevice());
+
 	for (int i = 0; i < iSwapCount; i++)
 	{
 		VkDescriptorSet* pDescriptor = new VkDescriptorSet();
 		m_pPool->CreateDescriptorSet(*pDescriptor, m_pPipeline->GetDescriptorSetLayout()[0]);
 
 		DescriptorPool::UpdateSubDesc oDescriptorSet;
-		oDescriptorSet.xDescriptorSet = std::shared_ptr<VkDescriptorSet>( pDescriptor );
+		oDescriptorSet.pDescriptorSet = pDescriptor;
 		oDescriptorSet.oBuffers = m_oPrototype[0];
 
 		//0 -> Uniform buffer
@@ -235,9 +241,7 @@ void BasicWrapper::FillDescriptorsBuffer()
 		oBuffer.eUsage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
 		oBuffer.oPropertyFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 		
-		std::vector<glm::mat4> oMVP{ m_pCamera->GetViewMatrix(), m_pCamera->GetProjectionMatrix() };
-		oDescriptorSet.oBuffers[0].xBuffer = std::shared_ptr<Buffer>( m_pCamera->GetVPMatriceBuffer() );
-		oDescriptorSet.oBuffers[0].xBuffer->CopyFromMemory(oMVP.data(), GetModifiableDevice());
+		oDescriptorSet.oBuffers[0].xBuffer = xVPMatrice;
 
 		//1 -> Storage buffer 
 		oDescriptorSet.oBuffers[1].xBuffer = m_pRenderModel->GetModelMatrices();
@@ -269,7 +273,7 @@ void BasicWrapper::FillDescriptorsBuffer()
 		m_pPool->CreateDescriptorSet(*pDescriptorSet, m_pSkyboxPipeline->GetDescriptorSetLayout()[0]);
 
 		DescriptorPool::UpdateSubDesc oDescriptorSet;
-		oDescriptorSet.xDescriptorSet = std::shared_ptr<VkDescriptorSet>( pDescriptorSet );
+		oDescriptorSet.pDescriptorSet = pDescriptorSet;
 		oDescriptorSet.oBuffers = m_oPrototypeSkybox[0];
 
 		//0 -> Uniform Buffer
@@ -320,14 +324,14 @@ void BasicWrapper::CreateCommandBuffer()
 	for (int i = 0; i < m_pSwapchain->GetImageViews().size(); i++)
 	{
 		CommandFactory::SubDrawDesc oSubSky;
-		oSubSky.oDescriptorSet = *m_oInputDatasSky[i].xDescriptorSet;
+		oSubSky.oDescriptorSet = *m_oInputDatasSky[i].pDescriptorSet;
 		oSubSky.pPipeline = m_pSkyboxPipeline;
 		oSubSky.xVertexData = m_pRenderModelSky->GetVerticesBuffer();
 		oSubSky.xIndexData = m_pRenderModelSky->GetIndexesBuffer();
 		oSubSky.iInstanceCount = 1;
 
 		CommandFactory::SubDrawDesc oSub;
-		oSub.oDescriptorSet = *m_oInputDatas[i].xDescriptorSet;
+		oSub.oDescriptorSet = *m_oInputDatas[i].pDescriptorSet;
 		oSub.pPipeline = m_pPipeline;
 		oSub.xVertexData = m_pRenderModel->GetVerticesBuffer();
 		oSub.xIndexData = m_pRenderModel->GetIndexesBuffer();
@@ -352,16 +356,25 @@ void BasicWrapper::InitVerticesBuffers()
 	oDesc.sFilenameModel = "./Models/viking_room.obj";
 	oDesc.oFilenamesTextures = { "./Textures/viking_room.png" };
 	oDesc.oModels = { std::shared_ptr<Transform>( new Transform() ), std::shared_ptr<Transform>(new Transform()) };
-	oDesc.oModels[1]->SetPosition(glm::vec3(1, 0, 0), true);
+	oDesc.oModels[1]->SetPosition(glm::vec3(2.5f, 0, 0), true);
+	oDesc.oModels[1]->SetScale(glm::vec3(-0.3f), true);
 	oDesc.eFlag = RenderModel::eVerticesAttributes::E_UV | RenderModel::eVerticesAttributes::E_POSITIONS;
+
+	m_iInstanceCount += oDesc.oModels.size();
 
 	m_pRenderModel = new RenderModel(oDesc);
 	m_pRenderModel->ConvertToBuffer(m_pRenderModel->GetBufferFlags(), true, oDesc.pWrapper);
+	m_iVerticesCount += m_pRenderModel->GetVerticeCount();
 
 	oDesc.oFilenamesTextures = {};
 	oDesc.sFilenameModel = { "./Models/cube.obj" };
+	oDesc.oModels = { std::shared_ptr<Transform>(new Transform() )};
+	oDesc.oModels[0]->SetScale(glm::vec3(3.0f));
 	m_pRenderModelSky = new RenderModel(oDesc);
 	m_pRenderModelSky->ConvertToBuffer(m_pRenderModelSky->GetBufferFlags(), true, oDesc.pWrapper);
+
+	m_iInstanceCount += oDesc.oModels.size();
+	m_iVerticesCount += m_pRenderModelSky->GetVerticeCount();
 
 	std::cout << "vertex buffer created" << std::endl;
 }
@@ -556,7 +569,13 @@ void BasicWrapper::RecreateSwapChain()
 	delete m_pRenderpass;
 	delete m_pSwapchain;
 
+	for (DescriptorPool::UpdateSubDesc& oSub : m_oInputDatas)
+	{
+		oSub.oBuffers.clear();
+		delete oSub.pDescriptorSet;
+	}
 	m_oInputDatas.clear();
+
 	m_oInputDatasSky.clear();
 	delete m_pPool;
 	delete m_pImGui;

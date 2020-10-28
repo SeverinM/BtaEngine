@@ -21,15 +21,10 @@ Camera::Camera(Desc& oDesc)
 	oBufferDesc.iUnitCount = 2;
 	oBufferDesc.pWrapper = oDesc.pWrapper;
 	oBufferDesc.oPropertyFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
-	m_pMatriceBuffer = new BasicBuffer(oBufferDesc);
+	m_xMatriceBuffer = std::shared_ptr<BasicBuffer>( new BasicBuffer(oBufferDesc) );
 
 	std::vector<glm::mat4> oVP = { m_mViewMatrix, m_mProjectionMatrix };
-	m_pMatriceBuffer->CopyFromMemory(oVP.data(), oDesc.pWrapper->GetModifiableDevice());
-}
-
-Camera::~Camera()
-{
-	delete m_pMatriceBuffer;
+	m_xMatriceBuffer->CopyFromMemory(oVP.data(), oDesc.pWrapper->GetModifiableDevice());
 }
 
 glm::vec3 Camera::GetForward()
@@ -45,6 +40,11 @@ glm::vec3 Camera::GetRight()
 glm::vec3 Camera::GetUp()
 {
 	return glm::vec3(m_mViewMatrix[0][1], m_mViewMatrix[1][1], m_mViewMatrix[2][1]);
+}
+
+glm::vec3 Camera::GetPosition()
+{
+	return glm::vec3(m_mViewMatrix[3][0], m_mViewMatrix[3][1], m_mViewMatrix[3][2]);
 }
 
 void Camera::Translate(glm::vec3 vNewPos)

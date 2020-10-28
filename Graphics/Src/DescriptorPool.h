@@ -30,7 +30,7 @@ public:
 	struct UpdateSubDesc
 	{
 		std::vector<BufferDesc> oBuffers;
-		std::shared_ptr< VkDescriptorSet > xDescriptorSet;
+		VkDescriptorSet* pDescriptorSet;
 	};
 
 	DescriptorPool(Desc& oDesc);
