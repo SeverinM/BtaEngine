@@ -20,8 +20,8 @@ void InputHandling::ProcessKeyboard(GLFWwindow* pwindow, int iKey, int iScancode
 	InputHandling* pHandling = (InputHandling*)glfwGetWindowUserPointer(pwindow);
 
 	glm::vec3 vTranslate(0.0f);
-	glm::vec3 vCamForward = pHandling->m_pWrapper->m_pCamera->GetForward();
-	glm::vec3 vCamRight = pHandling->m_pWrapper->m_pCamera->GetRight();
+	glm::vec3 vCamForward = pHandling->m_pWrapper->m_pCamera->GetTransform()->GetForward();
+	glm::vec3 vCamRight = pHandling->m_pWrapper->m_pCamera->GetTransform()->GetRight();
 	
 	if (glfwGetKey(pwindow, GLFW_KEY_W ) == GLFW_PRESS)
 	{
@@ -43,7 +43,7 @@ void InputHandling::ProcessKeyboard(GLFWwindow* pwindow, int iKey, int iScancode
 		vTranslate += -vCamRight * pHandling->m_fSpeed;
 	}
 
-	pHandling->m_pWrapper->m_pCamera->Translate(vTranslate);
+	pHandling->m_pWrapper->m_pCamera->GetTransform()->SetPosition(vTranslate, true);
 }
 
 void InputHandling::ProcessMouse(GLFWwindow* pwindow, double xpos, double ypos)
@@ -54,8 +54,8 @@ void InputHandling::ProcessMouse(GLFWwindow* pwindow, double xpos, double ypos)
 
 	if (pHandling->m_bRightClickEnabled)
 	{
-		pHandling->m_pWrapper->m_pCamera->Rotate(glm::vec3(0, 0, 1), 10.0f * fDeltaX * pHandling->m_fRotateSpeed);
-		pHandling->m_pWrapper->m_pCamera->Rotate(pHandling->m_pWrapper->m_pCamera->GetRight(), 10.0f * fDeltaY * pHandling->m_fRotateSpeed);
+		pHandling->m_pWrapper->m_pCamera->GetTransform()->Rotate(glm::vec3(0, 0, 1), 10.0f * fDeltaX * pHandling->m_fRotateSpeed);
+		pHandling->m_pWrapper->m_pCamera->GetTransform()->Rotate(pHandling->m_pWrapper->m_pCamera->GetTransform()->GetRight(), 10.0f * fDeltaY * pHandling->m_fRotateSpeed);
 	}
 
 	pHandling->m_fPreviousX = xpos;

@@ -5,7 +5,7 @@
 
 Camera::Camera(Desc& oDesc)
 {
-	m_mViewMatrix = glm::lookAt(glm::vec3(2, 2, 2), glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	m_pTransform = new Transform(oDesc.mInitialMatrix);
 
 	if (oDesc.fNearPlane > oDesc.fFarPlane || oDesc.fNearPlane <= 0.0f)
 	{
@@ -23,37 +23,6 @@ Camera::Camera(Desc& oDesc)
 	oBufferDesc.oPropertyFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
 	m_xMatriceBuffer = std::shared_ptr<BasicBuffer>( new BasicBuffer(oBufferDesc) );
 
-	std::vector<glm::mat4> oVP = { m_mViewMatrix, m_mProjectionMatrix };
+	std::vector<glm::mat4> oVP = { m_pTransform->GetModelMatrix(), m_mProjectionMatrix };
 	m_xMatriceBuffer->CopyFromMemory(oVP.data(), oDesc.pWrapper->GetModifiableDevice());
 }
-
-glm::vec3 Camera::GetForward()
-{
-	return glm::vec3(m_mViewMatrix[0][2], m_mViewMatrix[1][2], m_mViewMatrix[2][2]);
-}
-
-glm::vec3 Camera::GetRight()
-{
-	return glm::vec3(m_mViewMatrix[0][0], m_mViewMatrix[1][0], m_mViewMatrix[2][0]);
-}
-
-glm::vec3 Camera::GetUp()
-{
-	return glm::vec3(m_mViewMatrix[0][1], m_mViewMatrix[1][1], m_mViewMatrix[2][1]);
-}
-
-glm::vec3 Camera::GetPosition()
-{
-	return glm::vec3(m_mViewMatrix[3][0], m_mViewMatrix[3][1], m_mViewMatrix[3][2]);
-}
-
-void Camera::Translate(glm::vec3 vNewPos)
-{
-	m_mViewMatrix = glm::translate(m_mViewMatrix, vNewPos);
-}
-
-void Camera::Rotate(glm::vec3 vAxis, float fDegreeAngle)
-{
-	m_mViewMatrix = glm::rotate(m_mViewMatrix, glm::radians(fDegreeAngle), vAxis);
-}
-

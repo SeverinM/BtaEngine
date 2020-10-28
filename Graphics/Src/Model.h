@@ -48,6 +48,10 @@ public:
 	inline std::vector< std::shared_ptr<Image>>& GetTextures() { return m_oTextures; }
 	inline std::vector< std::shared_ptr<Transform>>& GetModels() { return m_oModels; }
 	inline uint64_t GetVerticeCount() { return m_iVerticesCount; }
+	inline int GetInstanceCount() { return m_iInstanceCount; }
+	inline VkDescriptorSet* GetDescriptorSet() { return m_pDescriptorSet; }
+	inline void SetDescriptorSet(VkDescriptorSet* pDescriptorSet) { m_pDescriptorSet = pDescriptorSet; }
+
 	BufferElementsFlag GetBufferFlags();
 
 	protected:
@@ -66,6 +70,7 @@ public:
 
 		std::shared_ptr<Buffer> m_xCachedVerticesBuffer;
 		std::shared_ptr<Buffer> m_xCachedIndexesBuffer;
+		VkDescriptorSet* m_pDescriptorSet;
 };
 
 #endif H_MODEL

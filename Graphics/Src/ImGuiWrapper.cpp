@@ -107,8 +107,8 @@ ImGuiWrapper::~ImGuiWrapper()
 
 VkCommandBuffer* ImGuiWrapper::GetDrawCommand(Desc& oDesc)
 {
-	glm::vec3 vPos = oDesc.pWrapper->m_pCamera->GetPosition();
-	glm::vec3 vForward = oDesc.pWrapper->m_pCamera->GetForward();
+	glm::vec3 vPos = oDesc.pWrapper->m_pCamera->GetTransform()->GetPosition();
+	glm::vec3 vForward = oDesc.pWrapper->m_pCamera->GetTransform()->GetForward();
 
 	ImGui_ImplVulkan_NewFrame();
 	ImGui_ImplGlfw_NewFrame();

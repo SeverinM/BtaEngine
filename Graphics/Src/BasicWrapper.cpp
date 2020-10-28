@@ -97,6 +97,7 @@ void BasicWrapper::CreateGraphicDevice()
 	oCamDesc.fNearPlane = 0.1f;
 	oCamDesc.fFarPlane = 10.0f;
 	oCamDesc.pWrapper = this;
+	oCamDesc.mInitialMatrix = glm::lookAt(glm::vec3(2, 2, 2), glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
 	m_pCamera = new Camera(oCamDesc);
 
@@ -357,7 +358,6 @@ void BasicWrapper::InitVerticesBuffers()
 	oDesc.oFilenamesTextures = { "./Textures/viking_room.png" };
 	oDesc.oModels = { std::shared_ptr<Transform>( new Transform() ), std::shared_ptr<Transform>(new Transform()) };
 	oDesc.oModels[1]->SetPosition(glm::vec3(2.5f, 0, 0), true);
-	oDesc.oModels[1]->SetScale(glm::vec3(-0.3f), true);
 	oDesc.eFlag = RenderModel::eVerticesAttributes::E_UV | RenderModel::eVerticesAttributes::E_POSITIONS;
 
 	m_iInstanceCount += oDesc.oModels.size();
