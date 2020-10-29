@@ -19,6 +19,7 @@ public:
 	VkDeviceSize GetSizeUnit() { return m_iSizeUnit; }
 	int GetUnitCount() { return m_iUnitCount; }
 	void CopyFromMemory(void* pData, GraphicDevice* pDevice);
+	void CopyFromMemory(char* pData, GraphicDevice* pDevice, uint64_t iOffset, uint64_t iSize);
 
 protected:
 	uint32_t FindMemoryType(GraphicWrapper* pWrapper, uint32_t iTypeFilter, VkMemoryPropertyFlags oProperties);

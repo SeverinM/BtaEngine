@@ -82,24 +82,24 @@ void RenderBatch::ChainSubpass(VkCommandBuffer* pBuffer)
 {
 	vkCmdBindPipeline(*m_pCachedCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, *m_pPipeline->GetPipeline());
 
-	for (RenderModel* pEntity : m_oEntities)
+	for (std::pair<RenderModel*, VkDescriptorSet*> pEntity : m_oEntities)
 	{
-		vkCmdBindDescriptorSets(*m_pCachedCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, *m_pPipeline->GetPipelineLayout(), 0, 1, pEntity->GetDescriptorSet(), 0, nullptr);
+		vkCmdBindDescriptorSets(*m_pCachedCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, *m_pPipeline->GetPipelineLayout(), 0, 1, pEntity.first->GetDescriptorSet(), 0, nullptr);
 
 		VkDeviceSize oOffsets[] = { 0 };
-		std::shared_ptr<BasicBuffer> xBasicBuffer = std::static_pointer_cast<BasicBuffer>(pEntity->GetVerticesBuffer());
+		std::shared_ptr<BasicBuffer> xBasicBuffer = std::static_pointer_cast<BasicBuffer>(pEntity.first->GetVerticesBuffer());
 		vkCmdBindVertexBuffers(*m_pCachedCommandBuffer, 0, 1, xBasicBuffer->GetBuffer(), oOffsets);
 
-		if (pEntity->GetIndexesBuffer() != nullptr)
+		if (pEntity.first->GetIndexesBuffer() != nullptr)
 		{
-			std::shared_ptr<BasicBuffer> xBasicBufferIndex = std::static_pointer_cast<BasicBuffer>(pEntity->GetIndexesBuffer());
+			std::shared_ptr<BasicBuffer> xBasicBufferIndex = std::static_pointer_cast<BasicBuffer>(pEntity.first->GetIndexesBuffer());
 			vkCmdBindIndexBuffer(*m_pCachedCommandBuffer, *xBasicBufferIndex->GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
 
-			vkCmdDrawIndexed(*m_pCachedCommandBuffer, pEntity->GetIndexesBuffer()->GetUnitCount(), pEntity->GetInstanceCount(), 0, 0, 0);
+			vkCmdDrawIndexed(*m_pCachedCommandBuffer, pEntity.first->GetIndexesBuffer()->GetUnitCount(), pEntity.first->GetInstanceCount(), 0, 0, 0);
 		}
 		else
 		{
-			vkCmdDraw(*m_pCachedCommandBuffer, pEntity->GetVerticesBuffer()->GetUnitCount(), pEntity->GetInstanceCount(), 0, 0);
+			vkCmdDraw(*m_pCachedCommandBuffer, pEntity.first->GetVerticesBuffer()->GetUnitCount(), pEntity.first->GetInstanceCount(), 0, 0);
 		}
 	}
 

@@ -432,16 +432,6 @@ void BasicWrapper::InitFramebuffer()
 	std::cout << "Framebuffer created" << std::endl;
 }
 
-void BasicWrapper::UpdateUniformBuffer(int iImageIndex)
-{
-	while (!m_oUpdates.empty())
-	{
-		Updatable* pUpdt = m_oUpdates.back();
-		pUpdt->UpdateToGpu(m_pDevice);
-		m_oUpdates.pop();
-	}
-}
-
 bool BasicWrapper::Render(SyncObjects* pSync)
 {
 	auto start = std::chrono::system_clock::now();
@@ -465,7 +455,6 @@ bool BasicWrapper::Render(SyncObjects* pSync)
 			throw std::runtime_error("Failed to acquire swap chain images");
 		}
 
-		UpdateUniformBuffer(iImageIndex);
 		if (pSync->GetSwapChainImagesFences()[iImageIndex] != VK_NULL_HANDLE)
 		{
 			vkWaitForFences(*GetDevice()->GetLogicalDevice(), 1, &pSync->GetSwapChainImagesFences()[iImageIndex], VK_TRUE, UINT64_MAX);

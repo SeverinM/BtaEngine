@@ -3,6 +3,7 @@
 #include "Model.h"
 #include "Pipeline.h"
 #include "RenderPass.h"
+#include <unordered_map>
 
 class RenderBatch
 {
@@ -25,13 +26,14 @@ protected :
 	VkCommandBuffer* m_pCachedCommandBuffer;
 	void ReconstructCommand(Framebuffer* pFramebuffer);
 	void ChainSubpass(VkCommandBuffer* pBuffer);
-	std::vector<RenderModel*> m_oEntities;
 	uint32_t m_eFlag;
 	GraphicWrapper* m_pWrapper;
 	CommandFactory* m_pFactory;
 	RenderPass* m_pRenderpass;
 	Pipeline* m_pPipeline;
 	RenderBatch* m_pNext;
+
+	std::unordered_map<RenderModel*, VkDescriptorSet*> m_oEntities;
 };
 
 #endif

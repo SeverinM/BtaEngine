@@ -50,11 +50,9 @@ public :
 
 	const Swapchain* const GetSwapchain() const { return m_pSwapchain; }
 	Pipeline* GetPipeline() const { return m_pPipeline; }
-	void PushBufferUpdate(Updatable* pUpd) { m_oUpdates.push(pUpd); }
 
 protected:
 
-	std::queue<Updatable*> m_oUpdates;
 	Camera* m_pCamera;
 	Swapchain* m_pSwapchain;
 	RenderPass* m_pRenderpass;
@@ -81,8 +79,6 @@ protected:
 	std::vector< std::shared_ptr<Image> > m_oAllDepths;
 	std::vector< std::shared_ptr<Image> > m_oAllMultisample;
 	std::vector< Framebuffer* > m_oFramebuffers;
-
-	void UpdateUniformBuffer(int iImageIndex);
 
 	struct Vertex
 	{

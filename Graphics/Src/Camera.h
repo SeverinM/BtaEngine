@@ -4,13 +4,7 @@
 #include "Buffer.h"
 #include "GraphicWrapper.h"
 
-class Updatable
-{
-public:
-	virtual void UpdateToGpu(GraphicDevice* pDevice) = 0;
-};
-
-class Camera : public Updatable
+class Camera
 {
 public:
 	struct Desc
@@ -27,11 +21,10 @@ public:
 	inline glm::mat4 GetProjectionMatrix() { return m_mProjectionMatrix; }
 	inline glm::mat4 GetViewMatrix() { return m_pTransform->GetModelMatrix(); }
 	inline std::shared_ptr<BasicBuffer> GetVPMatriceBuffer() { return m_xMatriceBuffer; }
-	void UpdateToGpu(GraphicDevice* pDevice) override;
-	Transform* GetTransform() { return m_pTransform; }
+	BufferedTransform* GetTransform() { return m_pTransform; }
 
 private:
-	Transform* m_pTransform;
+	BufferedTransform* m_pTransform;
 	glm::mat4 m_mProjectionMatrix;
 	std::shared_ptr<BasicBuffer> m_xMatriceBuffer;
 };

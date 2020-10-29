@@ -43,11 +43,8 @@ void InputHandling::ProcessKeyboard(GLFWwindow* pwindow, int iKey, int iScancode
 		vTranslate += -vCamRight * pHandling->m_fSpeed;
 	}
 
-	pHandling->m_pWrapper->m_pCamera->GetTransform()->SetPosition(vTranslate, true);
-	if (vTranslate.length() > 0)
-	{
-		pHandling->m_pWrapper->PushBufferUpdate(pHandling->m_pWrapper->m_pCamera);
-	}
+	if (vTranslate.length() != 0)
+		pHandling->m_pWrapper->m_pCamera->GetTransform()->SetPosition(vTranslate, true);
 }
 
 void InputHandling::ProcessMouse(GLFWwindow* pwindow, double xpos, double ypos)
@@ -60,8 +57,6 @@ void InputHandling::ProcessMouse(GLFWwindow* pwindow, double xpos, double ypos)
 	{
 		pHandling->m_pWrapper->m_pCamera->GetTransform()->Rotate(glm::vec3(0, 0, 1), 10.0f * fDeltaX * pHandling->m_fRotateSpeed);
 		pHandling->m_pWrapper->m_pCamera->GetTransform()->Rotate(pHandling->m_pWrapper->m_pCamera->GetTransform()->GetRight(), 10.0f * fDeltaY * pHandling->m_fRotateSpeed);
-
-		pHandling->m_pWrapper->PushBufferUpdate(pHandling->m_pWrapper->m_pCamera);
 	}
 
 	pHandling->m_fPreviousX = xpos;

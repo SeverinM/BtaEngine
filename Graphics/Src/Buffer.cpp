@@ -74,6 +74,15 @@ void Buffer::CopyFromMemory(void* pData, GraphicDevice* pDevice)
 	vkUnmapMemory(*pDevice->GetLogicalDevice(), *m_pMemory);
 }
 
+void Buffer::CopyFromMemory(char* pData, GraphicDevice* pDevice, uint64_t iOffset, uint64_t iSize)
+{
+	void* pGpuData;
+	vkMapMemory(*pDevice->GetLogicalDevice(), *m_pMemory, 0, GetMemorySize(), 0, &pGpuData);
+	void* pOffseted = (char*)pGpuData + iOffset;
+	memcpy(pOffseted, pData, iSize);
+	vkUnmapMemory(*pDevice->GetLogicalDevice(), *m_pMemory);
+}
+
 void Image::SendCopyCommand(BasicBuffer* pBuffer, CommandFactory* pFactory)
 {
 	VkCommandBuffer oCommandBuffer = pFactory->BeginSingleTimeCommands();
