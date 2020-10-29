@@ -46,7 +46,7 @@ public:
 	inline std::shared_ptr<Buffer> GetIndexesBuffer() { return m_xCachedIndexesBuffer; }
 	inline std::shared_ptr<Buffer> GetModelMatrices() { return m_xAllModelMatrices; }
 	inline std::vector< std::shared_ptr<Image>>& GetTextures() { return m_oTextures; }
-	inline std::vector< std::shared_ptr<Transform>>& GetModels() { return m_oModels; }
+	inline std::vector< std::shared_ptr<BufferedTransform>>& GetModels() { return m_oModels; }
 	inline uint64_t GetVerticeCount() { return m_iVerticesCount; }
 	inline int GetInstanceCount() { return m_iInstanceCount; }
 	inline VkDescriptorSet* GetDescriptorSet() { return m_pDescriptorSet; }
@@ -64,7 +64,7 @@ public:
 		std::vector <uint32_t> m_oIndexes;
 		std::vector< std::shared_ptr< Image >> m_oTextures;
 
-		std::vector< std::shared_ptr<Transform>> m_oModels;
+		std::vector< std::shared_ptr<BufferedTransform>> m_oModels;
 		std::shared_ptr< Buffer > m_xAllModelMatrices;
 		int m_iInstanceCount;
 

@@ -8,7 +8,6 @@
 RenderModel::RenderModel(Desc& oDesc)
 {
 	m_iInstanceCount = oDesc.oModels.size();
-	m_oModels = oDesc.oModels;
 
 	//Load textures
 	Image::FromFileDesc oTexDesc;
@@ -66,22 +65,11 @@ RenderModel::RenderModel(Desc& oDesc)
 		LoadModel(oDesc);
 	}
 
-	//Load instance models
-	BasicBuffer::Desc oBufferDesc;
-	oBufferDesc.eUsage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-	oBufferDesc.iUnitCount = m_iInstanceCount;
-	oBufferDesc.iUnitSize = sizeof(glm::mat4);
-	oBufferDesc.pWrapper = oDesc.pWrapper;
-	oBufferDesc.oPropertyFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
-
-	std::vector<glm::mat4> oMatrices;
-	for (std::shared_ptr< Transform > xTransform : oDesc.oModels)
+	m_xAllModelMatrices = BufferedTransform::MergeTransform(oDesc.oModels, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, oDesc.pWrapper, m_oModels);
+	for (int i = 0; i < m_iInstanceCount; i++)
 	{
-		oMatrices.push_back(xTransform->GetModelMatrix());
+		m_oModels[i]->ForceMatrix(oDesc.oModels[i]->GetModelMatrix());
 	}
-
-	m_xAllModelMatrices = std::shared_ptr<Buffer>( new BasicBuffer(oBufferDesc) );
-	m_xAllModelMatrices->CopyFromMemory(oMatrices.data(), oDesc.pWrapper->GetModifiableDevice());
 }
 
 RenderModel::~RenderModel()

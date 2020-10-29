@@ -31,7 +31,7 @@ public:
 	void SetScale(glm::vec3 vNewScale, bool bRelative = false) override;
 	void Rotate(glm::vec3 vAxis, float fDegrees) override;
 	void ForceMatrix(glm::mat4 mMatrix) override;
-	static std::vector<BufferedTransform*> MergeTransform(std::vector<std::shared_ptr<Transform>> oTrsf, VkBufferUsageFlags eUsage, GraphicWrapper* pWrapper);
+	static std::shared_ptr<BasicBuffer> MergeTransform(std::vector<std::shared_ptr<Transform>> oTrsf, VkBufferUsageFlags eUsage, GraphicWrapper* pWrapper, std::vector<std::shared_ptr<BufferedTransform>>& oBufferedTransform);
 
 	protected:
 		uint64_t m_iOffset;

@@ -90,9 +90,8 @@ void BufferedTransform::ForceMatrix(glm::mat4 mMatrix)
 	UpdateBuffer();
 }
 
-std::vector<BufferedTransform*> BufferedTransform::MergeTransform(std::vector<std::shared_ptr<Transform>> oTrsf, VkBufferUsageFlags eUsage, GraphicWrapper* pWrapper)
+std::shared_ptr<BasicBuffer> BufferedTransform::MergeTransform(std::vector<std::shared_ptr<Transform>> oTrsf, VkBufferUsageFlags eUsage, GraphicWrapper* pWrapper, std::vector<std::shared_ptr<BufferedTransform>>& oBufferedTransform)
 {
-	std::vector<BufferedTransform*> oOutput;
 	BasicBuffer::Desc oDesc;
 	oDesc.eUsage = eUsage;
 	oDesc.oPropertyFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
@@ -105,11 +104,12 @@ std::vector<BufferedTransform*> BufferedTransform::MergeTransform(std::vector<st
 	for (std::shared_ptr<Transform> xTrans : oTrsf)
 	{
 		glm::mat4 mInput = xTrans->GetModelMatrix();
-		oOutput.push_back(new BufferedTransform( mInput, iOffset, std::static_pointer_cast<Buffer>(xBuffer), pWrapper->GetModifiableDevice()));
+		oBufferedTransform.push_back(std::make_shared<BufferedTransform> (BufferedTransform( mInput, iOffset, std::static_pointer_cast<Buffer>(xBuffer), pWrapper->GetModifiableDevice())));
 		iOffset += sizeof(glm::mat4);
+		oBufferedTransform[oBufferedTransform.size() - 1]->UpdateBuffer();
 	}
 
-	return oOutput;
+	return xBuffer;
 }
 
 void BufferedTransform::UpdateBuffer()

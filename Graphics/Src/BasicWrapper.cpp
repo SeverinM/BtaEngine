@@ -434,6 +434,8 @@ void BasicWrapper::InitFramebuffer()
 
 bool BasicWrapper::Render(SyncObjects* pSync)
 {
+	m_pRenderModel->GetModels()[1]->Rotate(glm::vec3(0, 0, 1), 0.1f);
+
 	auto start = std::chrono::system_clock::now();
 	VkResult eResult = VK_SUCCESS;
 	if (!s_bFramebufferResized)
