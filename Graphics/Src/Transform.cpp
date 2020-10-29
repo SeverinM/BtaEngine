@@ -115,5 +115,5 @@ std::shared_ptr<BasicBuffer> BufferedTransform::MergeTransform(std::vector<std::
 void BufferedTransform::UpdateBuffer()
 {
 	void* pData = &m_mModel;
-	m_xBuffer->CopyFromMemory((char*)pData, m_pDevice, m_iOffset, sizeof(glm::mat4));
+	m_xBuffer->CopyFromMemory(pData, m_pDevice, m_iOffset, sizeof(glm::mat4));
 }
