@@ -39,6 +39,7 @@ public :
 
 	bool Render(SyncObjects* pSync) override;
 	static void ResizeWindow(GLFWwindow* pWindow, int iWidth , int iHeight);
+	static void RenderGui(BasicWrapper* pWrapper);
 	void RecreateSwapChain();
 
 	BasicWrapper(GraphicWrapper::Desc& oDesc)

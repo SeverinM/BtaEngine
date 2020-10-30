@@ -41,7 +41,7 @@ public:
 	RenderModel(Desc& oDesc);
 	~RenderModel();
 
-	void ConvertToBuffer(BufferElementsFlag eFlags, bool bIncludeIndexes, GraphicWrapper* pWrapper);
+	void ConvertToVerticesBuffer(BufferElementsFlag eFlags, bool bIncludeIndexes, GraphicWrapper* pWrapper);
 	inline std::shared_ptr<Buffer> GetVerticesBuffer() { return m_xCachedVerticesBuffer; }
 	inline std::shared_ptr<Buffer> GetIndexesBuffer() { return m_xCachedIndexesBuffer; }
 	inline std::shared_ptr<Buffer> GetModelMatrices() { return m_xAllModelMatrices; }

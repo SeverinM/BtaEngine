@@ -154,6 +154,7 @@
     <ClCompile Include="Src\Camera.cpp" />
     <ClCompile Include="Src\CommandFactory.cpp" />
     <ClCompile Include="Src\DescriptorPool.cpp" />
+    <ClCompile Include="Src\DescriptorWrapper.cpp" />
     <ClCompile Include="Src\Framebuffer.cpp" />
     <ClCompile Include="Src\Globals.cpp" />
     <ClCompile Include="Src\GraphicDevice.cpp" />
@@ -183,6 +184,7 @@
     <ClInclude Include="Src\Camera.h" />
     <ClInclude Include="Src\CommandFactory.h" />
     <ClInclude Include="Src\DescriptorPool.h" />
+    <ClInclude Include="Src\DescriptorWrapper.h" />
     <ClInclude Include="Src\Framebuffer.h" />
     <ClInclude Include="Src\Globals.h" />
     <ClInclude Include="Src\GraphicDevice.h" />

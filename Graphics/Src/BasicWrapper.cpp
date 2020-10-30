@@ -310,12 +310,12 @@ void BasicWrapper::FillDescriptorsBuffer()
 	std::cout << "matrix buffer created" << std::endl;
 }
 
-
 void BasicWrapper::InitImGui()
 {
 	ImGuiWrapper::Desc oDesc;
 	oDesc.iImageIndex = 0;
 	oDesc.pWrapper = this;
+	oDesc.pCallback = BasicWrapper::RenderGui;
 
 	m_pImGui = new ImGuiWrapper(oDesc);
 }
@@ -363,7 +363,7 @@ void BasicWrapper::InitVerticesBuffers()
 	m_iInstanceCount += oDesc.oModels.size();
 
 	m_pRenderModel = new RenderModel(oDesc);
-	m_pRenderModel->ConvertToBuffer(m_pRenderModel->GetBufferFlags(), true, oDesc.pWrapper);
+	m_pRenderModel->ConvertToVerticesBuffer(m_pRenderModel->GetBufferFlags(), true, oDesc.pWrapper);
 	m_iVerticesCount += m_pRenderModel->GetVerticeCount();
 
 	oDesc.oFilenamesTextures = {};
@@ -371,7 +371,7 @@ void BasicWrapper::InitVerticesBuffers()
 	oDesc.oModels = { std::shared_ptr<Transform>(new Transform() )};
 	oDesc.oModels[0]->SetScale(glm::vec3(3.0f));
 	m_pRenderModelSky = new RenderModel(oDesc);
-	m_pRenderModelSky->ConvertToBuffer(m_pRenderModelSky->GetBufferFlags(), true, oDesc.pWrapper);
+	m_pRenderModelSky->ConvertToVerticesBuffer(m_pRenderModelSky->GetBufferFlags(), true, oDesc.pWrapper);
 
 	m_iInstanceCount += oDesc.oModels.size();
 	m_iVerticesCount += m_pRenderModelSky->GetVerticeCount();
@@ -517,6 +517,20 @@ bool BasicWrapper::Render(SyncObjects* pSync)
 void BasicWrapper::ResizeWindow(GLFWwindow* pWindow, int iWidth , int iHeight)
 {
 	s_bFramebufferResized = true;
+}
+
+void BasicWrapper::RenderGui(BasicWrapper* pWrapper)
+{
+	glm::vec3 vPos = pWrapper->m_pCamera->GetTransform()->GetPosition();
+	glm::vec3 vForward = pWrapper->m_pCamera->GetTransform()->GetForward();
+
+	ImGui::Begin("Bta Debug");
+	ImGui::Text("FPS : %i", (int)(1.0f / pWrapper->m_fElapsed));
+	ImGui::Text("Instances rendered : %i", pWrapper->m_iInstanceCount);
+	ImGui::Text("Vertices count : %i", pWrapper->m_iVerticesCount);
+	ImGui::Text("Camera position : %f / %f / %f", vPos.x, vPos.y, vPos.z);
+	ImGui::Text("Camera forward : %f / %f / %f", vForward.x, vForward.y, vForward.z);
+	ImGui::End();
 }
 
 void BasicWrapper::RecreateSwapChain()

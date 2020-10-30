@@ -83,7 +83,7 @@ RenderModel::~RenderModel()
 	m_oTextures.clear();
 }
 
-void RenderModel::ConvertToBuffer(BufferElementsFlag eFlags, bool bIncludeIndexes, GraphicWrapper* pWrapper)
+void RenderModel::ConvertToVerticesBuffer(BufferElementsFlag eFlags, bool bIncludeIndexes, GraphicWrapper* pWrapper)
 {
 	std::vector<uint8_t> oBytes;
 	int iUnitSize = 0;

@@ -1,7 +1,4 @@
 #include "ImGuiWrapper.h"
-#include "imgui.h"
-#include "imgui_impl_vulkan.h"
-#include "imgui_impl_glfw.h"
 #include "Globals.h"
 #include "RenderPass.h"
 #include "CommandFactory.h"
@@ -9,6 +6,7 @@
 
 ImGuiWrapper::ImGuiWrapper(Desc& oDesc)
 {
+	m_pCallback = oDesc.pCallback;
 	m_pWrapper = oDesc.pWrapper;
 	m_oCommandBuffer.resize(oDesc.pWrapper->m_pSwapchain->GetImageViews().size());
 
@@ -113,13 +111,14 @@ VkCommandBuffer* ImGuiWrapper::GetDrawCommand(Desc& oDesc)
 	ImGui_ImplVulkan_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
-	ImGui::Begin("Bta Debug");
+	m_pCallback(oDesc.pWrapper);
+	/*ImGui::Begin("Bta Debug");
 	ImGui::Text("FPS : %i", (int)(1.0f / oDesc.pWrapper->m_fElapsed));
 	ImGui::Text("Instances rendered : %i", oDesc.pWrapper->m_iInstanceCount);
 	ImGui::Text("Vertices count : %i", oDesc.pWrapper->m_iVerticesCount);
 	ImGui::Text("Camera position : %f / %f / %f", vPos.x, vPos.y, vPos.z);
 	ImGui::Text("Camera forward : %f / %f / %f", vForward.x, vForward.y, vForward.z);
-	ImGui::End();
+	ImGui::End();*/
 	//ImGui::ShowDemoWindow();
 	ImGui::Render();
 
