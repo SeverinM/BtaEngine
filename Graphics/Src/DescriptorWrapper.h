@@ -18,14 +18,14 @@ public:
 	struct MemorySlot
 	{
 		MemorySlot() : pData(nullptr) {};
-		void* pData;
+		Buffer* pData;
 		DescriptorPool::E_BINDING_TYPE eType;
 		std::vector<size_t> oElementsSize;
 		std::string sTag;
 	};
 	inline VkDescriptorSet* GetDescriptorSet() { return &m_oSet; }
 	inline const std::vector<MemorySlot>& GetSlots() { return m_oSlots; }
-	bool FillSlot(int iIndex, void* pBuffer);
+	bool FillSlot(int iIndex, Buffer* pBuffer);
 	bool FillSlotAtTag(Buffer* pBuffer, std::string sTag);
 	void CommitSlots(DescriptorPool* pPool);
 

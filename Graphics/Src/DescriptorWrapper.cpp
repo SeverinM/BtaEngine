@@ -213,7 +213,7 @@ std::unordered_map<int, DescriptorLayoutWrapper::Bindings> DescriptorLayoutWrapp
 	return oOutput;
 }
 
-bool DescriptorSetWrapper::FillSlot(int iIndex, void* pBuffer)
+bool DescriptorSetWrapper::FillSlot(int iIndex, Buffer* pBuffer)
 {
 	if (iIndex < 0 || iIndex >= m_oSlots.size())
 	{

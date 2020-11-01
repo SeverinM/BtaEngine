@@ -74,17 +74,17 @@ void DescriptorPool::WriteDescriptor(DescriptorSetWrapper* pDescriptorSet)
 	int i = 0;
 	for (const DescriptorSetWrapper::MemorySlot& oSlot : oSlots)
 	{
-		VkWriteDescriptorSet oWrite;
+		VkWriteDescriptorSet oWrite{};
 
 		oWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		oWrite.dstSet = *pDescriptorSet->GetDescriptorSet();
+		oWrite.dstSet = *pSet;
 		oWrite.dstArrayElement = 0;
 		oWrite.descriptorCount = 1;
 		oWrite.dstBinding = i;
 
 		if (oSlot.eType == E_TEXTURE)
 		{
-			std::shared_ptr<Image> pImage = std::shared_ptr<Image>((Image*)oSlot.pData);
+			Image* pImage = (Image*)oSlot.pData;
 
 			VkDescriptorImageInfo oImageInfo{};
 			oImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -96,7 +96,7 @@ void DescriptorPool::WriteDescriptor(DescriptorSetWrapper* pDescriptorSet)
 		}
 		else if (oSlot.eType == E_UNIFORM_BUFFER)
 		{
-			std::shared_ptr<BasicBuffer> xBasicBuffer = std::shared_ptr<BasicBuffer>((BasicBuffer*)oSlot.pData);
+			BasicBuffer* xBasicBuffer = (BasicBuffer*)oSlot.pData;
 
 			VkDescriptorBufferInfo oBufferInfo{};
 			oBufferInfo.buffer = *xBasicBuffer->GetBuffer();
@@ -108,11 +108,11 @@ void DescriptorPool::WriteDescriptor(DescriptorSetWrapper* pDescriptorSet)
 		}
 		else
 		{
-			std::shared_ptr<BasicBuffer> xBasicBuffer = std::shared_ptr<BasicBuffer>((BasicBuffer*)oSlot.pData);
+			BasicBuffer* pBasicBuffer = (BasicBuffer*)oSlot.pData;
 
 			VkDescriptorBufferInfo oBufferInfo{};
-			oBufferInfo.buffer = *xBasicBuffer->GetBuffer();
-			oBufferInfo.range = xBasicBuffer->GetMemorySize();
+			oBufferInfo.buffer = *pBasicBuffer->GetBuffer();
+			oBufferInfo.range = pBasicBuffer->GetMemorySize();
 			oBufferInfo.offset = 0;
 
 			oWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;

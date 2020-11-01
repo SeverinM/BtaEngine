@@ -44,7 +44,7 @@ public:
 	void ConvertToVerticesBuffer(BufferElementsFlag eFlags, bool bIncludeIndexes, GraphicWrapper* pWrapper);
 	inline std::shared_ptr<Buffer> GetVerticesBuffer() { return m_xCachedVerticesBuffer; }
 	inline std::shared_ptr<Buffer> GetIndexesBuffer() { return m_xCachedIndexesBuffer; }
-	inline std::shared_ptr<Buffer> GetModelMatrices() { return m_xAllModelMatrices; }
+	inline std::shared_ptr<BasicBuffer> GetModelMatrices() { return m_xAllModelMatrices; }
 	inline std::vector< std::shared_ptr<Image>>& GetTextures() { return m_oTextures; }
 	inline std::vector< std::shared_ptr<BufferedTransform>>& GetModels() { return m_oModels; }
 	inline uint64_t GetVerticeCount() { return m_iVerticesCount; }
@@ -65,7 +65,7 @@ public:
 		std::vector< std::shared_ptr< Image >> m_oTextures;
 
 		std::vector< std::shared_ptr<BufferedTransform>> m_oModels;
-		std::shared_ptr< Buffer > m_xAllModelMatrices;
+		std::shared_ptr< BasicBuffer > m_xAllModelMatrices;
 		int m_iInstanceCount;
 
 		std::shared_ptr<Buffer> m_xCachedVerticesBuffer;

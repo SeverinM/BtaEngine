@@ -198,22 +198,20 @@ void BasicWrapper::CreateGraphicPipeline()
 
 void BasicWrapper::FillDescriptorsBuffer()
 {
-	int iSwapCount = m_pSwapchain->GetImageViews().size();
-
-	std::vector<glm::mat4> oMVP{ m_pCamera->GetViewMatrix(), m_pCamera->GetProjectionMatrix() };
+	std::vector<glm::mat4> oVP{ m_pCamera->GetViewMatrix(), m_pCamera->GetProjectionMatrix() };
 	std::shared_ptr<BasicBuffer> xVPMatrice(m_pCamera->GetVPMatriceBuffer());
-	xVPMatrice->CopyFromMemory(oMVP.data(), GetModifiableDevice());
+	xVPMatrice->CopyFromMemory(oVP.data(), GetModifiableDevice());
 
 	m_pInputDatas = m_pPrototype->InstantiateDescriptorSet(*m_pPool, *m_pDevice);
 
 	//0 -> Uniform buffer
-	m_pInputDatas->FillSlot(0, (void*)xVPMatrice.get());
+	m_pInputDatas->FillSlot(0, m_pCamera->GetVPMatriceBuffer().get());
 
 	//1 -> Storage buffer 
-	m_pInputDatas->FillSlot(1, (void*)m_pRenderModel->GetModelMatrices().get());
+	m_pInputDatas->FillSlot(1, m_pRenderModel->GetModelMatrices().get());
 
 	//2 -> Texture
-	m_pInputDatas->FillSlot(2, (void*)m_pRenderModel->GetTextures()[0].get());
+	m_pInputDatas->FillSlot(2, m_pRenderModel->GetTextures()[0].get());
 
 	m_pInputDatas->CommitSlots(m_pPool);
 
@@ -229,7 +227,6 @@ void BasicWrapper::FillDescriptorsBuffer()
 	oFileDesc.pWrapper = this;
 	std::string sFilenames[6] = { "./Textures/bkg1_back.png", "./Textures/bkg1_bot.png", "./Textures/bkg1_front.png", "./Textures/bkg1_left.png", "./Textures/bkg1_right.png", "./Textures/bkg1_top.png" };
 	Image* pImage = Image::CreateCubeMap(sFilenames, oFileDesc);
-	std::shared_ptr<Image> xImage = std::shared_ptr<Image>(pImage);
 
 	m_pInputDatasSky = m_pPrototypeSky->InstantiateDescriptorSet(*m_pPool, *m_pDevice);
 
@@ -241,7 +238,12 @@ void BasicWrapper::FillDescriptorsBuffer()
 	oBuffer.eUsage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
 	oBuffer.oPropertyFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 
-	m_pInputDatasSky->FillSlot(0, new BasicBuffer(oBuffer));
+	BasicBuffer* pBuffer = new BasicBuffer(oBuffer);
+	m_pInputDatasSky->FillSlot(0, pBuffer);
+
+	glm::mat4 mMat = glm::mat4(1.0f);
+	pBuffer->CopyFromMemory(&mMat, m_pDevice, 0, sizeof(glm::mat4));
+	pBuffer->CopyFromMemory(&m_pCamera->GetProjectionMatrix(),m_pDevice, sizeof(glm::mat4), sizeof(glm::mat4));
 
 	//1-> texture
 	m_pInputDatasSky->FillSlot(1, pImage);
