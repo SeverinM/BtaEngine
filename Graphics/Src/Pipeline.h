@@ -12,7 +12,7 @@ class Pipeline
 public:
 	struct Desc
 	{
-		std::vector< std::vector< DescriptorPool::BufferDesc> >oInputDatas;
+		DescriptorLayoutWrapper* pInputDatas;
 		std::vector<std::string> oShaderFilenames;
 		GraphicWrapper* pWrapper;
 		VkVertexInputBindingDescription oBindingDescription;
@@ -27,7 +27,6 @@ public:
 	void Create(Desc& oDesc);
 	~Pipeline();
 
-	void CreateDescriptorLayout(Desc& oDesc);
 	void CreatePipelineLayout(Desc& oDesc);
 
 	VkPipelineLayout* GetPipelineLayout() { return &m_oPipelineLayout; }

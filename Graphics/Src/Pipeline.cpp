@@ -38,7 +38,7 @@ Pipeline::Pipeline(Desc& oDesc)
 
 void Pipeline::Create(Desc& oDesc)
 {
-	CreateDescriptorLayout(oDesc);
+	m_oDescriptorSetLayout = { *oDesc.pInputDatas->GetLayout() };
 	CreatePipelineLayout(oDesc);
 
 	VkPipelineShaderStageCreateInfo oVertexInfos{};
@@ -178,39 +178,6 @@ Pipeline::~Pipeline()
 {
 	vkDestroyPipeline(*m_pWrapper->GetDevice()->GetLogicalDevice(), m_oPipeline, nullptr);
 	vkDestroyPipelineLayout(*m_pWrapper->GetDevice()->GetLogicalDevice(), m_oPipelineLayout, nullptr);
-}
-
-void Pipeline::CreateDescriptorLayout(Desc& oDesc)
-{
-	m_oDescriptorSetLayout.resize(oDesc.oInputDatas.size());
-
-	m_pWrapper = oDesc.pWrapper;
-
-	for (int iSetLayoutIndex = 0; iSetLayoutIndex < oDesc.oInputDatas.size(); iSetLayoutIndex++)
-	{
-		std::vector<VkDescriptorSetLayoutBinding> oLayoutBindings;
-		for (int i = 0; i < oDesc.oInputDatas[iSetLayoutIndex].size(); i++)
-		{
-			VkDescriptorSetLayoutBinding oBinding{};
-			oBinding.binding = i;
-			oBinding.descriptorCount = 1;
-			oBinding.descriptorType = DescriptorPool::GetDescriptorType(oDesc.oInputDatas[iSetLayoutIndex][i].eType);
-			oBinding.pImmutableSamplers = nullptr;
-			oBinding.stageFlags = (oDesc.oInputDatas[iSetLayoutIndex][i].eType == DescriptorPool::E_TEXTURE ? VK_SHADER_STAGE_FRAGMENT_BIT : VK_SHADER_STAGE_VERTEX_BIT);
-
-			oLayoutBindings.push_back(oBinding);
-		}
-
-		VkDescriptorSetLayoutCreateInfo oLayoutCreateInfo{};
-		oLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-		oLayoutCreateInfo.bindingCount = oLayoutBindings.size();
-		oLayoutCreateInfo.pBindings = oLayoutBindings.data();
-
-		if (vkCreateDescriptorSetLayout(*oDesc.pWrapper->GetDevice()->GetLogicalDevice(), &oLayoutCreateInfo, nullptr, &m_oDescriptorSetLayout[iSetLayoutIndex]) != VK_SUCCESS)
-		{
-			throw std::runtime_error("Error creating set layout");
-		}
-	}
 }
 
 void Pipeline::CreatePipelineLayout(Desc& oDesc)

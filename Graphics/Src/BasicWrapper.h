@@ -7,12 +7,12 @@
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
 #include "GLM/gtc/matrix_transform.hpp"
-#include "DescriptorPool.h"
 #include "Framebuffer.h"
 #include "Model.h"
 #include "Camera.h"
 #include "ImGuiWrapper.h"
 #include <queue>
+#include "DescriptorWrapper.h"
 
 class Pipeline;
 class CommandFactory;
@@ -53,7 +53,6 @@ public :
 	Pipeline* GetPipeline() const { return m_pPipeline; }
 
 protected:
-
 	Camera* m_pCamera;
 	Swapchain* m_pSwapchain;
 	RenderPass* m_pRenderpass;
@@ -70,11 +69,11 @@ protected:
 	int m_iInstanceCount;
 
 	static bool s_bFramebufferResized;
-	std::vector< DescriptorPool::UpdateSubDesc> m_oInputDatas;
-	std::vector< DescriptorPool::UpdateSubDesc> m_oInputDatasSky;
+	DescriptorSetWrapper* m_pInputDatas;
+	DescriptorSetWrapper* m_pInputDatasSky;
 
-	std::vector < std::vector < DescriptorPool::BufferDesc> > m_oPrototype;
-	std::vector < std::vector < DescriptorPool::BufferDesc> > m_oPrototypeSkybox;
+	DescriptorLayoutWrapper* m_pPrototype;
+	DescriptorLayoutWrapper* m_pPrototypeSky;
 
 	std::vector< VkCommandBuffer > m_oAllDrawCommands;
 	std::vector< std::shared_ptr<Image> > m_oAllDepths;

@@ -2,6 +2,7 @@
 #include <iostream>
 #include "Pipeline.h"
 #include "BasicWrapper.h"
+#include "DescriptorWrapper.h"
 
 DescriptorPool::DescriptorPool(Desc& oDesc)
 {
@@ -38,7 +39,7 @@ void DescriptorPool::Create(Desc& oDesc)
 	}
 }
 
-VkDescriptorType DescriptorPool::GetDescriptorType(EBufferType eType)
+VkDescriptorType DescriptorPool::GetDescriptorType(E_BINDING_TYPE eType)
 {
 	if (eType == E_STORAGE_BUFFER)
 	{
@@ -63,62 +64,66 @@ DescriptorPool::~DescriptorPool()
 	vkDestroyDescriptorPool(*m_pRecreate->pWrapper->GetDevice()->GetLogicalDevice(), m_oPool, nullptr);
 }
 
-void DescriptorPool::WriteDescriptor(std::vector< UpdateSubDesc >& oUpdate, const VkDescriptorSetLayout& oDescriptorSetLayout)
+
+void DescriptorPool::WriteDescriptor(DescriptorSetWrapper* pDescriptorSet)
 {
-	std::vector<VkDescriptorSetLayout> oLayouts(oUpdate.size(), oDescriptorSetLayout);
-	
-	for (size_t i = 0; i < oUpdate.size(); i++)
+	VkDescriptorSet* pSet = pDescriptorSet->GetDescriptorSet();
+	std::vector< VkWriteDescriptorSet> oWriteDescriptors;
+	const std::vector< DescriptorSetWrapper::MemorySlot> oSlots = pDescriptorSet->GetSlots();
+
+	int i = 0;
+	for (const DescriptorSetWrapper::MemorySlot& oSlot : oSlots)
 	{
-		std::vector<VkWriteDescriptorSet> oDescriptorWrite;
-		oDescriptorWrite.resize(oUpdate[i].oBuffers.size());
-		for (int j = 0; j < oUpdate[i].oBuffers.size(); j++)
+		VkWriteDescriptorSet oWrite;
+
+		oWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		oWrite.dstSet = *pDescriptorSet->GetDescriptorSet();
+		oWrite.dstArrayElement = 0;
+		oWrite.descriptorCount = 1;
+		oWrite.dstBinding = i;
+
+		if (oSlot.eType == E_TEXTURE)
 		{
-			oDescriptorWrite[j].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			oDescriptorWrite[j].dstSet = *oUpdate[i].pDescriptorSet;
-			oDescriptorWrite[j].dstArrayElement = 0;
-			oDescriptorWrite[j].descriptorCount = 1;
-			oDescriptorWrite[j].dstBinding = j;
+			std::shared_ptr<Image> pImage = std::shared_ptr<Image>((Image*)oSlot.pData);
 
-			if (oUpdate[i].oBuffers[j].eType == E_TEXTURE)
-			{
-				std::shared_ptr<Image> pImage = std::static_pointer_cast<Image>(oUpdate[i].oBuffers[j].xBuffer);
+			VkDescriptorImageInfo oImageInfo{};
+			oImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+			oImageInfo.imageView = *pImage->GetImageView();
+			oImageInfo.sampler = *pImage->GetSampler();
 
-				VkDescriptorImageInfo oImageInfo{};
-				oImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-				oImageInfo.imageView = *pImage->GetImageView();
-				oImageInfo.sampler = *pImage->GetSampler();
+			oWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+			oWrite.pImageInfo = new VkDescriptorImageInfo(oImageInfo);
+		}
+		else if (oSlot.eType == E_UNIFORM_BUFFER)
+		{
+			std::shared_ptr<BasicBuffer> xBasicBuffer = std::shared_ptr<BasicBuffer>((BasicBuffer*)oSlot.pData);
 
-				oDescriptorWrite[j].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-				oDescriptorWrite[j].pImageInfo = new VkDescriptorImageInfo( oImageInfo );
-			}
-			else if (oUpdate[i].oBuffers[j].eType == E_UNIFORM_BUFFER)
-			{
-				std::shared_ptr<BasicBuffer> xBasicBuffer = std::static_pointer_cast<BasicBuffer>(oUpdate[i].oBuffers[j].xBuffer);
+			VkDescriptorBufferInfo oBufferInfo{};
+			oBufferInfo.buffer = *xBasicBuffer->GetBuffer();
+			oBufferInfo.range = xBasicBuffer->GetMemorySize();
+			oBufferInfo.offset = 0;
 
-				VkDescriptorBufferInfo oBufferInfo{};
-				oBufferInfo.buffer = *xBasicBuffer->GetBuffer();
-				oBufferInfo.range = oUpdate[i].oBuffers[j].xBuffer->GetMemorySize();
-				oBufferInfo.offset = 0;
+			oWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			oWrite.pBufferInfo = &oBufferInfo;
+		}
+		else
+		{
+			std::shared_ptr<BasicBuffer> xBasicBuffer = std::shared_ptr<BasicBuffer>((BasicBuffer*)oSlot.pData);
 
-				oDescriptorWrite[j].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-				oDescriptorWrite[j].pBufferInfo = &oBufferInfo;
-			}
-			else
-			{
-				std::shared_ptr<BasicBuffer> xBasicBuffer = std::static_pointer_cast<BasicBuffer>(oUpdate[i].oBuffers[j].xBuffer);
+			VkDescriptorBufferInfo oBufferInfo{};
+			oBufferInfo.buffer = *xBasicBuffer->GetBuffer();
+			oBufferInfo.range = xBasicBuffer->GetMemorySize();
+			oBufferInfo.offset = 0;
 
-				VkDescriptorBufferInfo oBufferInfo{};
-				oBufferInfo.buffer = *xBasicBuffer->GetBuffer();
-				oBufferInfo.range = oUpdate[i].oBuffers[j].xBuffer->GetMemorySize();
-				oBufferInfo.offset = 0;
-
-				oDescriptorWrite[j].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-				oDescriptorWrite[j].pBufferInfo = &oBufferInfo;
-			}
+			oWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+			oWrite.pBufferInfo = &oBufferInfo;
 		}
 
-		vkUpdateDescriptorSets(*m_pRecreate->pWrapper->GetDevice()->GetLogicalDevice(), static_cast<uint32_t>(oDescriptorWrite.size()), oDescriptorWrite.data(), 0, nullptr);
+		oWriteDescriptors.push_back(oWrite);
+		i++;
 	}
+
+	vkUpdateDescriptorSets(*m_pRecreate->pWrapper->GetDevice()->GetLogicalDevice(), static_cast<uint32_t>(oWriteDescriptors.size()), oWriteDescriptors.data(), 0, nullptr);
 }
 
 void DescriptorPool::CreateDescriptorSet(std::vector<VkDescriptorSet>& oOutput,int iSize, const VkDescriptorSetLayout& oLayout)

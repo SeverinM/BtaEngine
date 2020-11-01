@@ -1,8 +1,10 @@
 #include "ImGuiWrapper.h"
 #include "Globals.h"
+#include <chrono>
+
+#include "BasicWrapper.h"
 #include "RenderPass.h"
 #include "CommandFactory.h"
-#include <chrono>
 
 ImGuiWrapper::ImGuiWrapper(Desc& oDesc)
 {
@@ -112,14 +114,6 @@ VkCommandBuffer* ImGuiWrapper::GetDrawCommand(Desc& oDesc)
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
 	m_pCallback(oDesc.pWrapper);
-	/*ImGui::Begin("Bta Debug");
-	ImGui::Text("FPS : %i", (int)(1.0f / oDesc.pWrapper->m_fElapsed));
-	ImGui::Text("Instances rendered : %i", oDesc.pWrapper->m_iInstanceCount);
-	ImGui::Text("Vertices count : %i", oDesc.pWrapper->m_iVerticesCount);
-	ImGui::Text("Camera position : %f / %f / %f", vPos.x, vPos.y, vPos.z);
-	ImGui::Text("Camera forward : %f / %f / %f", vForward.x, vForward.y, vForward.z);
-	ImGui::End();*/
-	//ImGui::ShowDemoWindow();
 	ImGui::Render();
 
 	int iWidth, iHeight;

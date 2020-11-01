@@ -1,9 +1,13 @@
 #ifndef H_IM_GUI_WRAPPER
 #define H_IM_GUI_WRAPPER
-#include "BasicWrapper.h"
 #include "imgui.h"
 #include "imgui_impl_vulkan.h"
 #include "imgui_impl_glfw.h"
+#include "Framebuffer.h"
+
+class RenderPass;
+class CommandFactory;
+class BasicWrapper;
 
 class ImGuiWrapper
 {

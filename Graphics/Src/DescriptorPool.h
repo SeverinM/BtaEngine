@@ -3,10 +3,20 @@
 #include "Buffer.h"
 
 class BasicWrapper;
+class DescriptorSetWrapper;
 
 class DescriptorPool
 {
 public:
+
+	enum E_BINDING_TYPE
+	{
+		E_NONE = 0,
+		E_TEXTURE,
+		E_UNIFORM_BUFFER,
+		E_STORAGE_BUFFER
+	};
+
 	struct Desc
 	{
 		int iSize;
@@ -14,34 +24,15 @@ public:
 		BasicWrapper* pWrapper;
 	};
 
-	enum EBufferType
-	{
-		E_TEXTURE,
-		E_UNIFORM_BUFFER,
-		E_STORAGE_BUFFER
-	};
-
-	struct BufferDesc
-	{
-		std::shared_ptr<Buffer> xBuffer;
-		EBufferType eType;
-	};
-
-	struct UpdateSubDesc
-	{
-		std::vector<BufferDesc> oBuffers;
-		VkDescriptorSet* pDescriptorSet;
-	};
-
 	DescriptorPool(Desc& oDesc);
 	void Create(Desc& oDesc);
 
 	VkDescriptorPool& GetPool() { return m_oPool; }
 
-	static VkDescriptorType GetDescriptorType(EBufferType eType);
+	static VkDescriptorType GetDescriptorType(E_BINDING_TYPE eType);
 	~DescriptorPool();
 
-	void WriteDescriptor(std::vector< UpdateSubDesc >& oUpdate, const VkDescriptorSetLayout& oDescriptorSetLayout);
+	void WriteDescriptor(DescriptorSetWrapper* pDescriptorSet);
 	void CreateDescriptorSet(std::vector<VkDescriptorSet>& oOutput, int iSize, const VkDescriptorSetLayout& oLayout);
 	void CreateDescriptorSet(VkDescriptorSet& oOutput,const VkDescriptorSetLayout& oLayout);
 

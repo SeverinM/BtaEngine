@@ -1,7 +1,11 @@
 #include "DescriptorWrapper.h"
 #include <iostream>
+#include <fstream>
+#include "StringUtils.h"
+#include "VectorUtils.h"
+#include "GLM/glm.hpp"
 
-DescriptorLayoutWrapper::DescriptorLayoutWrapper(std::vector <Bindings>& oBindings, GraphicDevice& oDevice)
+DescriptorLayoutWrapper::DescriptorLayoutWrapper(std::vector<Bindings>& oBindings, GraphicDevice& oDevice)
 {
 	m_oAllBindings = oBindings;
 	std::vector<VkDescriptorSetLayoutBinding> oDescriptorBindings;
@@ -23,6 +27,7 @@ DescriptorLayoutWrapper::DescriptorLayoutWrapper(std::vector <Bindings>& oBindin
 	oLayoutCreateInfo.bindingCount = oDescriptorBindings.size();
 	oLayoutCreateInfo.pBindings = oDescriptorBindings.data();
 
+	m_pLayout = new VkDescriptorSetLayout();
 	if (vkCreateDescriptorSetLayout(*oDevice.GetLogicalDevice(), &oLayoutCreateInfo, nullptr, m_pLayout) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Error creating set layout");
@@ -32,15 +37,16 @@ DescriptorLayoutWrapper::DescriptorLayoutWrapper(std::vector <Bindings>& oBindin
 DescriptorSetWrapper* DescriptorLayoutWrapper::InstantiateDescriptorSet(DescriptorPool& oPool, GraphicDevice& oDevice)
 {
 	DescriptorSetWrapper* pDescriptor = new DescriptorSetWrapper();
+	pDescriptor->m_oSet = VkDescriptorSet();
+	pDescriptor->m_pLayoutFrom = m_pLayout;
 
 	for (Bindings& oBinding : m_oAllBindings)
 	{
 		DescriptorSetWrapper::MemorySlot oSlot;
 		oSlot.eType = oBinding.eType;
 		oSlot.pData = nullptr;
-		oSlot.iSizeUnit = oBinding.iSizeUnit;
-		oSlot.iUnitCount = oBinding.iUnitCount;
-		pDescriptor->m_oAllDatas.push_back(oSlot);
+		oSlot.oElementsSize = oBinding.oAllSizes;
+		pDescriptor->m_oSlots.push_back(oSlot);
 	}
 
 	oPool.CreateDescriptorSet(pDescriptor->m_oSet, *m_pLayout);
@@ -48,19 +54,19 @@ DescriptorSetWrapper* DescriptorLayoutWrapper::InstantiateDescriptorSet(Descript
 	return pDescriptor;
 }
 
-VkDescriptorType DescriptorLayoutWrapper::GetDescriptorType(E_BINDING_TYPE eType)
+VkDescriptorType DescriptorLayoutWrapper::GetDescriptorType(DescriptorPool::E_BINDING_TYPE eType)
 {
-	if (eType == E_STORAGE_BUFFER)
+	if (eType == DescriptorPool::E_STORAGE_BUFFER)
 	{
 		return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 	}
 
-	if (eType == E_TEXTURE)
+	if (eType == DescriptorPool::E_TEXTURE)
 	{
 		return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	}
 
-	if (eType == E_UNIFORM_BUFFER)
+	if (eType == DescriptorPool::E_UNIFORM_BUFFER)
 	{
 		return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	}
@@ -68,8 +74,178 @@ VkDescriptorType DescriptorLayoutWrapper::GetDescriptorType(E_BINDING_TYPE eType
 	return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 }
 
+size_t DescriptorLayoutWrapper::GetBindingSize(std::string sText)
+{
+	if (Bta::Utils::StringUtils::StartWith(sText, "mat4"))
+	{
+		return sizeof(glm::mat4);
+	}
+	else if (Bta::Utils::StringUtils::StartWith(sText, "vec3"))
+	{
+		return sizeof(glm::vec3);
+	}
+	else if (Bta::Utils::StringUtils::StartWith(sText, "vec2"))
+	{
+		return sizeof(glm::vec2);
+	}
+	else
+	{
+		return -1;
+	}
+}
+
 DescriptorLayoutWrapper* DescriptorLayoutWrapper::ParseShaderFiles(ShaderMap& oMap, GraphicDevice* pDevice)
 {
 	std::vector<DescriptorLayoutWrapper::Bindings> oBindings;
+
+	for (std::pair<VkShaderStageFlags, std::string> oParse : oMap)
+	{
+		std::unordered_map<int, DescriptorLayoutWrapper::Bindings> oBindShader = ParseShaderFile(oParse.second);
+
+		for (std::pair<int, DescriptorLayoutWrapper::Bindings> oPair : oBindShader)
+		{
+			if (oBindings.size() <= oPair.first)
+			{
+				oBindings.resize(oPair.first + 1);
+
+				oPair.second.eStages = oParse.first;
+				oBindings[oPair.first] = oPair.second;
+			}
+			else if (oBindings[oPair.first].eType == DescriptorPool::E_NONE)
+			{
+				oPair.second.eStages = oParse.first;
+				oBindings[oPair.first] = oPair.second;
+			}
+			else
+			{
+				if (oBindings[oPair.first].eType != oPair.second.eType)
+				{
+					throw std::runtime_error("Two different types for the same bind location");
+				}
+				oBindings[oPair.first].eStages |= oParse.first;
+			}
+		}
+	}
+
 	return new DescriptorLayoutWrapper(oBindings, *pDevice);
+}
+
+std::unordered_map<int, DescriptorLayoutWrapper::Bindings> DescriptorLayoutWrapper::ParseShaderFile(std::string sFilename)
+{
+	std::unordered_map<int, DescriptorLayoutWrapper::Bindings> oOutput;
+	DescriptorLayoutWrapper::Bindings* pCurrentBind = nullptr;
+
+	std::fstream oReadFile;
+	oReadFile.open(sFilename, std::ios::in);
+	if (!oReadFile.is_open())
+	{
+		char pBuff[100];
+		snprintf(pBuff, sizeof(pBuff), "Could not open file %s", sFilename.c_str());
+		throw std::runtime_error(pBuff);
+	}
+
+	std::string sLine;
+	int iIndex = -1;
+	while (getline(oReadFile, sLine))
+	{
+		if (Bta::Utils::StringUtils::Contains(sLine, "main()"))
+		{
+			break;
+		}
+
+		if (Bta::Utils::StringUtils::StartWith(sLine, "layout", false) && !Bta::Utils::StringUtils::Contains(sLine, "location") )
+		{
+			pCurrentBind = new DescriptorLayoutWrapper::Bindings();
+			std::vector<std::string> oValues = Bta::Utils::StringUtils::Split(sLine, ' ');
+			iIndex = std::stoi(oValues[4]);
+			
+			if (oValues[6] == "uniform")
+			{
+				if (oValues[7] == "sampler2D" || oValues[7] == "samplerCube")
+				{
+					pCurrentBind->eType = DescriptorPool::E_TEXTURE;
+				}
+				else
+				{
+					pCurrentBind->eType = DescriptorPool::E_UNIFORM_BUFFER;
+				}
+			}
+			else if (oValues[6] == "buffer")
+			{
+				pCurrentBind->eType = DescriptorPool::E_STORAGE_BUFFER;
+			}
+
+			pCurrentBind->sTag = Bta::Utils::StringUtils::Split(oValues[7], ';')[0];
+
+			if (!Bta::Utils::StringUtils::Contains(sLine, "{"))
+			{
+				oOutput[iIndex] = *pCurrentBind;
+				delete pCurrentBind;
+				pCurrentBind = nullptr;
+			}
+		}
+
+		if (pCurrentBind != nullptr)
+		{
+			if (Bta::Utils::StringUtils::Contains(sLine, "}"))
+			{
+				oOutput[iIndex] = *pCurrentBind;
+				delete pCurrentBind;
+				pCurrentBind = nullptr;
+				continue;
+			}
+
+			std::string sType = Bta::Utils::StringUtils::Split(sLine, ' ')[0];
+			int iSize = DescriptorLayoutWrapper::GetBindingSize(sType);
+			if (iSize != -1)
+			{
+				pCurrentBind->oAllSizes.push_back(iSize);
+			}
+			if (Bta::Utils::StringUtils::Contains(sType, "[]"))
+			{
+				pCurrentBind->oAllSizes.push_back(0);
+			}
+		}
+	}
+
+	oReadFile.close();
+
+	return oOutput;
+}
+
+bool DescriptorSetWrapper::FillSlot(int iIndex, void* pBuffer)
+{
+	if (iIndex < 0 || iIndex >= m_oSlots.size())
+	{
+		return false;
+	}
+
+	//TODO , better control
+	m_oSlots[iIndex].pData = pBuffer;
+}
+
+bool DescriptorSetWrapper::FillSlotAtTag(Buffer* pBuffer, std::string sTag)
+{
+	for (MemorySlot& oSlot : m_oSlots)
+	{
+		if (oSlot.sTag == sTag)
+		{
+			oSlot.pData = pBuffer;
+			return true;
+		}
+	}
+	return false;
+}
+
+void DescriptorSetWrapper::CommitSlots(DescriptorPool* pPool)
+{
+	for (MemorySlot& oSlot : m_oSlots)
+	{
+		if (oSlot.pData == nullptr)
+		{
+			throw std::runtime_error("A slot was not initialized");
+		}
+	}
+
+	pPool->WriteDescriptor(this);
 }

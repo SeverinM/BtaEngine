@@ -3,6 +3,7 @@
 #include "SyncObjects.h"
 #include <bitset>
 #include <cstdlib>
+#include "StringUtils.h"
 
 int main()
 {

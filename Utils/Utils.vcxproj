@@ -18,10 +18,14 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Src\StringUtils.h" />
+    <ClInclude Include="Src\VectorUtils.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
-    <ProjectGuid>{A34CF490-5895-4811-B6C5-1860E89005C2}</ProjectGuid>
-    <RootNamespace>Graphics</RootNamespace>
+    <ProjectGuid>{62100961-676E-4E2D-BC15-5214F89795FE}</ProjectGuid>
+    <RootNamespace>Utils</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -69,13 +73,11 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <LinkIncremental>true</LinkIncremental>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>$(ProjectDir)Bin\$(Platform)\$(Configuration)</OutDir>
-    <IntDir>$(ProjectDir)Bin\$(Platform)\$(Configuration)</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -83,7 +85,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
@@ -95,19 +97,16 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(VULKAN_SDK)\Include;$(ProjectDir)Include;$(SolutionDir)Utils\Src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(VULKAN_SDK)/Lib;$(ProjectDir)/Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>glfw3dll.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -142,69 +141,6 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="Include\imgui.cpp" />
-    <ClCompile Include="Include\imgui_demo.cpp" />
-    <ClCompile Include="Include\imgui_draw.cpp" />
-    <ClCompile Include="Include\imgui_impl_glfw.cpp" />
-    <ClCompile Include="Include\imgui_impl_vulkan.cpp" />
-    <ClCompile Include="Include\imgui_widgets.cpp" />
-    <ClCompile Include="Src\BasicWrapper.cpp" />
-    <ClCompile Include="Src\Buffer.cpp" />
-    <ClCompile Include="Src\Camera.cpp" />
-    <ClCompile Include="Src\CommandFactory.cpp" />
-    <ClCompile Include="Src\DescriptorPool.cpp" />
-    <ClCompile Include="Src\DescriptorWrapper.cpp" />
-    <ClCompile Include="Src\Framebuffer.cpp" />
-    <ClCompile Include="Src\Globals.cpp" />
-    <ClCompile Include="Src\GraphicDevice.cpp" />
-    <ClCompile Include="Src\ImGuiWrapper.cpp" />
-    <ClCompile Include="Src\InputHandling.cpp" />
-    <ClCompile Include="Src\Main.cpp" />
-    <ClCompile Include="Src\Model.cpp" />
-    <ClCompile Include="Src\Pipeline.cpp" />
-    <ClCompile Include="Src\RenderBatch.cpp" />
-    <ClCompile Include="Src\RenderPass.cpp" />
-    <ClCompile Include="Src\RenderSurface.cpp" />
-    <ClCompile Include="Src\Swapchain.cpp" />
-    <ClCompile Include="Src\SyncObjects.cpp" />
-    <ClCompile Include="Src\Transform.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="Include\imconfig.h" />
-    <ClInclude Include="Include\imgui.h" />
-    <ClInclude Include="Include\imgui_impl_glfw.h" />
-    <ClInclude Include="Include\imgui_impl_vulkan.h" />
-    <ClInclude Include="Include\imgui_internal.h" />
-    <ClInclude Include="Include\imstb_rectpack.h" />
-    <ClInclude Include="Include\imstb_textedit.h" />
-    <ClInclude Include="Include\imstb_truetype.h" />
-    <ClInclude Include="Src\BasicWrapper.h" />
-    <ClInclude Include="Src\Buffer.h" />
-    <ClInclude Include="Src\Camera.h" />
-    <ClInclude Include="Src\CommandFactory.h" />
-    <ClInclude Include="Src\DescriptorPool.h" />
-    <ClInclude Include="Src\DescriptorWrapper.h" />
-    <ClInclude Include="Src\Framebuffer.h" />
-    <ClInclude Include="Src\Globals.h" />
-    <ClInclude Include="Src\GraphicDevice.h" />
-    <ClInclude Include="Src\GraphicWrapper.h" />
-    <ClInclude Include="Src\ImGuiWrapper.h" />
-    <ClInclude Include="Src\InputHandling.h" />
-    <ClInclude Include="Src\Model.h" />
-    <ClInclude Include="Src\Pipeline.h" />
-    <ClInclude Include="Src\RenderBatch.h" />
-    <ClInclude Include="Src\RenderPass.h" />
-    <ClInclude Include="Src\RenderSurface.h" />
-    <ClInclude Include="Src\Swapchain.h" />
-    <ClInclude Include="Src\SyncObjects.h" />
-    <ClInclude Include="Src\Transform.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Utils\Utils.vcxproj">
-      <Project>{62100961-676e-4e2d-bc15-5214f89795fe}</Project>
-    </ProjectReference>
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

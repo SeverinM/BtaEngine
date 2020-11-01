@@ -9,6 +9,7 @@
 #include "GLM/glm.hpp"
 #include "InputHandling.h"
 #include "glm/gtx/string_cast.hpp"
+#include <memory>
 
 bool BasicWrapper::s_bFramebufferResized(false);
 
@@ -150,41 +151,19 @@ void BasicWrapper::CreateRenderPass()
 
 void BasicWrapper::CreateGraphicPipeline()
 {
-	//Setup inputs
-	int iSwapCount = m_pSwapchain->GetImageViews().size();
-
-	DescriptorPool::BufferDesc oBufferDesc;
-	oBufferDesc.eType = DescriptorPool::E_UNIFORM_BUFFER;
-
-	DescriptorPool::BufferDesc oBufferDesc2;
-	oBufferDesc2.eType = DescriptorPool::E_TEXTURE;
-
-	DescriptorPool::BufferDesc oBufferDesc3;
-	oBufferDesc3.eType = DescriptorPool::E_STORAGE_BUFFER;
-
-	std::vector<DescriptorPool::BufferDesc> oLayout;
-	oLayout.push_back(oBufferDesc);
-	oLayout.push_back(oBufferDesc3);
-	oLayout.push_back(oBufferDesc2);
-
-	m_oPrototype.push_back(oLayout);
+	DescriptorLayoutWrapper::ShaderMap oMap;
+	oMap[VK_SHADER_STAGE_VERTEX_BIT] = "./Shader/Src/vs.vert";
+	oMap[VK_SHADER_STAGE_FRAGMENT_BIT] = "./Shader/Src/fs.frag";
+	m_pPrototype = DescriptorLayoutWrapper::ParseShaderFiles(oMap, m_pDevice);
 
 	//Skybox
-	DescriptorPool::BufferDesc oBufferDescSky;
-	oBufferDescSky.eType = DescriptorPool::E_UNIFORM_BUFFER;
-
-	DescriptorPool::BufferDesc oBufferDesc2Sky;
-	oBufferDesc2Sky.eType = DescriptorPool::E_TEXTURE;
-
-	std::vector<DescriptorPool::BufferDesc> oLayoutSky;
-	oLayoutSky.push_back(oBufferDescSky);
-	oLayoutSky.push_back(oBufferDesc2Sky);
-
-	m_oPrototypeSkybox.push_back(oLayoutSky);
+	oMap[VK_SHADER_STAGE_VERTEX_BIT] = "./Shader/Skybox/Src/vs.vert";
+	oMap[VK_SHADER_STAGE_FRAGMENT_BIT] = "./Shader/Skybox/Src/fs.frag";
+	m_pPrototypeSky = DescriptorLayoutWrapper::ParseShaderFiles(oMap, m_pDevice);
 
 	//Create pipeline
 	Pipeline::Desc oDesc;
-	oDesc.oInputDatas = m_oPrototype;
+	oDesc.pInputDatas = m_pPrototype;
 	oDesc.bEnableDepth = true;
 	oDesc.bEnableTransparent = false;
 	oDesc.eSample = VK_SAMPLE_COUNT_8_BIT;
@@ -202,7 +181,7 @@ void BasicWrapper::CreateGraphicPipeline()
 	oDesc.bEnableDepth = false;
 	oDesc.eSample = VK_SAMPLE_COUNT_8_BIT;
 	oDesc.iSubPassIndex = 0;
-	oDesc.oInputDatas = m_oPrototypeSkybox;
+	oDesc.pInputDatas = m_pPrototypeSky;
 	m_pSkyboxPipeline = new Pipeline(oDesc);
 
 	
@@ -222,37 +201,21 @@ void BasicWrapper::FillDescriptorsBuffer()
 	int iSwapCount = m_pSwapchain->GetImageViews().size();
 
 	std::vector<glm::mat4> oMVP{ m_pCamera->GetViewMatrix(), m_pCamera->GetProjectionMatrix() };
-	std::shared_ptr<Buffer> xVPMatrice(m_pCamera->GetVPMatriceBuffer());
+	std::shared_ptr<BasicBuffer> xVPMatrice(m_pCamera->GetVPMatriceBuffer());
 	xVPMatrice->CopyFromMemory(oMVP.data(), GetModifiableDevice());
 
-	for (int i = 0; i < iSwapCount; i++)
-	{
-		VkDescriptorSet* pDescriptor = new VkDescriptorSet();
-		m_pPool->CreateDescriptorSet(*pDescriptor, m_pPipeline->GetDescriptorSetLayout()[0]);
+	m_pInputDatas = m_pPrototype->InstantiateDescriptorSet(*m_pPool, *m_pDevice);
 
-		DescriptorPool::UpdateSubDesc oDescriptorSet;
-		oDescriptorSet.pDescriptorSet = pDescriptor;
-		oDescriptorSet.oBuffers = m_oPrototype[0];
+	//0 -> Uniform buffer
+	m_pInputDatas->FillSlot(0, (void*)xVPMatrice.get());
 
-		//0 -> Uniform buffer
-		BasicBuffer::Desc oBuffer;
-		oBuffer.iUnitSize = sizeof(glm::mat4);
-		oBuffer.iUnitCount = 2;
-		oBuffer.pWrapper = this;
-		oBuffer.eUsage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-		oBuffer.oPropertyFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-		
-		oDescriptorSet.oBuffers[0].xBuffer = xVPMatrice;
+	//1 -> Storage buffer 
+	m_pInputDatas->FillSlot(1, (void*)m_pRenderModel->GetModelMatrices().get());
 
-		//1 -> Storage buffer 
-		oDescriptorSet.oBuffers[1].xBuffer = m_pRenderModel->GetModelMatrices();
+	//2 -> Texture
+	m_pInputDatas->FillSlot(2, (void*)m_pRenderModel->GetTextures()[0].get());
 
-		//2 -> Texture
-		oDescriptorSet.oBuffers[2].xBuffer = m_pRenderModel->GetTextures()[0];
-
-		m_oInputDatas.push_back(oDescriptorSet);
-	}
-	m_pPool->WriteDescriptor(m_oInputDatas, m_pPipeline->GetDescriptorSetLayout()[0]);
+	m_pInputDatas->CommitSlots(m_pPool);
 
 	std::vector<glm::mat4> oMPMatrices = { glm::mat4(1.0f), m_pCamera->GetProjectionMatrix() };
 
@@ -268,44 +231,22 @@ void BasicWrapper::FillDescriptorsBuffer()
 	Image* pImage = Image::CreateCubeMap(sFilenames, oFileDesc);
 	std::shared_ptr<Image> xImage = std::shared_ptr<Image>(pImage);
 
-	for (int i = 0; i < iSwapCount; i++)
-	{
-		VkDescriptorSet* pDescriptorSet = new VkDescriptorSet();
-		m_pPool->CreateDescriptorSet(*pDescriptorSet, m_pSkyboxPipeline->GetDescriptorSetLayout()[0]);
+	m_pInputDatasSky = m_pPrototypeSky->InstantiateDescriptorSet(*m_pPool, *m_pDevice);
 
-		DescriptorPool::UpdateSubDesc oDescriptorSet;
-		oDescriptorSet.pDescriptorSet = pDescriptorSet;
-		oDescriptorSet.oBuffers = m_oPrototypeSkybox[0];
+	//0 -> Uniform Buffer
+	BasicBuffer::Desc oBuffer;
+	oBuffer.iUnitSize = sizeof(glm::mat4);
+	oBuffer.iUnitCount = 2;
+	oBuffer.pWrapper = this;
+	oBuffer.eUsage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+	oBuffer.oPropertyFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 
-		//0 -> Uniform Buffer
-		BasicBuffer::Desc oBuffer;
-		oBuffer.iUnitSize = sizeof(glm::mat4);
-		oBuffer.iUnitCount = 2;
-		oBuffer.pWrapper = this;
-		oBuffer.eUsage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-		oBuffer.oPropertyFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+	m_pInputDatasSky->FillSlot(0, new BasicBuffer(oBuffer));
 
-		oDescriptorSet.oBuffers[0].xBuffer = std::shared_ptr<Buffer>( new BasicBuffer(oBuffer) );
-		oDescriptorSet.oBuffers[0].xBuffer->CopyFromMemory(oMPMatrices.data(), GetModifiableDevice());
-
-		//1-> texture
-		Image::FromFileDesc oFileDesc;
-		oFileDesc.bEnableMip = false;
-		oFileDesc.eAspect = VK_IMAGE_ASPECT_COLOR_BIT;
-		oFileDesc.eFormat = VK_FORMAT_R8G8B8A8_SRGB;
-		oFileDesc.eSampleFlag = VK_SAMPLE_COUNT_1_BIT;
-		oFileDesc.eTiling = VK_IMAGE_TILING_OPTIMAL;
-		oFileDesc.pFactory = m_pFactory;
-		oFileDesc.pWrapper = this;
-
-		oDescriptorSet.oBuffers[1].xBuffer = std::static_pointer_cast<Buffer>(xImage);
-
-		m_oInputDatasSky.push_back(oDescriptorSet);
-	}
-	m_pPool->WriteDescriptor(m_oInputDatasSky, m_pSkyboxPipeline->GetDescriptorSetLayout()[0]);
-
-	m_oPrototype.clear();
-	m_oPrototypeSkybox.clear();
+	//1-> texture
+	m_pInputDatasSky->FillSlot(1, pImage);
+	
+	m_pInputDatasSky->CommitSlots(m_pPool);
 
 	std::cout << "matrix buffer created" << std::endl;
 }
@@ -325,14 +266,14 @@ void BasicWrapper::CreateCommandBuffer()
 	for (int i = 0; i < m_pSwapchain->GetImageViews().size(); i++)
 	{
 		CommandFactory::SubDrawDesc oSubSky;
-		oSubSky.oDescriptorSet = *m_oInputDatasSky[i].pDescriptorSet;
+		oSubSky.oDescriptorSet = *m_pInputDatasSky->GetDescriptorSet();
 		oSubSky.pPipeline = m_pSkyboxPipeline;
 		oSubSky.xVertexData = m_pRenderModelSky->GetVerticesBuffer();
 		oSubSky.xIndexData = m_pRenderModelSky->GetIndexesBuffer();
 		oSubSky.iInstanceCount = 1;
 
 		CommandFactory::SubDrawDesc oSub;
-		oSub.oDescriptorSet = *m_oInputDatas[i].pDescriptorSet;
+		oSub.oDescriptorSet = *m_pInputDatas->GetDescriptorSet();
 		oSub.pPipeline = m_pPipeline;
 		oSub.xVertexData = m_pRenderModel->GetVerticesBuffer();
 		oSub.xIndexData = m_pRenderModel->GetIndexesBuffer();
@@ -562,14 +503,14 @@ void BasicWrapper::RecreateSwapChain()
 	delete m_pRenderpass;
 	delete m_pSwapchain;
 
-	for (DescriptorPool::UpdateSubDesc& oSub : m_oInputDatas)
+	/*for (DescriptorPool::UpdateSubDesc& oSub : m_oInputDatas)
 	{
 		oSub.oBuffers.clear();
 		delete oSub.pDescriptorSet;
 	}
 	m_oInputDatas.clear();
 
-	m_oInputDatasSky.clear();
+	m_oInputDatasSky.clear();*/
 	delete m_pPool;
 	delete m_pImGui;
 
@@ -584,21 +525,21 @@ BasicWrapper::~BasicWrapper()
 	delete m_pSwapchain;
 	delete m_pRenderpass;
 
-	for (DescriptorPool::UpdateSubDesc& oSub : m_oInputDatas)
-	{
-		oSub.oBuffers.clear();
+	//for (DescriptorPool::UpdateSubDesc& oSub : m_oInputDatas)
+	//{
+	//	oSub.oBuffers.clear();
 
-		//vkFreeDescriptorSets(*m_pDevice->GetLogicalDevice(), m_pPool->GetPool(), 1, oSub.xDescriptorSet);
-	}
-	m_oInputDatas.clear();
+	//	//vkFreeDescriptorSets(*m_pDevice->GetLogicalDevice(), m_pPool->GetPool(), 1, oSub.xDescriptorSet);
+	//}
+	//m_oInputDatas.clear();
 
-	for (DescriptorPool::UpdateSubDesc& oSub : m_oInputDatasSky)
-	{
-		oSub.oBuffers.clear();
+	//for (DescriptorPool::UpdateSubDesc& oSub : m_oInputDatasSky)
+	//{
+	//	oSub.oBuffers.clear();
 
-		//vkFreeDescriptorSets(*m_pDevice->GetLogicalDevice(), m_pPool->GetPool(), 1, oSub.pDescriptorSet);
-	}
-	m_oInputDatasSky.clear();
+	//	//vkFreeDescriptorSets(*m_pDevice->GetLogicalDevice(), m_pPool->GetPool(), 1, oSub.pDescriptorSet);
+	//}
+	//m_oInputDatasSky.clear();
 
 	vkFreeCommandBuffers(*m_pDevice->GetLogicalDevice(), *m_pFactory->GetCommandPool(), m_oAllDrawCommands.size(), m_oAllDrawCommands.data());
 	delete m_pPool;
