@@ -176,8 +176,8 @@ void Pipeline::Create(Desc& oDesc)
 
 Pipeline::~Pipeline()
 {
-	vkDestroyPipeline(*m_pWrapper->GetDevice()->GetLogicalDevice(), m_oPipeline, nullptr);
-	vkDestroyPipelineLayout(*m_pWrapper->GetDevice()->GetLogicalDevice(), m_oPipelineLayout, nullptr);
+	vkDestroyPipeline(*m_pRecreate->pWrapper->GetDevice()->GetLogicalDevice(), m_oPipeline, nullptr);
+	vkDestroyPipelineLayout(*m_pRecreate->pWrapper->GetDevice()->GetLogicalDevice(), m_oPipelineLayout, nullptr);
 }
 
 void Pipeline::CreatePipelineLayout(Desc& oDesc)

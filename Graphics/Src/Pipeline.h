@@ -37,7 +37,6 @@ private:
 	std::vector< VkDescriptorSetLayout > m_oDescriptorSetLayout;
 	VkPipelineLayout m_oPipelineLayout;
 	VkPipeline m_oPipeline;
-	GraphicWrapper* m_pWrapper;
 	Desc* m_pRecreate;
 };
 

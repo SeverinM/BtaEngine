@@ -34,6 +34,10 @@ DescriptorLayoutWrapper::DescriptorLayoutWrapper(std::vector<Bindings>& oBinding
 	}
 }
 
+DescriptorLayoutWrapper::~DescriptorLayoutWrapper()
+{
+}
+
 DescriptorSetWrapper* DescriptorLayoutWrapper::InstantiateDescriptorSet(DescriptorPool& oPool, GraphicDevice& oDevice)
 {
 	DescriptorSetWrapper* pDescriptor = new DescriptorSetWrapper();
@@ -49,6 +53,8 @@ DescriptorSetWrapper* DescriptorLayoutWrapper::InstantiateDescriptorSet(Descript
 		pDescriptor->m_oSlots.push_back(oSlot);
 	}
 
+	pDescriptor->m_pPool = &oPool;
+	pDescriptor->m_pDevice = &oDevice;
 	oPool.CreateDescriptorSet(pDescriptor->m_oSet, *m_pLayout);
 	
 	return pDescriptor;
@@ -248,4 +254,9 @@ void DescriptorSetWrapper::CommitSlots(DescriptorPool* pPool)
 	}
 
 	pPool->WriteDescriptor(this);
+}
+
+DescriptorSetWrapper::~DescriptorSetWrapper()
+{
+	vkFreeDescriptorSets(*m_pDevice->GetLogicalDevice(), m_pPool->GetPool(), 1, &m_oSet);
 }

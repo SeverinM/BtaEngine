@@ -28,8 +28,11 @@ public:
 	bool FillSlot(int iIndex, Buffer* pBuffer);
 	bool FillSlotAtTag(Buffer* pBuffer, std::string sTag);
 	void CommitSlots(DescriptorPool* pPool);
+	~DescriptorSetWrapper();
 
 protected:
+	DescriptorPool* m_pPool;
+	GraphicDevice* m_pDevice;
 	DescriptorSetWrapper() {};
 	std::vector<MemorySlot> m_oSlots;
 	VkDescriptorSet m_oSet;
@@ -55,6 +58,8 @@ public:
 	};
 
 	DescriptorLayoutWrapper(std::vector <Bindings>& oBindings, GraphicDevice& oDevice );
+	~DescriptorLayoutWrapper();
+
 	DescriptorSetWrapper* InstantiateDescriptorSet(DescriptorPool& oPool, GraphicDevice& oDevice);
 	static VkDescriptorType GetDescriptorType(DescriptorPool::E_BINDING_TYPE eType);
 	static size_t GetBindingSize(std::string sText);

@@ -505,14 +505,8 @@ void BasicWrapper::RecreateSwapChain()
 	delete m_pRenderpass;
 	delete m_pSwapchain;
 
-	/*for (DescriptorPool::UpdateSubDesc& oSub : m_oInputDatas)
-	{
-		oSub.oBuffers.clear();
-		delete oSub.pDescriptorSet;
-	}
-	m_oInputDatas.clear();
-
-	m_oInputDatasSky.clear();*/
+	delete m_pInputDatas;
+	delete m_pInputDatasSky;
 	delete m_pPool;
 	delete m_pImGui;
 
@@ -526,22 +520,8 @@ BasicWrapper::~BasicWrapper()
 {
 	delete m_pSwapchain;
 	delete m_pRenderpass;
-
-	//for (DescriptorPool::UpdateSubDesc& oSub : m_oInputDatas)
-	//{
-	//	oSub.oBuffers.clear();
-
-	//	//vkFreeDescriptorSets(*m_pDevice->GetLogicalDevice(), m_pPool->GetPool(), 1, oSub.xDescriptorSet);
-	//}
-	//m_oInputDatas.clear();
-
-	//for (DescriptorPool::UpdateSubDesc& oSub : m_oInputDatasSky)
-	//{
-	//	oSub.oBuffers.clear();
-
-	//	//vkFreeDescriptorSets(*m_pDevice->GetLogicalDevice(), m_pPool->GetPool(), 1, oSub.pDescriptorSet);
-	//}
-	//m_oInputDatasSky.clear();
+	delete m_pInputDatas;
+	delete m_pInputDatasSky;
 
 	vkFreeCommandBuffers(*m_pDevice->GetLogicalDevice(), *m_pFactory->GetCommandPool(), m_oAllDrawCommands.size(), m_oAllDrawCommands.data());
 	delete m_pPool;

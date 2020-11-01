@@ -32,6 +32,7 @@ void DescriptorPool::Create(Desc& oDesc)
 	oPoolInfo.poolSizeCount = 11;
 	oPoolInfo.pPoolSizes = pPool_sizes;
 	oPoolInfo.maxSets = oDesc.iImageCount * 10;
+	oPoolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
 	if (vkCreateDescriptorPool(*oDesc.pWrapper->GetDevice()->GetLogicalDevice(), &oPoolInfo, nullptr, &m_oPool) != VK_SUCCESS)
 	{
