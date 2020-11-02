@@ -16,8 +16,6 @@ public:
 	static void ProcessMouseButtons(GLFWwindow* pwindow, int button, int action, int mods);
 
 protected:
-	float m_fSpeed;
-	float m_fRotateSpeed;
 	BasicWrapper* m_pWrapper;
 	double m_fPreviousX;
 	double m_fPreviousY;

@@ -1,9 +1,10 @@
 #ifndef H_RENDER_BATCH
 #define H_RENDER_BATCH
-#include "Model.h"
+#include "Mesh.h"
 #include "Pipeline.h"
 #include "RenderPass.h"
 #include <unordered_map>
+#include "DescriptorWrapper.h"
 
 class RenderBatch
 {
@@ -33,7 +34,7 @@ protected :
 	Pipeline* m_pPipeline;
 	RenderBatch* m_pNext;
 
-	std::unordered_map<RenderModel*, VkDescriptorSet*> m_oEntities;
+	std::unordered_map<Mesh*, DescriptorSetWrapper*> m_oEntities;
 };
 
 #endif

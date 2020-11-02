@@ -10,7 +10,7 @@
 #include <unordered_map>
 #include "Transform.h"
 
-class RenderModel
+class Mesh
 {
 public:
 
@@ -38,8 +38,8 @@ public:
 		BufferElementsFlag eFlag;
 	};
 
-	RenderModel(Desc& oDesc);
-	~RenderModel();
+	Mesh(Desc& oDesc);
+	~Mesh();
 
 	void ConvertToVerticesBuffer(BufferElementsFlag eFlags, bool bIncludeIndexes, GraphicWrapper* pWrapper);
 	inline std::shared_ptr<Buffer> GetVerticesBuffer() { return m_xCachedVerticesBuffer; }

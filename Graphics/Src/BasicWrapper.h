@@ -8,7 +8,7 @@
 #define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
 #include "GLM/gtc/matrix_transform.hpp"
 #include "Framebuffer.h"
-#include "Model.h"
+#include "Mesh.h"
 #include "Camera.h"
 #include "ImGuiWrapper.h"
 #include <queue>
@@ -59,12 +59,11 @@ protected:
 	Pipeline* m_pPipeline;
 	CommandFactory* m_pFactory;
 	DescriptorPool* m_pPool;
-	RenderModel* m_pRenderModel;
-	RenderModel* m_pRenderModelSky;
+	Mesh* m_pRenderModel;
+	Mesh* m_pRenderModelSky;
 	Pipeline* m_pSkyboxPipeline;
 	ImGuiWrapper* m_pImGui;
 	InputHandling* m_pHandling;
-	float m_fElapsed;
 	int m_iVerticesCount;
 	int m_iInstanceCount;
 

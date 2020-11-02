@@ -6,6 +6,7 @@
 
 class Camera
 {
+	friend class BasicWrapper;
 public:
 	struct Desc
 	{
@@ -22,8 +23,14 @@ public:
 	inline glm::mat4 GetViewMatrix() { return m_pTransform->GetModelMatrix(); }
 	inline std::shared_ptr<BasicBuffer> GetVPMatriceBuffer() { return m_xMatriceBuffer; }
 	BufferedTransform* GetTransform() { return m_pTransform; }
+	inline float GetMoveSpeed() { return m_fMoveSpeed; }
+	inline float GetRotateSpeed() { return m_fAngularSpeed; }
 
 private:
+	inline float& GetModifiableMoveSpeed() { return m_fMoveSpeed; }
+	inline float& GetModifiableRotateSpeed() { return m_fAngularSpeed; }
+	float m_fMoveSpeed;
+	float m_fAngularSpeed;
 	BufferedTransform* m_pTransform;
 	glm::mat4 m_mProjectionMatrix;
 	std::shared_ptr<BasicBuffer> m_xMatriceBuffer;

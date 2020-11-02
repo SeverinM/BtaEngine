@@ -82,9 +82,9 @@ void RenderBatch::ChainSubpass(VkCommandBuffer* pBuffer)
 {
 	vkCmdBindPipeline(*m_pCachedCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, *m_pPipeline->GetPipeline());
 
-	for (std::pair<RenderModel*, VkDescriptorSet*> pEntity : m_oEntities)
+	for (std::pair<Mesh*, DescriptorSetWrapper*> pEntity : m_oEntities)
 	{
-		vkCmdBindDescriptorSets(*m_pCachedCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, *m_pPipeline->GetPipelineLayout(), 0, 1, pEntity.first->GetDescriptorSet(), 0, nullptr);
+		vkCmdBindDescriptorSets(*m_pCachedCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, *m_pPipeline->GetPipelineLayout(), 0, 1, pEntity.second->GetDescriptorSet(), 0, nullptr);
 
 		VkDeviceSize oOffsets[] = { 0 };
 		std::shared_ptr<BasicBuffer> xBasicBuffer = std::static_pointer_cast<BasicBuffer>(pEntity.first->GetVerticesBuffer());

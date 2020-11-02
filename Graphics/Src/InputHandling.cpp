@@ -1,6 +1,7 @@
 #include "InputHandling.h"
 #include <iostream>
 #include "glm/gtx/string_cast.hpp"
+#include "Globals.h"
 
 InputHandling::InputHandling(Desc& oDesc)
 {
@@ -8,8 +9,6 @@ InputHandling::InputHandling(Desc& oDesc)
 	glfwSetCursorPosCallback(oDesc.pWrapper->m_pDevice->GetModifiableRenderSurface()->GetWindow(), InputHandling::ProcessMouse);
 	glfwSetMouseButtonCallback(oDesc.pWrapper->m_pDevice->GetModifiableRenderSurface()->GetWindow(), InputHandling::ProcessMouseButtons);
 	glfwSetWindowUserPointer(oDesc.pWrapper->m_pDevice->GetModifiableRenderSurface()->GetWindow(), this);
-	m_fSpeed = 0.01f;
-	m_fRotateSpeed = 0.1f;
 	m_pWrapper = oDesc.pWrapper;
 	m_fPreviousY = m_fPreviousX = -1.0f;
 	m_bRightClickEnabled = false;
@@ -25,22 +24,22 @@ void InputHandling::ProcessKeyboard(GLFWwindow* pwindow, int iKey, int iScancode
 	
 	if (glfwGetKey(pwindow, GLFW_KEY_W ) == GLFW_PRESS)
 	{
-		vTranslate += vCamForward * pHandling->m_fSpeed;
+		vTranslate += vCamForward * pHandling->m_pWrapper->m_pCamera->GetMoveSpeed() * Graphics::Globals::s_fElapsed;
 	}
 
 	if (glfwGetKey(pwindow, GLFW_KEY_S) == GLFW_PRESS)
 	{
-		vTranslate += -vCamForward * pHandling->m_fSpeed;
+		vTranslate += -vCamForward * pHandling->m_pWrapper->m_pCamera->GetMoveSpeed() * Graphics::Globals::s_fElapsed;
 	}
 
 	if (glfwGetKey(pwindow, GLFW_KEY_A) == GLFW_PRESS)
 	{
-		vTranslate += vCamRight * pHandling->m_fSpeed;
+		vTranslate += vCamRight * pHandling->m_pWrapper->m_pCamera->GetMoveSpeed() * Graphics::Globals::s_fElapsed;
 	}
 
 	if (glfwGetKey(pwindow, GLFW_KEY_D) == GLFW_PRESS)
 	{
-		vTranslate += -vCamRight * pHandling->m_fSpeed;
+		vTranslate += -vCamRight * pHandling->m_pWrapper->m_pCamera->GetMoveSpeed() * Graphics::Globals::s_fElapsed;
 	}
 
 	if (vTranslate.length() != 0)
@@ -55,8 +54,8 @@ void InputHandling::ProcessMouse(GLFWwindow* pwindow, double xpos, double ypos)
 
 	if (pHandling->m_bRightClickEnabled)
 	{
-		pHandling->m_pWrapper->m_pCamera->GetTransform()->Rotate(glm::vec3(0, 0, 1), 10.0f * fDeltaX * pHandling->m_fRotateSpeed);
-		pHandling->m_pWrapper->m_pCamera->GetTransform()->Rotate(pHandling->m_pWrapper->m_pCamera->GetTransform()->GetRight(), 10.0f * fDeltaY * pHandling->m_fRotateSpeed);
+		pHandling->m_pWrapper->m_pCamera->GetTransform()->Rotate(glm::vec3(0, 0, 1),fDeltaX * pHandling->m_pWrapper->m_pCamera->GetRotateSpeed() * Graphics::Globals::s_fElapsed);
+		pHandling->m_pWrapper->m_pCamera->GetTransform()->Rotate(pHandling->m_pWrapper->m_pCamera->GetTransform()->GetRight(), fDeltaY * pHandling->m_pWrapper->m_pCamera->GetRotateSpeed() * Graphics::Globals::s_fElapsed);
 	}
 
 	pHandling->m_fPreviousX = xpos;

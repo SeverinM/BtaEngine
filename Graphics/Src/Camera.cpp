@@ -5,6 +5,9 @@
 
 Camera::Camera(Desc& oDesc)
 {
+	m_fMoveSpeed = 1.0f;
+	m_fAngularSpeed = 50.0f;
+
 	if (oDesc.fNearPlane > oDesc.fFarPlane || oDesc.fNearPlane <= 0.0f)
 	{
 		throw std::runtime_error("Cannot create camera with such parameters");

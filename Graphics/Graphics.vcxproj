@@ -161,7 +161,7 @@
     <ClCompile Include="Src\ImGuiWrapper.cpp" />
     <ClCompile Include="Src\InputHandling.cpp" />
     <ClCompile Include="Src\Main.cpp" />
-    <ClCompile Include="Src\Model.cpp" />
+    <ClCompile Include="Src\Mesh.cpp" />
     <ClCompile Include="Src\Pipeline.cpp" />
     <ClCompile Include="Src\RenderBatch.cpp" />
     <ClCompile Include="Src\RenderPass.cpp" />
@@ -191,7 +191,7 @@
     <ClInclude Include="Src\GraphicWrapper.h" />
     <ClInclude Include="Src\ImGuiWrapper.h" />
     <ClInclude Include="Src\InputHandling.h" />
-    <ClInclude Include="Src\Model.h" />
+    <ClInclude Include="Src\Mesh.h" />
     <ClInclude Include="Src\Pipeline.h" />
     <ClInclude Include="Src\RenderBatch.h" />
     <ClInclude Include="Src\RenderPass.h" />

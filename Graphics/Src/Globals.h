@@ -8,6 +8,7 @@ namespace Graphics
 	struct Globals
 	{
 		static VkInstance s_oInstance;
+		static float s_fElapsed;
 	};
 
 	static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback

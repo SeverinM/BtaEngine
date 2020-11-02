@@ -1,11 +1,11 @@
-#include "Model.h"
+#include "Mesh.h"
 
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "tiny_obj_loader.h"
 #include <functional>
 #include <iostream>
 
-RenderModel::RenderModel(Desc& oDesc)
+Mesh::Mesh(Desc& oDesc)
 {
 	m_iInstanceCount = oDesc.oModels.size();
 
@@ -72,7 +72,7 @@ RenderModel::RenderModel(Desc& oDesc)
 	}
 }
 
-RenderModel::~RenderModel()
+Mesh::~Mesh()
 {
 	m_oColors.clear();
 	m_oIndexes.clear();
@@ -83,7 +83,7 @@ RenderModel::~RenderModel()
 	m_oTextures.clear();
 }
 
-void RenderModel::ConvertToVerticesBuffer(BufferElementsFlag eFlags, bool bIncludeIndexes, GraphicWrapper* pWrapper)
+void Mesh::ConvertToVerticesBuffer(BufferElementsFlag eFlags, bool bIncludeIndexes, GraphicWrapper* pWrapper)
 {
 	std::vector<uint8_t> oBytes;
 	int iUnitSize = 0;
@@ -162,7 +162,7 @@ void RenderModel::ConvertToVerticesBuffer(BufferElementsFlag eFlags, bool bInclu
 	}
 }
 
-RenderModel::BufferElementsFlag RenderModel::GetBufferFlags()
+Mesh::BufferElementsFlag Mesh::GetBufferFlags()
 {
 	BufferElementsFlag eFlag = 0;
 	eFlag |= (m_oPositions.size() == 0 ? 0 : eVerticesAttributes::E_POSITIONS);
@@ -171,7 +171,7 @@ RenderModel::BufferElementsFlag RenderModel::GetBufferFlags()
 	return eFlag;
 }
 
-void RenderModel::LoadModel(Desc& oDesc)
+void Mesh::LoadModel(Desc& oDesc)
 {
 	tinyobj::attrib_t oAttrib;
 	std::vector<tinyobj::shape_t> oShapes;

@@ -10,6 +10,7 @@
 #include "InputHandling.h"
 #include "glm/gtx/string_cast.hpp"
 #include <memory>
+#include "Globals.h"
 
 bool BasicWrapper::s_bFramebufferResized(false);
 
@@ -294,18 +295,18 @@ void BasicWrapper::CreateCommandBuffer()
 
 void BasicWrapper::InitVerticesBuffers()
 {
-	RenderModel::Desc oDesc;
+	Mesh::Desc oDesc;
 	oDesc.pFactory = m_pFactory;
 	oDesc.pWrapper = this;
 	oDesc.sFilenameModel = "./Models/viking_room.obj";
 	oDesc.oFilenamesTextures = { "./Textures/viking_room.png" };
 	oDesc.oModels = { std::shared_ptr<Transform>( new Transform() ), std::shared_ptr<Transform>(new Transform()) };
 	oDesc.oModels[1]->SetPosition(glm::vec3(2.5f, 0, 0), true);
-	oDesc.eFlag = RenderModel::eVerticesAttributes::E_UV | RenderModel::eVerticesAttributes::E_POSITIONS;
+	oDesc.eFlag = Mesh::eVerticesAttributes::E_UV | Mesh::eVerticesAttributes::E_POSITIONS;
 
 	m_iInstanceCount += oDesc.oModels.size();
 
-	m_pRenderModel = new RenderModel(oDesc);
+	m_pRenderModel = new Mesh(oDesc);
 	m_pRenderModel->ConvertToVerticesBuffer(m_pRenderModel->GetBufferFlags(), true, oDesc.pWrapper);
 	m_iVerticesCount += m_pRenderModel->GetVerticeCount();
 
@@ -313,7 +314,7 @@ void BasicWrapper::InitVerticesBuffers()
 	oDesc.sFilenameModel = { "./Models/cube.obj" };
 	oDesc.oModels = { std::shared_ptr<Transform>(new Transform() )};
 	oDesc.oModels[0]->SetScale(glm::vec3(3.0f));
-	m_pRenderModelSky = new RenderModel(oDesc);
+	m_pRenderModelSky = new Mesh(oDesc);
 	m_pRenderModelSky->ConvertToVerticesBuffer(m_pRenderModelSky->GetBufferFlags(), true, oDesc.pWrapper);
 
 	m_iInstanceCount += oDesc.oModels.size();
@@ -453,7 +454,7 @@ bool BasicWrapper::Render(SyncObjects* pSync)
 
 	pSync->NextFrame();
 	auto end = std::chrono::system_clock::now();
-	m_fElapsed = std::chrono::duration<float>(end - start).count();
+	Graphics::Globals::s_fElapsed = std::chrono::duration<float>(end - start).count();
 	return true;
 }
 
@@ -468,11 +469,13 @@ void BasicWrapper::RenderGui(BasicWrapper* pWrapper)
 	glm::vec3 vForward = pWrapper->m_pCamera->GetTransform()->GetForward();
 
 	ImGui::Begin("Bta Debug");
-	ImGui::Text("FPS : %i", (int)(1.0f / pWrapper->m_fElapsed));
+	ImGui::Text("FPS : %i", (int)(1.0f / Graphics::Globals::s_fElapsed));
 	ImGui::Text("Instances rendered : %i", pWrapper->m_iInstanceCount);
 	ImGui::Text("Vertices count : %i", pWrapper->m_iVerticesCount);
 	ImGui::Text("Camera position : %f / %f / %f", vPos.x, vPos.y, vPos.z);
 	ImGui::Text("Camera forward : %f / %f / %f", vForward.x, vForward.y, vForward.z);
+	ImGui::SliderFloat("Move speed camera", &pWrapper->m_pCamera->GetModifiableMoveSpeed(), 1.0f, 100.0f);
+	ImGui::SliderFloat("Rotate speed camera", &pWrapper->m_pCamera->GetModifiableRotateSpeed(), 50.0f, 5000.0f);
 	ImGui::End();
 }
 
