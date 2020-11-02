@@ -20,6 +20,7 @@ public:
 
 	VkCommandBuffer BeginSingleTimeCommands();
 	void EndSingleTimeCommands(VkCommandBuffer& oCommandBuffer);
+	VkCommandBuffer* CreateCommand();
 
 	struct SubDrawDesc
 	{

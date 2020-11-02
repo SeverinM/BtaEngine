@@ -1,9 +1,9 @@
 #include "RenderBatch.h"
 #include <iostream>
+#include "CommandFactory.h"
 
 RenderBatch::RenderBatch(Desc& oDesc)
 {
-	m_pCachedCommandBuffer = nullptr;
 	m_bDirty = false;
 	m_pWrapper = oDesc.pWrapper;
 	m_pFactory = oDesc.pFactory;
@@ -20,17 +20,31 @@ VkCommandBuffer* RenderBatch::GetDrawCommand(Framebuffer* pFramebuffer)
 		return nullptr;
 	}
 
-	if (m_pCachedCommandBuffer != nullptr || m_bDirty)
+	if (m_oCachedCommandBuffer.count(pFramebuffer) == 0)
 	{
+		m_oCachedCommandBuffer[pFramebuffer] = nullptr;
+		m_bDirty = true;
+	}
+
+	if (m_bDirty)
+	{
+		if (m_oCachedCommandBuffer[pFramebuffer] != nullptr)
+		{
+			vkFreeCommandBuffers(*m_pWrapper->GetDevice()->GetLogicalDevice(), *m_pFactory->GetCommandPool(), 1, m_oCachedCommandBuffer[pFramebuffer]);
+			delete m_oCachedCommandBuffer[pFramebuffer];
+		}
+		else
+			m_oCachedCommandBuffer[pFramebuffer] = m_pFactory->CreateCommand();
+
 		ReconstructCommand(pFramebuffer);
 		m_bDirty = false;
 	}
-	return m_pCachedCommandBuffer;
+	return m_oCachedCommandBuffer[pFramebuffer];
 }
 
 void RenderBatch::AddMesh(Mesh* pMesh, DescriptorSetWrapper* pWrapper)
 {
-	if (m_oEntities.find(pMesh) != m_oEntities.end())
+	if (m_oEntities.find(pMesh) == m_oEntities.end())
 	{
 		m_oEntities[pMesh] = pWrapper;
 		MarkAsDirty();
@@ -42,7 +56,8 @@ void RenderBatch::ReconstructCommand(Framebuffer* pFramebuffer)
 	VkCommandBufferBeginInfo oCommandBeginInfo{};
 	oCommandBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
-	if (vkBeginCommandBuffer(*m_pCachedCommandBuffer, &oCommandBeginInfo) != VK_SUCCESS)
+	VkCommandBuffer* pBuffer = m_oCachedCommandBuffer[pFramebuffer];
+	if (vkBeginCommandBuffer(*m_oCachedCommandBuffer[pFramebuffer], &oCommandBeginInfo) != VK_SUCCESS)
 	{
 		throw std::runtime_error("failed to begin recording command buffer!");
 	}
@@ -75,12 +90,12 @@ void RenderBatch::ReconstructCommand(Framebuffer* pFramebuffer)
 	oBeginInfo.clearValueCount = static_cast<uint32_t>(oClear.size());
 	oBeginInfo.pClearValues = oClear.data();
 
-	vkCmdBeginRenderPass(*m_pCachedCommandBuffer, &oBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+	vkCmdBeginRenderPass(*m_oCachedCommandBuffer[pFramebuffer], &oBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 	
-	ChainSubpass(m_pCachedCommandBuffer);
+	ChainSubpass(m_oCachedCommandBuffer[pFramebuffer]);
 
-	vkCmdEndRenderPass(*m_pCachedCommandBuffer);
-	if (vkEndCommandBuffer(*m_pCachedCommandBuffer) != VK_SUCCESS)
+	vkCmdEndRenderPass(*m_oCachedCommandBuffer[pFramebuffer]);
+	if (vkEndCommandBuffer(*m_oCachedCommandBuffer[pFramebuffer]) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to record command");
 	}
@@ -89,33 +104,33 @@ void RenderBatch::ReconstructCommand(Framebuffer* pFramebuffer)
 
 void RenderBatch::ChainSubpass(VkCommandBuffer* pBuffer)
 {
-	vkCmdBindPipeline(*m_pCachedCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, *m_pPipeline->GetPipeline());
+	vkCmdBindPipeline(*pBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, *m_pPipeline->GetPipeline());
 
 	for (std::pair<Mesh*, DescriptorSetWrapper*> pEntity : m_oEntities)
 	{
-		vkCmdBindDescriptorSets(*m_pCachedCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, *m_pPipeline->GetPipelineLayout(), 0, 1, pEntity.second->GetDescriptorSet(), 0, nullptr);
+		vkCmdBindDescriptorSets(*pBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, *m_pPipeline->GetPipelineLayout(), 0, 1, pEntity.second->GetDescriptorSet(), 0, nullptr);
 
 		VkDeviceSize oOffsets[] = { 0 };
 		std::shared_ptr<BasicBuffer> xBasicBuffer = std::static_pointer_cast<BasicBuffer>(pEntity.first->GetVerticesBuffer());
-		vkCmdBindVertexBuffers(*m_pCachedCommandBuffer, 0, 1, xBasicBuffer->GetBuffer(), oOffsets);
+		vkCmdBindVertexBuffers(*pBuffer, 0, 1, xBasicBuffer->GetBuffer(), oOffsets);
 
 		if (pEntity.first->GetIndexesBuffer() != nullptr)
 		{
 			std::shared_ptr<BasicBuffer> xBasicBufferIndex = std::static_pointer_cast<BasicBuffer>(pEntity.first->GetIndexesBuffer());
-			vkCmdBindIndexBuffer(*m_pCachedCommandBuffer, *xBasicBufferIndex->GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
+			vkCmdBindIndexBuffer(*pBuffer, *xBasicBufferIndex->GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
 
-			vkCmdDrawIndexed(*m_pCachedCommandBuffer, pEntity.first->GetIndexesBuffer()->GetUnitCount(), pEntity.first->GetInstanceCount(), 0, 0, 0);
+			vkCmdDrawIndexed(*pBuffer, pEntity.first->GetIndexesBuffer()->GetUnitCount(), pEntity.first->GetInstanceCount(), 0, 0, 0);
 		}
 		else
 		{
-			vkCmdDraw(*m_pCachedCommandBuffer, pEntity.first->GetVerticesBuffer()->GetUnitCount(), pEntity.first->GetInstanceCount(), 0, 0);
+			vkCmdDraw(*pBuffer, pEntity.first->GetVerticesBuffer()->GetUnitCount(), pEntity.first->GetInstanceCount(), 0, 0);
 		}
 	}
 
 	if (m_pNext != nullptr)
 	{
-		vkCmdNextSubpass(*m_pCachedCommandBuffer, VK_SUBPASS_CONTENTS_INLINE);
-		m_pNext->ChainSubpass(m_pCachedCommandBuffer);
+		vkCmdNextSubpass(*pBuffer, VK_SUBPASS_CONTENTS_INLINE);
+		m_pNext->ChainSubpass(pBuffer);
 	}
 }
 

@@ -18,6 +18,7 @@ class Pipeline;
 class CommandFactory;
 class RenderPass;
 class InputHandling;
+class RenderBatch;
 
 class BasicWrapper : public GraphicWrapper
 {
@@ -32,7 +33,7 @@ public :
 	void CreateGraphicPipeline() override;
 	void CreateRenderPass() override;
 	void CreateCommandBuffer() override;
-	void InitVerticesBuffers();
+	void InitBatch();
 	void InitFramebuffer();
 	void FillDescriptorsBuffer();
 	void InitImGui();
@@ -59,22 +60,21 @@ protected:
 	Pipeline* m_pPipeline;
 	CommandFactory* m_pFactory;
 	DescriptorPool* m_pPool;
-	Mesh* m_pRenderModel;
-	Mesh* m_pRenderModelSky;
 	Pipeline* m_pSkyboxPipeline;
 	ImGuiWrapper* m_pImGui;
 	InputHandling* m_pHandling;
-	int m_iVerticesCount;
-	int m_iInstanceCount;
+
+	Mesh* m_pMesh;
+	Mesh* m_pMeshSky;
 
 	static bool s_bFramebufferResized;
-	DescriptorSetWrapper* m_pInputDatas;
-	DescriptorSetWrapper* m_pInputDatasSky;
+
+	RenderBatch* m_pBatch;
+	RenderBatch* m_pBatchSky;
 
 	DescriptorLayoutWrapper* m_pPrototype;
 	DescriptorLayoutWrapper* m_pPrototypeSky;
 
-	std::vector< VkCommandBuffer > m_oAllDrawCommands;
 	std::vector< std::shared_ptr<Image> > m_oAllDepths;
 	std::vector< std::shared_ptr<Image> > m_oAllMultisample;
 	std::vector< Framebuffer* > m_oFramebuffers;

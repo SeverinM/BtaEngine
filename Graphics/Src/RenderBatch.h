@@ -22,10 +22,12 @@ public:
 	VkCommandBuffer* GetDrawCommand(Framebuffer* pFramebuffer);
 	inline void MarkAsDirty() { m_bDirty = true; }
 	void AddMesh(Mesh* pMesh, DescriptorSetWrapper* pWrapper);
+	inline DescriptorSetWrapper* GetDescriptor(Mesh* pMesh) { if (m_oEntities.count(pMesh) == 0) return nullptr; return m_oEntities[pMesh]; }
 
 protected :
 	bool m_bDirty;
-	VkCommandBuffer* m_pCachedCommandBuffer;
+	std::unordered_map<Framebuffer*, VkCommandBuffer*> m_oCachedCommandBuffer;
+
 	void ReconstructCommand(Framebuffer* pFramebuffer);
 	void ChainSubpass(VkCommandBuffer* pBuffer);
 	uint32_t m_eFlag;

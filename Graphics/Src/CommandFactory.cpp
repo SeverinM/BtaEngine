@@ -62,6 +62,24 @@ void CommandFactory::EndSingleTimeCommands(VkCommandBuffer& oCommandBuffer)
 	vkFreeCommandBuffers(*m_pDevice->GetLogicalDevice(), m_oCommandPool, 1, &oCommandBuffer);
 }
 
+VkCommandBuffer* CommandFactory::CreateCommand()
+{
+	VkCommandBuffer* pCmdBuffer = new VkCommandBuffer();;
+
+	VkCommandBufferAllocateInfo oAllocateInfo{};
+	oAllocateInfo.commandPool = m_oCommandPool;
+	oAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	oAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	oAllocateInfo.commandBufferCount = 1;
+
+	if (vkAllocateCommandBuffers(*m_pDevice->GetLogicalDevice(), &oAllocateInfo, pCmdBuffer) != VK_SUCCESS)
+	{
+		throw std::runtime_error("Error allocating command buffer");
+	}
+
+	return pCmdBuffer;
+}
+
 VkCommandBuffer CommandFactory::CreateDrawCommand(DrawDesc& oDesc)
 {
 	VkCommandBuffer oCmdBuffer;

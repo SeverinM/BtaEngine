@@ -11,13 +11,12 @@
 #include "glm/gtx/string_cast.hpp"
 #include <memory>
 #include "Globals.h"
+#include "RenderBatch.h"
 
 bool BasicWrapper::s_bFramebufferResized(false);
 
 void BasicWrapper::CreateInstance()
 {
-	m_iInstanceCount = m_iVerticesCount = 0;
-
 	Window::RenderSurface::Init();
 
 	VkApplicationInfo oAppInfo{};
@@ -197,9 +196,9 @@ void BasicWrapper::CreateGraphicPipeline()
 	oDescPool.pWrapper = this;
 	m_pPool = new DescriptorPool(oDescPool);
 
-	InitVerticesBuffers();
-	FillDescriptorsBuffer();
 	InitFramebuffer();
+	InitBatch();
+	FillDescriptorsBuffer();
 }
 
 void BasicWrapper::FillDescriptorsBuffer()
@@ -207,34 +206,43 @@ void BasicWrapper::FillDescriptorsBuffer()
 	std::vector<glm::mat4> oVP{ m_pCamera->GetViewMatrix(), m_pCamera->GetProjectionMatrix() };
 	std::shared_ptr<BasicBuffer> xVPMatrice(m_pCamera->GetVPMatriceBuffer());
 	xVPMatrice->CopyFromMemory(oVP.data(), GetModifiableDevice());
-
-	m_pInputDatas = m_pPrototype->InstantiateDescriptorSet(*m_pPool, *m_pDevice);
+	
+	DescriptorSetWrapper* pMainRender = m_pBatch->GetDescriptor(m_pMesh);
 
 	//0 -> Uniform buffer
-	m_pInputDatas->FillSlot(0, m_pCamera->GetVPMatriceBuffer().get());
+	pMainRender->FillSlot(0, m_pCamera->GetVPMatriceBuffer().get());
 
 	//1 -> Storage buffer 
-	m_pInputDatas->FillSlot(1, m_pRenderModel->GetModelMatrices().get());
+	pMainRender->FillSlot(1, m_pMesh->GetModelMatrices().get());
 
 	//2 -> Texture
-	m_pInputDatas->FillSlot(2, m_pRenderModel->GetTextures()[0].get());
-
-	m_pInputDatas->CommitSlots(m_pPool);
-
-	std::vector<glm::mat4> oMPMatrices = { glm::mat4(1.0f), m_pCamera->GetProjectionMatrix() };
-
 	Image::FromFileDesc oFileDesc;
-	oFileDesc.bEnableMip = false;
+	oFileDesc.bEnableMip = true;
 	oFileDesc.eAspect = VK_IMAGE_ASPECT_COLOR_BIT;
 	oFileDesc.eFormat = VK_FORMAT_R8G8B8A8_SRGB;
 	oFileDesc.eSampleFlag = VK_SAMPLE_COUNT_1_BIT;
 	oFileDesc.eTiling = VK_IMAGE_TILING_OPTIMAL;
 	oFileDesc.pFactory = m_pFactory;
 	oFileDesc.pWrapper = this;
-	std::string sFilenames[6] = { "./Textures/bkg1_back.png", "./Textures/bkg1_bot.png", "./Textures/bkg1_front.png", "./Textures/bkg1_left.png", "./Textures/bkg1_right.png", "./Textures/bkg1_top.png" };
-	Image* pImage = Image::CreateCubeMap(sFilenames, oFileDesc);
 
-	m_pInputDatasSky = m_pPrototypeSky->InstantiateDescriptorSet(*m_pPool, *m_pDevice);
+	pMainRender->FillSlot(2, Image::CreateFromFile("./Textures/viking_room.png", oFileDesc));
+
+	pMainRender->CommitSlots(m_pPool);
+
+	std::vector<glm::mat4> oMPMatrices = { glm::mat4(1.0f), m_pCamera->GetProjectionMatrix() };
+
+	Image::FromFileDesc oFileDescSky;
+	oFileDescSky.bEnableMip = false;
+	oFileDescSky.eAspect = VK_IMAGE_ASPECT_COLOR_BIT;
+	oFileDescSky.eFormat = VK_FORMAT_R8G8B8A8_SRGB;
+	oFileDescSky.eSampleFlag = VK_SAMPLE_COUNT_1_BIT;
+	oFileDescSky.eTiling = VK_IMAGE_TILING_OPTIMAL;
+	oFileDescSky.pFactory = m_pFactory;
+	oFileDescSky.pWrapper = this;
+	std::string sFilenames[6] = { "./Textures/bkg1_back.png", "./Textures/bkg1_bot.png", "./Textures/bkg1_front.png", "./Textures/bkg1_left.png", "./Textures/bkg1_right.png", "./Textures/bkg1_top.png" };
+	Image* pImage = Image::CreateCubeMap(sFilenames, oFileDescSky);
+
+	DescriptorSetWrapper* pRenderSky = m_pBatchSky->GetDescriptor(m_pMeshSky);
 
 	//0 -> Uniform Buffer
 	BasicBuffer::Desc oBuffer;
@@ -245,16 +253,16 @@ void BasicWrapper::FillDescriptorsBuffer()
 	oBuffer.oPropertyFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 
 	BasicBuffer* pBuffer = new BasicBuffer(oBuffer);
-	m_pInputDatasSky->FillSlot(0, pBuffer);
+	pRenderSky->FillSlot(0, pBuffer);
 
 	glm::mat4 mMat = glm::mat4(1.0f);
 	pBuffer->CopyFromMemory(&mMat, m_pDevice, 0, sizeof(glm::mat4));
 	pBuffer->CopyFromMemory(&m_pCamera->GetProjectionMatrix(),m_pDevice, sizeof(glm::mat4), sizeof(glm::mat4));
 
 	//1-> texture
-	m_pInputDatasSky->FillSlot(1, pImage);
+	pRenderSky->FillSlot(1, pImage);
 	
-	m_pInputDatasSky->CommitSlots(m_pPool);
+	pRenderSky->CommitSlots(m_pPool);
 
 	std::cout << "matrix buffer created" << std::endl;
 }
@@ -271,59 +279,48 @@ void BasicWrapper::InitImGui()
 
 void BasicWrapper::CreateCommandBuffer()
 {
-	for (int i = 0; i < m_pSwapchain->GetImageViews().size(); i++)
-	{
-		CommandFactory::SubDrawDesc oSubSky;
-		oSubSky.oDescriptorSet = *m_pInputDatasSky->GetDescriptorSet();
-		oSubSky.pPipeline = m_pSkyboxPipeline;
-		oSubSky.xVertexData = m_pRenderModelSky->GetVerticesBuffer();
-		oSubSky.xIndexData = m_pRenderModelSky->GetIndexesBuffer();
-		oSubSky.iInstanceCount = 1;
-
-		CommandFactory::SubDrawDesc oSub;
-		oSub.oDescriptorSet = *m_pInputDatas->GetDescriptorSet();
-		oSub.pPipeline = m_pPipeline;
-		oSub.xVertexData = m_pRenderModel->GetVerticesBuffer();
-		oSub.xIndexData = m_pRenderModel->GetIndexesBuffer();
-		oSub.iInstanceCount = m_pRenderModel->GetModels().size();
-
-		CommandFactory::DrawDesc oDesc;
-		oDesc.oMultipleDraw = { oSubSky, oSub };
-		oDesc.pRenderpass = m_pRenderpass;
-		oDesc.pFramebuffer = m_oFramebuffers[i];
-
-		m_oAllDrawCommands.push_back(m_pFactory->CreateDrawCommand(oDesc));
-	}
-	std::cout << "Draw commands created" << std::endl;
 	InitImGui();
 }
 
-void BasicWrapper::InitVerticesBuffers()
+void BasicWrapper::InitBatch()
 {
-	Mesh::Desc oDesc;
+	RenderBatch::Desc oDesc;
 	oDesc.pFactory = m_pFactory;
+	oDesc.pPipeline = m_pPipeline;
+	oDesc.pRenderpass = m_pRenderpass;
+	oDesc.pNext = nullptr;
 	oDesc.pWrapper = this;
-	oDesc.sFilenameModel = "./Models/viking_room.obj";
-	oDesc.oFilenamesTextures = { "./Textures/viking_room.png" };
-	oDesc.oModels = { std::shared_ptr<Transform>( new Transform() ), std::shared_ptr<Transform>(new Transform()) };
-	oDesc.oModels[1]->SetPosition(glm::vec3(2.5f, 0, 0), true);
-	oDesc.eFlag = Mesh::eVerticesAttributes::E_UV | Mesh::eVerticesAttributes::E_POSITIONS;
 
-	m_iInstanceCount += oDesc.oModels.size();
+	m_pBatch = new RenderBatch(oDesc);
 
-	m_pRenderModel = new Mesh(oDesc);
-	m_pRenderModel->ConvertToVerticesBuffer(m_pRenderModel->GetBufferFlags(), true, oDesc.pWrapper);
-	m_iVerticesCount += m_pRenderModel->GetVerticeCount();
+	RenderBatch::Desc oDescSky;
+	oDescSky.pFactory = m_pFactory;
+	oDescSky.pPipeline = m_pSkyboxPipeline;
+	oDescSky.pRenderpass = m_pRenderpass;
+	oDescSky.pWrapper = this;
+	oDescSky.pNext = m_pBatch;
 
-	oDesc.oFilenamesTextures = {};
-	oDesc.sFilenameModel = { "./Models/cube.obj" };
-	oDesc.oModels = { std::shared_ptr<Transform>(new Transform() )};
-	oDesc.oModels[0]->SetScale(glm::vec3(3.0f));
-	m_pRenderModelSky = new Mesh(oDesc);
-	m_pRenderModelSky->ConvertToVerticesBuffer(m_pRenderModelSky->GetBufferFlags(), true, oDesc.pWrapper);
+	m_pBatchSky = new RenderBatch(oDescSky);
 
-	m_iInstanceCount += oDesc.oModels.size();
-	m_iVerticesCount += m_pRenderModelSky->GetVerticeCount();
+	Mesh::Desc oMeshDesc;
+	oMeshDesc.pFactory = m_pFactory;
+	oMeshDesc.pWrapper = this;
+	oMeshDesc.sFilenameModel = "./Models/viking_room.obj";
+	oMeshDesc.oModels = { std::shared_ptr<Transform>( new Transform() ), std::shared_ptr<Transform>(new Transform()) };
+	oMeshDesc.oModels[1]->SetPosition(glm::vec3(2.5f, 0, 0), true);
+	oMeshDesc.eFlag = Mesh::eVerticesAttributes::E_UV | Mesh::eVerticesAttributes::E_POSITIONS;
+
+	m_pMesh = new Mesh(oMeshDesc);
+	m_pMesh->ConvertToVerticesBuffer(m_pMesh->GetBufferFlags(), true, oMeshDesc.pWrapper);
+	m_pBatch->AddMesh(m_pMesh, m_pPrototype->InstantiateDescriptorSet(*m_pPool, *m_pDevice));
+
+	oMeshDesc.sFilenameModel = { "./Models/cube.obj" };
+	oMeshDesc.oModels = { std::shared_ptr<Transform>(new Transform() )};
+	oMeshDesc.oModels[0]->SetScale(glm::vec3(3.0f));
+	
+	m_pMeshSky = new Mesh(oMeshDesc);
+	m_pMeshSky->ConvertToVerticesBuffer(m_pMeshSky->GetBufferFlags(), true, oDesc.pWrapper);
+	m_pBatchSky->AddMesh(m_pMeshSky, m_pPrototypeSky->InstantiateDescriptorSet(*m_pPool, *m_pDevice));
 
 	std::cout << "vertex buffer created" << std::endl;
 }
@@ -383,7 +380,7 @@ void BasicWrapper::InitFramebuffer()
 
 bool BasicWrapper::Render(SyncObjects* pSync)
 {
-	m_pRenderModel->GetModels()[1]->Rotate(glm::vec3(0, 0, 1), 0.1f);
+	//m_pRenderModel->GetModels()[1]->Rotate(glm::vec3(0, 0, 1), 0.1f);
 
 	auto start = std::chrono::system_clock::now();
 	VkResult eResult = VK_SUCCESS;
@@ -422,7 +419,7 @@ bool BasicWrapper::Render(SyncObjects* pSync)
 		oSubmit.pWaitSemaphores = &pSync->GetImageAcquiredSemaphore()[pSync->GetFrame()];
 		VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 
-		std::vector<VkCommandBuffer> oCmds = { m_oAllDrawCommands[iImageIndex], *m_pImGui->GetDrawCommand(oDesc) };
+		std::vector<VkCommandBuffer> oCmds = { *m_pBatchSky->GetDrawCommand( m_oFramebuffers[iImageIndex] ), *m_pImGui->GetDrawCommand(oDesc) };
 		oSubmit.pWaitDstStageMask = waitStages;
 		oSubmit.commandBufferCount = oCmds.size();
 		oSubmit.pCommandBuffers = oCmds.data();
@@ -475,8 +472,8 @@ void BasicWrapper::RenderGui(BasicWrapper* pWrapper)
 
 	ImGui::Begin("Bta Debug");
 	ImGui::Text("FPS : %i", (int)(1.0f / Graphics::Globals::s_fElapsed));
-	ImGui::Text("Instances rendered : %i", pWrapper->m_iInstanceCount);
-	ImGui::Text("Vertices count : %i", pWrapper->m_iVerticesCount);
+	//ImGui::Text("Instances rendered : %i", pWrapper->m_iInstanceCount);
+	//ImGui::Text("Vertices count : %i", pWrapper->m_iVerticesCount);
 	ImGui::Text("Camera position : %f / %f / %f", vPos.x, vPos.y, vPos.z);
 	ImGui::Text("Camera forward : %f / %f / %f", vForward.x, vForward.y, vForward.z);
 	ImGui::SliderFloat("Move speed camera", &pWrapper->m_pCamera->GetModifiableMoveSpeed(), 1.0f, 100.0f);
@@ -505,16 +502,15 @@ void BasicWrapper::RecreateSwapChain()
 	}
 	m_oFramebuffers.clear();
 
-	vkFreeCommandBuffers(*m_pDevice->GetLogicalDevice(), *m_pFactory->GetCommandPool(), m_oAllDrawCommands.size(), m_oAllDrawCommands.data());
-	m_oAllDrawCommands.clear();
+	//vkFreeCommandBuffers(*m_pDevice->GetLogicalDevice(), *m_pFactory->GetCommandPool(), m_oAllDrawCommands.size(), m_oAllDrawCommands.data());
 
 	delete m_pPipeline;
 	delete m_pSkyboxPipeline;
 	delete m_pRenderpass;
 	delete m_pSwapchain;
 
-	delete m_pInputDatas;
-	delete m_pInputDatasSky;
+	//delete m_pInputDatas;
+	//delete m_pInputDatasSky;
 	delete m_pPool;
 	delete m_pImGui;
 
@@ -528,16 +524,14 @@ BasicWrapper::~BasicWrapper()
 {
 	delete m_pSwapchain;
 	delete m_pRenderpass;
-	delete m_pInputDatas;
-	delete m_pInputDatasSky;
+	//delete m_pInputDatas;
+	//delete m_pInputDatasSky;
 
-	vkFreeCommandBuffers(*m_pDevice->GetLogicalDevice(), *m_pFactory->GetCommandPool(), m_oAllDrawCommands.size(), m_oAllDrawCommands.data());
+	//vkFreeCommandBuffers(*m_pDevice->GetLogicalDevice(), *m_pFactory->GetCommandPool(), m_oAllDrawCommands.size(), m_oAllDrawCommands.data());
 	delete m_pPool;
 	delete m_pPipeline;
 	delete m_pSkyboxPipeline;
 	delete m_pFactory;
-	delete m_pRenderModel;
-	delete m_pRenderModelSky;
 
 	m_oAllDepths.clear();
 	m_oAllMultisample.clear();

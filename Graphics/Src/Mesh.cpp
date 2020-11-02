@@ -7,8 +7,6 @@
 
 Mesh::Mesh(Desc& oDesc)
 {
-	m_iInstanceCount = oDesc.oModels.size();
-
 	//Load textures
 	Image::FromFileDesc oTexDesc;
 	oTexDesc.bEnableMip = true;
@@ -19,7 +17,7 @@ Mesh::Mesh(Desc& oDesc)
 	oTexDesc.pFactory = oDesc.pFactory;
 	oTexDesc.pWrapper = oDesc.pWrapper;
 
-	for (std::string& sFilename : oDesc.oFilenamesTextures)
+	/*for (std::string& sFilename : oDesc.oFilenamesTextures)
 	{
 		Image* pImage = Image::CreateFromFile(sFilename, oTexDesc);
 		m_oTextures.push_back(std::shared_ptr<Image>(pImage));
@@ -36,7 +34,7 @@ Mesh::Mesh(Desc& oDesc)
 		{
 			pImage->TransitionLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, oDesc.pFactory, 1);
 		}
-	}
+	}*/
 
 	//Load vertices
 	if (oDesc.oPositions.size() > 0)
@@ -66,7 +64,7 @@ Mesh::Mesh(Desc& oDesc)
 	}
 
 	m_xAllModelMatrices = BufferedTransform::MergeTransform(oDesc.oModels, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, oDesc.pWrapper, m_oModels);
-	for (int i = 0; i < m_iInstanceCount; i++)
+	for (int i = 0; i < m_oModels.size(); i++)
 	{
 		m_oModels[i]->ForceMatrix(oDesc.oModels[i]->GetModelMatrix());
 	}
@@ -80,7 +78,6 @@ Mesh::~Mesh()
 	m_oUVs.clear();
 	m_oPositions.clear();
 	m_oModels.clear();
-	m_oTextures.clear();
 }
 
 void Mesh::ConvertToVerticesBuffer(BufferElementsFlag eFlags, bool bIncludeIndexes, GraphicWrapper* pWrapper)
@@ -215,5 +212,4 @@ void Mesh::LoadModel(Desc& oDesc)
 			m_oIndexes.push_back(oUniqueVertices[iHash]);
 		}
 	}
-	m_iVerticesCount = oUniqueVertices.size();
 }
