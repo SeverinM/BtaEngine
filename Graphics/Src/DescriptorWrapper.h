@@ -62,7 +62,6 @@ public:
 
 	DescriptorSetWrapper* InstantiateDescriptorSet(DescriptorPool& oPool, GraphicDevice& oDevice);
 	static VkDescriptorType GetDescriptorType(DescriptorPool::E_BINDING_TYPE eType);
-	static size_t GetBindingSize(std::string sText);
 
 	inline VkDescriptorSetLayout* GetLayout() { return m_pLayout; }
 

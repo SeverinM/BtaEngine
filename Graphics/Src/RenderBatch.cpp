@@ -28,6 +28,15 @@ VkCommandBuffer* RenderBatch::GetDrawCommand(Framebuffer* pFramebuffer)
 	return m_pCachedCommandBuffer;
 }
 
+void RenderBatch::AddMesh(Mesh* pMesh, DescriptorSetWrapper* pWrapper)
+{
+	if (m_oEntities.find(pMesh) != m_oEntities.end())
+	{
+		m_oEntities[pMesh] = pWrapper;
+		MarkAsDirty();
+	}
+}
+
 void RenderBatch::ReconstructCommand(Framebuffer* pFramebuffer)
 {
 	VkCommandBufferBeginInfo oCommandBeginInfo{};

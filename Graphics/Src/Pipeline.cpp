@@ -2,6 +2,8 @@
 #include <fstream>
 #include <iostream>
 #include "RenderPass.h"
+#include "StringUtils.h"
+#include <fstream>
 
 VkShaderModule* CompileShader(std::string sFilename, const GraphicDevice& oDevice)
 {
@@ -191,4 +193,62 @@ void Pipeline::CreatePipelineLayout(Desc& oDesc)
 	{
 		throw std::runtime_error("Cannot create layout");
 	}
+}
+
+void Pipeline::FillVerticesDescription(VkVertexInputBindingDescription& oBindingDescription, std::vector<VkVertexInputAttributeDescription>& oAttributeDescription, std::string sFilename)
+{
+	oAttributeDescription.clear();
+
+	std::ifstream oReadFile;
+	oReadFile.open(sFilename.c_str(), std::ios::in);
+
+	if (!oReadFile.is_open())
+	{
+		throw std::runtime_error("Vertex shader file does not exist");
+	}
+
+	int iOffset = 0;
+	std::string sLine;
+	while (getline(oReadFile, sLine))
+	{
+		if (Bta::Utils::StringUtils::Contains(sLine, "main()"))
+		{
+			break;
+		}
+
+		if (Bta::Utils::StringUtils::Contains(sLine, "location") && Bta::Utils::StringUtils::StartWith(sLine, "layout") && Bta::Utils::StringUtils::Contains(sLine, " in ") )
+		{
+			int iBindingIndex = std::stoi(Bta::Utils::StringUtils::Split(sLine, ' ')[4]);
+			if (iBindingIndex != oAttributeDescription.size())
+			{
+				throw std::runtime_error("location index must be in ascending order");
+			}
+
+			VkVertexInputAttributeDescription oAttribute{};
+			oAttribute.binding = 0;
+			oAttribute.location = iBindingIndex;
+			oAttribute.offset = iOffset;
+
+			size_t iSize = Bta::Utils::StringUtils::ParseMemorySize(Bta::Utils::StringUtils::Split(sLine, ' ')[7]);
+			
+			if (iSize == sizeof(glm::vec3))
+			{
+				oAttribute.format = VK_FORMAT_R32G32B32_SFLOAT;
+			}
+			else if (iSize == sizeof(glm::vec2))
+			{
+				oAttribute.format = VK_FORMAT_R32G32_SFLOAT;
+			}
+			else if (iSize == sizeof(glm::vec4))
+			{
+				oAttribute.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+			}
+			iOffset += iSize;
+			oAttributeDescription.push_back(oAttribute);
+		}
+	}
+
+	oBindingDescription.binding = 0;
+	oBindingDescription.stride = iOffset;
+	oBindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 }

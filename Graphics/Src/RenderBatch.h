@@ -21,6 +21,7 @@ public:
 	RenderBatch(Desc& oDesc);
 	VkCommandBuffer* GetDrawCommand(Framebuffer* pFramebuffer);
 	inline void MarkAsDirty() { m_bDirty = true; }
+	void AddMesh(Mesh* pMesh, DescriptorSetWrapper* pWrapper);
 
 protected :
 	bool m_bDirty;

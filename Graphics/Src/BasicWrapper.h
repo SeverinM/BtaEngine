@@ -78,40 +78,6 @@ protected:
 	std::vector< std::shared_ptr<Image> > m_oAllDepths;
 	std::vector< std::shared_ptr<Image> > m_oAllMultisample;
 	std::vector< Framebuffer* > m_oFramebuffers;
-
-	struct Vertex
-	{
-		glm::vec3 vPos;
-		glm::vec2 vTex;
-
-		static VkVertexInputBindingDescription GetBindingDescription()
-		{
-			VkVertexInputBindingDescription oBindingDescription{};
-			oBindingDescription.binding = 0;
-			oBindingDescription.stride = sizeof(Vertex);
-			oBindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
-			return oBindingDescription;
-		}
-
-		static std::vector<VkVertexInputAttributeDescription> GetAttributeDescriptions()
-		{
-			std::vector<VkVertexInputAttributeDescription> oAttributeDescriptions{};
-			oAttributeDescriptions.resize(2);
-
-			oAttributeDescriptions[0].binding = 0;
-			oAttributeDescriptions[0].location = 0;
-			oAttributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-			oAttributeDescriptions[0].offset = offsetof(Vertex, vPos);
-
-			oAttributeDescriptions[1].binding = 0;
-			oAttributeDescriptions[1].location = 1;
-			oAttributeDescriptions[1].format = VK_FORMAT_R32G32_SFLOAT;
-			oAttributeDescriptions[1].offset = offsetof(Vertex, vTex);
-
-			return oAttributeDescriptions;
-		}
-	};
 };
 
 #endif

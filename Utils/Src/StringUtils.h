@@ -2,6 +2,7 @@
 #define H_STRING_UTILS
 #include <string>
 #include <iostream>
+#include "GLM/glm.hpp"
 
 namespace Bta
 {
@@ -111,6 +112,26 @@ namespace Bta
 					}
 				}
 				return oOutput;
+			}
+
+			static size_t ParseMemorySize(std::string& sText)
+			{
+				if (Bta::Utils::StringUtils::StartWith(sText, "mat4"))
+				{
+					return sizeof(glm::mat4);
+				}
+				else if (Bta::Utils::StringUtils::StartWith(sText, "vec3"))
+				{
+					return sizeof(glm::vec3);
+				}
+				else if (Bta::Utils::StringUtils::StartWith(sText, "vec2"))
+				{
+					return sizeof(glm::vec2);
+				}
+				else
+				{
+					return -1;
+				}
 			}
 		};
 	}

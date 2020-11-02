@@ -152,6 +152,11 @@ void BasicWrapper::CreateRenderPass()
 
 void BasicWrapper::CreateGraphicPipeline()
 {
+	VkVertexInputBindingDescription oBinding;
+	std::vector<VkVertexInputAttributeDescription> oAttributes;
+	Pipeline::FillVerticesDescription(oBinding, oAttributes, "./Shader/Src/vs.vert");
+
+
 	DescriptorLayoutWrapper::ShaderMap oMap;
 	oMap[VK_SHADER_STAGE_VERTEX_BIT] = "./Shader/Src/vs.vert";
 	oMap[VK_SHADER_STAGE_FRAGMENT_BIT] = "./Shader/Src/fs.frag";
@@ -168,8 +173,8 @@ void BasicWrapper::CreateGraphicPipeline()
 	oDesc.bEnableDepth = true;
 	oDesc.bEnableTransparent = false;
 	oDesc.eSample = VK_SAMPLE_COUNT_8_BIT;
-	oDesc.oBindingDescription = Vertex::GetBindingDescription();
-	oDesc.oAttributeDescriptions = Vertex::GetAttributeDescriptions();
+	oDesc.oBindingDescription = oBinding;
+	oDesc.oAttributeDescriptions = oAttributes;
 	oDesc.oShaderFilenames = { "./Shader/vert.spv", "./Shader/frag.spv" };
 	oDesc.pWrapper = this;
 	oDesc.pRenderPass = m_pRenderpass;

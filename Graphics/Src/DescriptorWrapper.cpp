@@ -80,26 +80,6 @@ VkDescriptorType DescriptorLayoutWrapper::GetDescriptorType(DescriptorPool::E_BI
 	return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 }
 
-size_t DescriptorLayoutWrapper::GetBindingSize(std::string sText)
-{
-	if (Bta::Utils::StringUtils::StartWith(sText, "mat4"))
-	{
-		return sizeof(glm::mat4);
-	}
-	else if (Bta::Utils::StringUtils::StartWith(sText, "vec3"))
-	{
-		return sizeof(glm::vec3);
-	}
-	else if (Bta::Utils::StringUtils::StartWith(sText, "vec2"))
-	{
-		return sizeof(glm::vec2);
-	}
-	else
-	{
-		return -1;
-	}
-}
-
 DescriptorLayoutWrapper* DescriptorLayoutWrapper::ParseShaderFiles(ShaderMap& oMap, GraphicDevice* pDevice)
 {
 	std::vector<DescriptorLayoutWrapper::Bindings> oBindings;
@@ -202,7 +182,7 @@ std::unordered_map<int, DescriptorLayoutWrapper::Bindings> DescriptorLayoutWrapp
 			}
 
 			std::string sType = Bta::Utils::StringUtils::Split(sLine, ' ')[0];
-			int iSize = DescriptorLayoutWrapper::GetBindingSize(sType);
+			int iSize = Bta::Utils::StringUtils::ParseMemorySize(sType);
 			if (iSize != -1)
 			{
 				pCurrentBind->oAllSizes.push_back(iSize);

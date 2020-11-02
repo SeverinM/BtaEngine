@@ -33,6 +33,8 @@ public:
 	const std::vector< VkDescriptorSetLayout >& GetDescriptorSetLayout() { return m_oDescriptorSetLayout; }
 	VkPipeline* GetPipeline() { return &m_oPipeline; }
 
+	static void FillVerticesDescription(VkVertexInputBindingDescription& oBindingDescription, std::vector<VkVertexInputAttributeDescription>& oAttributeDescription, std::string sFilename);
+
 private:
 	std::vector< VkDescriptorSetLayout > m_oDescriptorSetLayout;
 	VkPipelineLayout m_oPipelineLayout;

@@ -11,8 +11,8 @@ layout ( binding = 1 ) buffer DataObject
 	mat4[] mModel;
 } data;
 
-layout(location = 0) in vec3 inPosition;
-layout(location = 1) in vec2 inColor;
+layout ( location = 0 ) in vec3 inPosition;
+layout ( location = 1 ) in vec2 inColor;
 
 layout(location = 0) out vec3 fragPosition;
 layout(location = 1) out vec2 fragColor;
