@@ -455,6 +455,13 @@ void BasicWrapper::RecreateSwapChain()
 
 	vkDeviceWaitIdle(*m_pDevice->GetLogicalDevice());
 
+	int i = 0;
+	while (m_pHandler->GetRenderBatch(i) != nullptr)
+	{
+		m_pHandler->GetRenderBatch(i)->MarkAsDirty();
+		i++;
+	}
+
 	m_oAllDepths.clear();
 	m_oAllMultisample.clear();
 
@@ -464,16 +471,23 @@ void BasicWrapper::RecreateSwapChain()
 	}
 	m_oFramebuffers.clear();
 
-	delete m_pRenderpass;
 	delete m_pSwapchain;
-
-	delete m_pPool;
 	delete m_pImGui;
 
-	CreateSwapChain();
-	CreateRenderPass();
-	CreateGraphicPipeline();
-	CreateCommandBuffer();
+	//Recreate swap chain
+	Swapchain::Desc oDesc;
+	oDesc.eColorspace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
+	oDesc.eImagesFormat = VK_FORMAT_B8G8R8A8_SRGB;
+	oDesc.ePresentMode = VkPresentModeKHR::VK_PRESENT_MODE_MAILBOX_KHR;
+	oDesc.pGraphicWrapper = this;
+	oDesc.iImageLayers = 1;
+
+	m_pSwapchain = new Swapchain(oDesc);
+
+	m_pHandler->ReconstructPipelines(this);
+
+	InitFramebuffer();
+	InitImGui();
 }
 
 BasicWrapper::~BasicWrapper()

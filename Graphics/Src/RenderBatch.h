@@ -26,7 +26,10 @@ public:
 	inline DescriptorSetWrapper* GetDescriptor(Mesh* pMesh) { if (m_oEntities.count(pMesh) == 0) return nullptr; return m_oEntities[pMesh]; }
 	uint64_t GetVerticesCount();
 	uint64_t GetInstancesCount();
+	Pipeline* GetPipeline() { return m_pPipeline; }
+	void SetPipeline(Pipeline* pNew) { m_pPipeline = pNew; }
 	void SetNext(RenderBatch* pBatch) { m_pNext = pBatch; }
+	void ClearCache();
 
 protected :
 	bool m_bDirty;
@@ -64,9 +67,10 @@ public:
 	};
 	RenderBatchesHandler(Desc& oDesc);
 	RenderBatch* GetRenderBatch(int iIndex) { if (iIndex < 0 || iIndex >= m_oBatches.size()) return nullptr; return m_oBatches[iIndex]; }
-	Pipeline* GetPipeline(int iIndex) { if (iIndex < 0 || iIndex >= m_oPipelines.size()) return nullptr; return m_oPipelines[iIndex]; }
+	Pipeline* GetPipeline(int iIndex) { if (iIndex < 0 || iIndex >= m_oBatches.size()) return nullptr; return m_oBatches[iIndex]->GetPipeline(); }
 	void AddMesh(Mesh* pMesh, int iIndex, DescriptorPool* pPool);
 	VkCommandBuffer* GetCommand(Framebuffer* pFramebuffer) { return m_oBatches[0]->GetDrawCommand(pFramebuffer); }
+	void ReconstructPipelines(GraphicWrapper* pWrapper);
 
 	uint64_t GetVerticesCount()
 	{
@@ -89,7 +93,9 @@ public:
 	}
 
 protected:
-	std::vector<Pipeline*> m_oPipelines;
+	VkSampleCountFlagBits m_eSamples;
+	RenderPass* m_pRenderpass;
+	std::vector<CreationBatchDesc> m_oPipelineDesc;
 	std::vector<RenderBatch*> m_oBatches;
 	GraphicDevice* m_pDevice;
 };

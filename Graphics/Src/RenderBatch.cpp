@@ -84,6 +84,15 @@ uint64_t RenderBatch::GetInstancesCount()
 	return iOutput;
 }
 
+void RenderBatch::ClearCache()
+{
+	for (std::pair<Framebuffer*, VkCommandBuffer*> oCmd : m_oCachedCommandBuffer)
+	{
+		vkFreeCommandBuffers(*m_pWrapper->GetModifiableDevice()->GetLogicalDevice(), *m_pFactory->GetCommandPool(), 1, oCmd.second);
+	}
+	m_oCachedCommandBuffer.clear();
+}
+
 void RenderBatch::ReconstructCommand(Framebuffer* pFramebuffer)
 {
 	VkCommandBufferBeginInfo oCommandBeginInfo{};
@@ -171,33 +180,37 @@ RenderBatchesHandler::RenderBatchesHandler(Desc& oDesc)
 {
 	m_pDevice = oDesc.pWrapper->GetModifiableDevice();
 	int i = 0;
-	for (CreationBatchDesc& oBatchDesc : oDesc.oBatches)
+	m_eSamples = oDesc.eSamples;
+	m_pRenderpass = oDesc.m_pPass;
+	for (CreationBatchDesc& oBatchCreateDesc : oDesc.oBatches)
 	{
 		Pipeline::Desc oPipelineDesc;
-		oPipelineDesc.oShaderFilenames = oBatchDesc.oShaderCompiled;
-		Pipeline::FillVerticesDescription(oPipelineDesc.oBindingDescription, oPipelineDesc.oAttributeDescriptions, oBatchDesc.oShaderSources[0]);
-		oPipelineDesc.bEnableDepth = oBatchDesc.bTestDepth;
+		oPipelineDesc.oShaderFilenames = oBatchCreateDesc.oShaderCompiled;
+		Pipeline::FillVerticesDescription(oPipelineDesc.oBindingDescription, oPipelineDesc.oAttributeDescriptions, oBatchCreateDesc.oShaderSources[0]);
+		oPipelineDesc.bEnableDepth = oBatchCreateDesc.bTestDepth;
 		oPipelineDesc.bEnableTransparent = false;
 		oPipelineDesc.eSample = oDesc.eSamples;
 		oPipelineDesc.iSubPassIndex = i;
 
 		DescriptorLayoutWrapper::ShaderMap oMap;
-		oMap[VK_SHADER_STAGE_VERTEX_BIT] = oBatchDesc.oShaderSources[0];
-		oMap[VK_SHADER_STAGE_FRAGMENT_BIT] = oBatchDesc.oShaderSources[1];
+		oMap[VK_SHADER_STAGE_VERTEX_BIT] = oBatchCreateDesc.oShaderSources[0];
+		oMap[VK_SHADER_STAGE_FRAGMENT_BIT] = oBatchCreateDesc.oShaderSources[1];
 		oPipelineDesc.pInputDatas = DescriptorLayoutWrapper::ParseShaderFiles(oMap, oDesc.pWrapper->GetModifiableDevice());
 		oPipelineDesc.pRenderPass = oDesc.m_pPass;
 		oPipelineDesc.pWrapper = oDesc.pWrapper;
 		
-		m_oPipelines.push_back(new Pipeline(oPipelineDesc));
+		Pipeline* pPipeline = new Pipeline(oPipelineDesc);
 
 		RenderBatch::Desc oBatchDesc;
 		oBatchDesc.pWrapper = oDesc.pWrapper;
 		oBatchDesc.pRenderpass = oDesc.m_pPass;
-		oBatchDesc.pPipeline = m_oPipelines[m_oPipelines.size() - 1];
+		oBatchDesc.pPipeline = pPipeline;
 		oBatchDesc.pFactory = oDesc.pFactory;
 		oBatchDesc.pNext = nullptr;
 
 		m_oBatches.push_back(new RenderBatch(oBatchDesc));
+
+		m_oPipelineDesc.push_back(oBatchCreateDesc);
 
 		if (i > 0)
 		{
@@ -216,5 +229,37 @@ void RenderBatchesHandler::AddMesh(Mesh* pMesh, int iIndex, DescriptorPool* pPoo
 	if (pPipeline != nullptr && pBatch != nullptr)
 	{
 		pBatch->AddMesh(pMesh, pPipeline->GetDescriptorSetLayout()->InstantiateDescriptorSet(*pPool, *m_pDevice));
+	}
+}
+
+void RenderBatchesHandler::ReconstructPipelines(GraphicWrapper* pWrapper)
+{
+	for (RenderBatch* pBatch : m_oBatches)
+	{
+		pBatch->ClearCache();
+		delete pBatch->GetPipeline();
+	}
+
+	for (int i = 0; i < m_oBatches.size(); i++)
+	{
+		CreationBatchDesc oBatchCreateDesc = m_oPipelineDesc[i];
+
+		Pipeline::Desc oPipelineDesc;
+		oPipelineDesc.oShaderFilenames = oBatchCreateDesc.oShaderCompiled;
+		Pipeline::FillVerticesDescription(oPipelineDesc.oBindingDescription, oPipelineDesc.oAttributeDescriptions, oBatchCreateDesc.oShaderSources[0]);
+		oPipelineDesc.bEnableDepth = oBatchCreateDesc.bTestDepth;
+		oPipelineDesc.bEnableTransparent = false;
+		oPipelineDesc.eSample = m_eSamples;
+		oPipelineDesc.iSubPassIndex = i;
+
+		DescriptorLayoutWrapper::ShaderMap oMap;
+		oMap[VK_SHADER_STAGE_VERTEX_BIT] = oBatchCreateDesc.oShaderSources[0];
+		oMap[VK_SHADER_STAGE_FRAGMENT_BIT] = oBatchCreateDesc.oShaderSources[1];
+		oPipelineDesc.pInputDatas = DescriptorLayoutWrapper::ParseShaderFiles(oMap, pWrapper->GetModifiableDevice());
+		oPipelineDesc.pRenderPass = m_pRenderpass;
+		oPipelineDesc.pWrapper = pWrapper;
+
+		Pipeline* pPipeline = new Pipeline(oPipelineDesc);
+		m_oBatches[i]->SetPipeline(pPipeline);
 	}
 }
