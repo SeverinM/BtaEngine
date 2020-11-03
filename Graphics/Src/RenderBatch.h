@@ -14,15 +14,19 @@ public:
 		RenderPass* pRenderpass;
 		Pipeline* pPipeline;
 		CommandFactory* pFactory;
-		uint32_t eFlags;
 		GraphicWrapper* pWrapper;
 		RenderBatch* pNext;
 	};
 	RenderBatch(Desc& oDesc);
+	~RenderBatch();
+
 	VkCommandBuffer* GetDrawCommand(Framebuffer* pFramebuffer);
 	inline void MarkAsDirty() { m_bDirty = true; }
 	void AddMesh(Mesh* pMesh, DescriptorSetWrapper* pWrapper);
 	inline DescriptorSetWrapper* GetDescriptor(Mesh* pMesh) { if (m_oEntities.count(pMesh) == 0) return nullptr; return m_oEntities[pMesh]; }
+	uint64_t GetVerticesCount();
+	uint64_t GetInstancesCount();
+	void SetNext(RenderBatch* pBatch) { m_pNext = pBatch; }
 
 protected :
 	bool m_bDirty;
@@ -30,7 +34,6 @@ protected :
 
 	void ReconstructCommand(Framebuffer* pFramebuffer);
 	void ChainSubpass(VkCommandBuffer* pBuffer);
-	uint32_t m_eFlag;
 	GraphicWrapper* m_pWrapper;
 	CommandFactory* m_pFactory;
 	RenderPass* m_pRenderpass;
@@ -38,6 +41,33 @@ protected :
 	RenderBatch* m_pNext;
 
 	std::unordered_map<Mesh*, DescriptorSetWrapper*> m_oEntities;
+};
+
+class RenderBatchesHandler
+{
+public:
+	struct CreationBatchDesc
+	{
+		std::vector<std::string> oShaderCompiled;
+		bool bWriteDepth;
+		bool bTestDepth;
+		std::vector<std::string> oShaderSources;
+	};
+
+	struct Desc
+	{
+		std::vector<CreationBatchDesc> oBatches;
+		RenderPass* m_pPass;
+		GraphicWrapper* pWrapper;
+		VkSampleCountFlagBits eSamples;
+		CommandFactory* pFactory;
+	};
+	RenderBatchesHandler(Desc& oDesc);
+	VkCommandBuffer* GetCommand(Framebuffer* pFramebuffer) { return m_oBatches[0]->GetDrawCommand(pFramebuffer); }
+
+protected:
+	std::vector<Pipeline*> m_oPipelines;
+	std::vector<RenderBatch*> m_oBatches;
 };
 
 #endif

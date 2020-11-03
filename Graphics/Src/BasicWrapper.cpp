@@ -256,6 +256,7 @@ void BasicWrapper::FillDescriptorsBuffer()
 	pRenderSky->FillSlot(0, pBuffer);
 
 	glm::mat4 mMat = glm::mat4(1.0f);
+	mMat = glm::scale(mMat, glm::vec3(10.0f));
 	pBuffer->CopyFromMemory(&mMat, m_pDevice, 0, sizeof(glm::mat4));
 	pBuffer->CopyFromMemory(&m_pCamera->GetProjectionMatrix(),m_pDevice, sizeof(glm::mat4), sizeof(glm::mat4));
 
@@ -380,7 +381,7 @@ void BasicWrapper::InitFramebuffer()
 
 bool BasicWrapper::Render(SyncObjects* pSync)
 {
-	//m_pRenderModel->GetModels()[1]->Rotate(glm::vec3(0, 0, 1), 0.1f);
+	m_pMesh->GetModels()[1]->Rotate(glm::vec3(0, 0, 1), 0.1f);
 
 	auto start = std::chrono::system_clock::now();
 	VkResult eResult = VK_SUCCESS;
@@ -472,8 +473,8 @@ void BasicWrapper::RenderGui(BasicWrapper* pWrapper)
 
 	ImGui::Begin("Bta Debug");
 	ImGui::Text("FPS : %i", (int)(1.0f / Graphics::Globals::s_fElapsed));
-	//ImGui::Text("Instances rendered : %i", pWrapper->m_iInstanceCount);
-	//ImGui::Text("Vertices count : %i", pWrapper->m_iVerticesCount);
+	ImGui::Text("Instances rendered : %i", pWrapper->m_pBatch->GetInstancesCount() + pWrapper->m_pBatchSky->GetInstancesCount());
+	ImGui::Text("Vertices count : %i", pWrapper->m_pBatch->GetVerticesCount() + pWrapper->m_pBatchSky->GetVerticesCount());
 	ImGui::Text("Camera position : %f / %f / %f", vPos.x, vPos.y, vPos.z);
 	ImGui::Text("Camera forward : %f / %f / %f", vForward.x, vForward.y, vForward.z);
 	ImGui::SliderFloat("Move speed camera", &pWrapper->m_pCamera->GetModifiableMoveSpeed(), 1.0f, 100.0f);
@@ -496,21 +497,21 @@ void BasicWrapper::RecreateSwapChain()
 	m_oAllDepths.clear();
 	m_oAllMultisample.clear();
 
+	delete m_pBatch;
+	delete m_pBatchSky;
+
 	for (Framebuffer* pFramebuffer : m_oFramebuffers)
 	{
 		delete pFramebuffer;
 	}
 	m_oFramebuffers.clear();
 
-	//vkFreeCommandBuffers(*m_pDevice->GetLogicalDevice(), *m_pFactory->GetCommandPool(), m_oAllDrawCommands.size(), m_oAllDrawCommands.data());
 
 	delete m_pPipeline;
 	delete m_pSkyboxPipeline;
 	delete m_pRenderpass;
 	delete m_pSwapchain;
 
-	//delete m_pInputDatas;
-	//delete m_pInputDatasSky;
 	delete m_pPool;
 	delete m_pImGui;
 
@@ -524,10 +525,9 @@ BasicWrapper::~BasicWrapper()
 {
 	delete m_pSwapchain;
 	delete m_pRenderpass;
-	//delete m_pInputDatas;
-	//delete m_pInputDatasSky;
+	delete m_pBatch;
+	delete m_pBatchSky;
 
-	//vkFreeCommandBuffers(*m_pDevice->GetLogicalDevice(), *m_pFactory->GetCommandPool(), m_oAllDrawCommands.size(), m_oAllDrawCommands.data());
 	delete m_pPool;
 	delete m_pPipeline;
 	delete m_pSkyboxPipeline;

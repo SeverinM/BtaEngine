@@ -151,6 +151,7 @@ Image* Image::CreateFromFile(std::string sFilename, FromFileDesc& oDesc)
 
 	BasicBuffer* pBasicBuffer = new BasicBuffer(oBufferDesc);
 	pBasicBuffer->CopyFromMemory(pPixels, oDesc.pWrapper->GetModifiableDevice());
+	stbi_image_free(pPixels);
 
 	Image::Desc oImgDesc;
 	oImgDesc.iHeight = iHeight;
