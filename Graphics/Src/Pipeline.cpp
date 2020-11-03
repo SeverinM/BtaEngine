@@ -40,7 +40,7 @@ Pipeline::Pipeline(Desc& oDesc)
 
 void Pipeline::Create(Desc& oDesc)
 {
-	m_oDescriptorSetLayout = { *oDesc.pInputDatas->GetLayout() };
+	m_pDescriptorLayout = oDesc.pInputDatas;
 	CreatePipelineLayout(oDesc);
 
 	VkPipelineShaderStageCreateInfo oVertexInfos{};
@@ -186,8 +186,8 @@ void Pipeline::CreatePipelineLayout(Desc& oDesc)
 {
 	VkPipelineLayoutCreateInfo oPipelineLayoutInfo{};
 	oPipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	oPipelineLayoutInfo.setLayoutCount = m_oDescriptorSetLayout.size();
-	oPipelineLayoutInfo.pSetLayouts = m_oDescriptorSetLayout.data();
+	oPipelineLayoutInfo.setLayoutCount = 1;
+	oPipelineLayoutInfo.pSetLayouts = m_pDescriptorLayout->GetLayout();
 
 	if (vkCreatePipelineLayout(*oDesc.pWrapper->GetDevice()->GetLogicalDevice(), &oPipelineLayoutInfo, nullptr, &m_oPipelineLayout) != VK_SUCCESS)
 	{

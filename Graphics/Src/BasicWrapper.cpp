@@ -151,53 +151,53 @@ void BasicWrapper::CreateRenderPass()
 
 void BasicWrapper::CreateGraphicPipeline()
 {
-	VkVertexInputBindingDescription oBinding;
-	std::vector<VkVertexInputAttributeDescription> oAttributes;
-	Pipeline::FillVerticesDescription(oBinding, oAttributes, "./Shader/Src/vs.vert");
+	RenderBatchesHandler::CreationBatchDesc oCreationBatch;
+	oCreationBatch.bTestDepth = true;
+	oCreationBatch.bWriteDepth = true;
+	oCreationBatch.oShaderCompiled = { "./Shader/vert.spv","./Shader/frag.spv" };
+	oCreationBatch.oShaderSources = { "./Shader/Src/vs.vert", "./Shader/Src/fs.frag" };
 
-
-	DescriptorLayoutWrapper::ShaderMap oMap;
-	oMap[VK_SHADER_STAGE_VERTEX_BIT] = "./Shader/Src/vs.vert";
-	oMap[VK_SHADER_STAGE_FRAGMENT_BIT] = "./Shader/Src/fs.frag";
-	m_pPrototype = DescriptorLayoutWrapper::ParseShaderFiles(oMap, m_pDevice);
-
-	//Skybox
-	oMap[VK_SHADER_STAGE_VERTEX_BIT] = "./Shader/Skybox/Src/vs.vert";
-	oMap[VK_SHADER_STAGE_FRAGMENT_BIT] = "./Shader/Skybox/Src/fs.frag";
-	m_pPrototypeSky = DescriptorLayoutWrapper::ParseShaderFiles(oMap, m_pDevice);
-
-	//Create pipeline
-	Pipeline::Desc oDesc;
-	oDesc.pInputDatas = m_pPrototype;
-	oDesc.bEnableDepth = true;
-	oDesc.bEnableTransparent = false;
-	oDesc.eSample = VK_SAMPLE_COUNT_8_BIT;
-	oDesc.oBindingDescription = oBinding;
-	oDesc.oAttributeDescriptions = oAttributes;
-	oDesc.oShaderFilenames = { "./Shader/vert.spv", "./Shader/frag.spv" };
-	oDesc.pWrapper = this;
-	oDesc.pRenderPass = m_pRenderpass;
-	oDesc.iSubPassIndex = 1;
-	m_pPipeline = new Pipeline(oDesc);
-
-	//SkyboxPipeline
-	oDesc.iSubPassIndex = 0;
-	oDesc.oShaderFilenames = { "./Shader/Skybox/vert.spv", "./Shader/Skybox/frag.spv" };
-	oDesc.bEnableDepth = false;
-	oDesc.eSample = VK_SAMPLE_COUNT_8_BIT;
-	oDesc.iSubPassIndex = 0;
-	oDesc.pInputDatas = m_pPrototypeSky;
-	m_pSkyboxPipeline = new Pipeline(oDesc);
-
+	RenderBatchesHandler::CreationBatchDesc oCreationBatchSky;
+	oCreationBatchSky.bTestDepth = false;
+	oCreationBatchSky.bWriteDepth = false;
+	oCreationBatchSky.oShaderCompiled = { "./Shader/Skybox/vert.spv","./Shader/Skybox/frag.spv" };
+	oCreationBatchSky.oShaderSources = { "./Shader/Skybox/Src/vs.vert", "./Shader/Skybox/Src/fs.frag" };
 	
+	RenderBatchesHandler::Desc oBatchesHandler;
+	oBatchesHandler.eSamples = VK_SAMPLE_COUNT_8_BIT;
+	oBatchesHandler.m_pPass = m_pRenderpass;
+	oBatchesHandler.pWrapper = this;
+	oBatchesHandler.pFactory = m_pFactory;
+	oBatchesHandler.oBatches = { oCreationBatchSky, oCreationBatch };
+	m_pHandler = new RenderBatchesHandler(oBatchesHandler);
+
 	DescriptorPool::Desc oDescPool;
 	oDescPool.iImageCount = m_pSwapchain->GetImageViews().size();
 	oDescPool.iSize = 1000;
 	oDescPool.pWrapper = this;
 	m_pPool = new DescriptorPool(oDescPool);
 
+	Mesh::Desc oMeshDesc;
+	oMeshDesc.pFactory = m_pFactory;
+	oMeshDesc.pWrapper = this;
+	oMeshDesc.sFilenameModel = "./Models/viking_room.obj";
+	oMeshDesc.oModels = { std::shared_ptr<Transform>(new Transform()), std::shared_ptr<Transform>(new Transform()) };
+	oMeshDesc.oModels[1]->SetPosition(glm::vec3(2.5f, 0, 0), true);
+	oMeshDesc.eFlag = Mesh::eVerticesAttributes::E_UV | Mesh::eVerticesAttributes::E_POSITIONS;
+
+	m_pMesh = new Mesh(oMeshDesc);
+	m_pMesh->ConvertToVerticesBuffer(m_pMesh->GetBufferFlags(), true, oMeshDesc.pWrapper);
+	m_pHandler->AddMesh(m_pMesh, 1,m_pPool);
+
+	oMeshDesc.sFilenameModel = { "./Models/cube.obj" };
+	oMeshDesc.oModels = { std::shared_ptr<Transform>(new Transform()) };
+	oMeshDesc.eFlag = Mesh::eVerticesAttributes::E_POSITIONS;
+
+	m_pMeshSky = new Mesh(oMeshDesc);
+	m_pMeshSky->ConvertToVerticesBuffer(m_pMeshSky->GetBufferFlags(), true, this);
+	m_pHandler->AddMesh(m_pMeshSky, 0, m_pPool);
+
 	InitFramebuffer();
-	InitBatch();
 	FillDescriptorsBuffer();
 }
 
@@ -207,7 +207,7 @@ void BasicWrapper::FillDescriptorsBuffer()
 	std::shared_ptr<BasicBuffer> xVPMatrice(m_pCamera->GetVPMatriceBuffer());
 	xVPMatrice->CopyFromMemory(oVP.data(), GetModifiableDevice());
 	
-	DescriptorSetWrapper* pMainRender = m_pBatch->GetDescriptor(m_pMesh);
+	DescriptorSetWrapper* pMainRender = m_pHandler->GetRenderBatch(1)->GetDescriptor(m_pMesh);
 
 	//0 -> Uniform buffer
 	pMainRender->FillSlot(0, m_pCamera->GetVPMatriceBuffer().get());
@@ -242,7 +242,7 @@ void BasicWrapper::FillDescriptorsBuffer()
 	std::string sFilenames[6] = { "./Textures/bkg1_back.png", "./Textures/bkg1_bot.png", "./Textures/bkg1_front.png", "./Textures/bkg1_left.png", "./Textures/bkg1_right.png", "./Textures/bkg1_top.png" };
 	Image* pImage = Image::CreateCubeMap(sFilenames, oFileDescSky);
 
-	DescriptorSetWrapper* pRenderSky = m_pBatchSky->GetDescriptor(m_pMeshSky);
+	DescriptorSetWrapper* pRenderSky = m_pHandler->GetRenderBatch(0)->GetDescriptor(m_pMeshSky);
 
 	//0 -> Uniform Buffer
 	BasicBuffer::Desc oBuffer;
@@ -256,7 +256,6 @@ void BasicWrapper::FillDescriptorsBuffer()
 	pRenderSky->FillSlot(0, pBuffer);
 
 	glm::mat4 mMat = glm::mat4(1.0f);
-	mMat = glm::scale(mMat, glm::vec3(10.0f));
 	pBuffer->CopyFromMemory(&mMat, m_pDevice, 0, sizeof(glm::mat4));
 	pBuffer->CopyFromMemory(&m_pCamera->GetProjectionMatrix(),m_pDevice, sizeof(glm::mat4), sizeof(glm::mat4));
 
@@ -285,44 +284,6 @@ void BasicWrapper::CreateCommandBuffer()
 
 void BasicWrapper::InitBatch()
 {
-	RenderBatch::Desc oDesc;
-	oDesc.pFactory = m_pFactory;
-	oDesc.pPipeline = m_pPipeline;
-	oDesc.pRenderpass = m_pRenderpass;
-	oDesc.pNext = nullptr;
-	oDesc.pWrapper = this;
-
-	m_pBatch = new RenderBatch(oDesc);
-
-	RenderBatch::Desc oDescSky;
-	oDescSky.pFactory = m_pFactory;
-	oDescSky.pPipeline = m_pSkyboxPipeline;
-	oDescSky.pRenderpass = m_pRenderpass;
-	oDescSky.pWrapper = this;
-	oDescSky.pNext = m_pBatch;
-
-	m_pBatchSky = new RenderBatch(oDescSky);
-
-	Mesh::Desc oMeshDesc;
-	oMeshDesc.pFactory = m_pFactory;
-	oMeshDesc.pWrapper = this;
-	oMeshDesc.sFilenameModel = "./Models/viking_room.obj";
-	oMeshDesc.oModels = { std::shared_ptr<Transform>( new Transform() ), std::shared_ptr<Transform>(new Transform()) };
-	oMeshDesc.oModels[1]->SetPosition(glm::vec3(2.5f, 0, 0), true);
-	oMeshDesc.eFlag = Mesh::eVerticesAttributes::E_UV | Mesh::eVerticesAttributes::E_POSITIONS;
-
-	m_pMesh = new Mesh(oMeshDesc);
-	m_pMesh->ConvertToVerticesBuffer(m_pMesh->GetBufferFlags(), true, oMeshDesc.pWrapper);
-	m_pBatch->AddMesh(m_pMesh, m_pPrototype->InstantiateDescriptorSet(*m_pPool, *m_pDevice));
-
-	oMeshDesc.sFilenameModel = { "./Models/cube.obj" };
-	oMeshDesc.oModels = { std::shared_ptr<Transform>(new Transform() )};
-	oMeshDesc.oModels[0]->SetScale(glm::vec3(3.0f));
-	
-	m_pMeshSky = new Mesh(oMeshDesc);
-	m_pMeshSky->ConvertToVerticesBuffer(m_pMeshSky->GetBufferFlags(), true, oDesc.pWrapper);
-	m_pBatchSky->AddMesh(m_pMeshSky, m_pPrototypeSky->InstantiateDescriptorSet(*m_pPool, *m_pDevice));
-
 	std::cout << "vertex buffer created" << std::endl;
 }
 
@@ -420,7 +381,7 @@ bool BasicWrapper::Render(SyncObjects* pSync)
 		oSubmit.pWaitSemaphores = &pSync->GetImageAcquiredSemaphore()[pSync->GetFrame()];
 		VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 
-		std::vector<VkCommandBuffer> oCmds = { *m_pBatchSky->GetDrawCommand( m_oFramebuffers[iImageIndex] ), *m_pImGui->GetDrawCommand(oDesc) };
+		std::vector<VkCommandBuffer> oCmds = { *m_pHandler->GetCommand( m_oFramebuffers[iImageIndex] ), *m_pImGui->GetDrawCommand(oDesc) };
 		oSubmit.pWaitDstStageMask = waitStages;
 		oSubmit.commandBufferCount = oCmds.size();
 		oSubmit.pCommandBuffers = oCmds.data();
@@ -473,8 +434,8 @@ void BasicWrapper::RenderGui(BasicWrapper* pWrapper)
 
 	ImGui::Begin("Bta Debug");
 	ImGui::Text("FPS : %i", (int)(1.0f / Graphics::Globals::s_fElapsed));
-	ImGui::Text("Instances rendered : %i", pWrapper->m_pBatch->GetInstancesCount() + pWrapper->m_pBatchSky->GetInstancesCount());
-	ImGui::Text("Vertices count : %i", pWrapper->m_pBatch->GetVerticesCount() + pWrapper->m_pBatchSky->GetVerticesCount());
+	ImGui::Text("Instances rendered : %i", pWrapper->m_pHandler->GetInstancesCount() + pWrapper->m_pHandler->GetInstancesCount());
+	ImGui::Text("Vertices count : %i", pWrapper->m_pHandler->GetVerticesCount() + pWrapper->m_pHandler->GetVerticesCount());
 	ImGui::Text("Camera position : %f / %f / %f", vPos.x, vPos.y, vPos.z);
 	ImGui::Text("Camera forward : %f / %f / %f", vForward.x, vForward.y, vForward.z);
 	ImGui::SliderFloat("Move speed camera", &pWrapper->m_pCamera->GetModifiableMoveSpeed(), 1.0f, 100.0f);
@@ -497,18 +458,12 @@ void BasicWrapper::RecreateSwapChain()
 	m_oAllDepths.clear();
 	m_oAllMultisample.clear();
 
-	delete m_pBatch;
-	delete m_pBatchSky;
-
 	for (Framebuffer* pFramebuffer : m_oFramebuffers)
 	{
 		delete pFramebuffer;
 	}
 	m_oFramebuffers.clear();
 
-
-	delete m_pPipeline;
-	delete m_pSkyboxPipeline;
 	delete m_pRenderpass;
 	delete m_pSwapchain;
 
@@ -525,12 +480,8 @@ BasicWrapper::~BasicWrapper()
 {
 	delete m_pSwapchain;
 	delete m_pRenderpass;
-	delete m_pBatch;
-	delete m_pBatchSky;
 
 	delete m_pPool;
-	delete m_pPipeline;
-	delete m_pSkyboxPipeline;
 	delete m_pFactory;
 
 	m_oAllDepths.clear();

@@ -169,13 +169,15 @@ void RenderBatch::ChainSubpass(VkCommandBuffer* pBuffer)
 
 RenderBatchesHandler::RenderBatchesHandler(Desc& oDesc)
 {
+	m_pDevice = oDesc.pWrapper->GetModifiableDevice();
 	int i = 0;
 	for (CreationBatchDesc& oBatchDesc : oDesc.oBatches)
 	{
 		Pipeline::Desc oPipelineDesc;
-		oPipelineDesc.oShaderFilenames = oBatchDesc.oShaderSources;
+		oPipelineDesc.oShaderFilenames = oBatchDesc.oShaderCompiled;
 		Pipeline::FillVerticesDescription(oPipelineDesc.oBindingDescription, oPipelineDesc.oAttributeDescriptions, oBatchDesc.oShaderSources[0]);
-		oPipelineDesc.bEnableDepth = oPipelineDesc.bEnableTransparent = true;
+		oPipelineDesc.bEnableDepth = oBatchDesc.bTestDepth;
+		oPipelineDesc.bEnableTransparent = false;
 		oPipelineDesc.eSample = oDesc.eSamples;
 		oPipelineDesc.iSubPassIndex = i;
 
@@ -193,6 +195,7 @@ RenderBatchesHandler::RenderBatchesHandler(Desc& oDesc)
 		oBatchDesc.pRenderpass = oDesc.m_pPass;
 		oBatchDesc.pPipeline = m_oPipelines[m_oPipelines.size() - 1];
 		oBatchDesc.pFactory = oDesc.pFactory;
+		oBatchDesc.pNext = nullptr;
 
 		m_oBatches.push_back(new RenderBatch(oBatchDesc));
 
@@ -202,5 +205,16 @@ RenderBatchesHandler::RenderBatchesHandler(Desc& oDesc)
 		}
 
 		i++;
+	}
+}
+
+void RenderBatchesHandler::AddMesh(Mesh* pMesh, int iIndex, DescriptorPool* pPool)
+{
+	Pipeline* pPipeline = GetPipeline(iIndex);
+	RenderBatch* pBatch = GetRenderBatch(iIndex);
+
+	if (pPipeline != nullptr && pBatch != nullptr)
+	{
+		pBatch->AddMesh(pMesh, pPipeline->GetDescriptorSetLayout()->InstantiateDescriptorSet(*pPool, *m_pDevice));
 	}
 }

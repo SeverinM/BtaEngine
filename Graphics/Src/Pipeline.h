@@ -30,13 +30,13 @@ public:
 	void CreatePipelineLayout(Desc& oDesc);
 
 	VkPipelineLayout* GetPipelineLayout() { return &m_oPipelineLayout; }
-	const std::vector< VkDescriptorSetLayout >& GetDescriptorSetLayout() { return m_oDescriptorSetLayout; }
+	DescriptorLayoutWrapper* GetDescriptorSetLayout() { return m_pDescriptorLayout; }
 	VkPipeline* GetPipeline() { return &m_oPipeline; }
 
 	static void FillVerticesDescription(VkVertexInputBindingDescription& oBindingDescription, std::vector<VkVertexInputAttributeDescription>& oAttributeDescription, std::string sFilename);
 
 private:
-	std::vector< VkDescriptorSetLayout > m_oDescriptorSetLayout;
+	DescriptorLayoutWrapper* m_pDescriptorLayout;
 	VkPipelineLayout m_oPipelineLayout;
 	VkPipeline m_oPipeline;
 	Desc* m_pRecreate;

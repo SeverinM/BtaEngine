@@ -19,6 +19,7 @@ class CommandFactory;
 class RenderPass;
 class InputHandling;
 class RenderBatch;
+class RenderBatchesHandler;
 
 class BasicWrapper : public GraphicWrapper
 {
@@ -51,16 +52,13 @@ public :
 	virtual ~BasicWrapper();
 
 	const Swapchain* const GetSwapchain() const { return m_pSwapchain; }
-	Pipeline* GetPipeline() const { return m_pPipeline; }
 
 protected:
 	Camera* m_pCamera;
 	Swapchain* m_pSwapchain;
 	RenderPass* m_pRenderpass;
-	Pipeline* m_pPipeline;
 	CommandFactory* m_pFactory;
 	DescriptorPool* m_pPool;
-	Pipeline* m_pSkyboxPipeline;
 	ImGuiWrapper* m_pImGui;
 	InputHandling* m_pHandling;
 
@@ -69,11 +67,7 @@ protected:
 
 	static bool s_bFramebufferResized;
 
-	RenderBatch* m_pBatch;
-	RenderBatch* m_pBatchSky;
-
-	DescriptorLayoutWrapper* m_pPrototype;
-	DescriptorLayoutWrapper* m_pPrototypeSky;
+	RenderBatchesHandler* m_pHandler;
 
 	std::vector< std::shared_ptr<Image> > m_oAllDepths;
 	std::vector< std::shared_ptr<Image> > m_oAllMultisample;

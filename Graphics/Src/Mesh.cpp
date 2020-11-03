@@ -17,25 +17,6 @@ Mesh::Mesh(Desc& oDesc)
 	oTexDesc.pFactory = oDesc.pFactory;
 	oTexDesc.pWrapper = oDesc.pWrapper;
 
-	/*for (std::string& sFilename : oDesc.oFilenamesTextures)
-	{
-		Image* pImage = Image::CreateFromFile(sFilename, oTexDesc);
-		m_oTextures.push_back(std::shared_ptr<Image>(pImage));
-
-		Image::MipDesc oMipDesc;
-		oMipDesc.eFormat = oTexDesc.eFormat;
-		oMipDesc.pWrapper = oDesc.pWrapper;
-		oMipDesc.pFactory = oDesc.pFactory;
-		if (oTexDesc.bEnableMip)
-		{
-			pImage->GenerateMipsInterface(oMipDesc);
-		}
-		else
-		{
-			pImage->TransitionLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, oDesc.pFactory, 1);
-		}
-	}*/
-
 	//Load vertices
 	if (oDesc.oPositions.size() > 0)
 	{
