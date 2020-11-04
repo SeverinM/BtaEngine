@@ -8,6 +8,9 @@ class Transform
 {
 protected:
 	glm::mat4 m_mModel;
+	std::shared_ptr<Transform> m_xParent;
+	std::vector<std::shared_ptr<Transform>> m_oChilds;
+
 public:
 	Transform(glm::mat4& mInitialModel);
 	Transform();
@@ -20,6 +23,8 @@ public:
 	glm::vec3 GetRight() const;
 	glm::vec3 GetPosition() const;
 	inline glm::mat4 GetModelMatrix() const{ return m_mModel;}
+	void SetParent(std::shared_ptr<Transform> xParent);
+	void AddChild(std::shared_ptr<Transform> xChild);
 };
 
 class BufferedTransform : public Transform

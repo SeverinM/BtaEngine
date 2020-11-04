@@ -56,7 +56,8 @@ class Image : public Buffer
 public:
 	struct Desc
 	{
-		Desc() : eSampleFlag(VK_SAMPLE_COUNT_1_BIT), eFormat(VK_FORMAT_R8G8B8A8_SRGB), eTiling(VK_IMAGE_TILING_OPTIMAL), iLayerCount(1), bEnableMip(false), bIsCubemap(false) {}
+		Desc() : eSampleFlag(VK_SAMPLE_COUNT_1_BIT), eFormat(VK_FORMAT_R8G8B8A8_SRGB), eTiling(VK_IMAGE_TILING_OPTIMAL), iLayerCount(1), bEnableMip(false), bIsCubemap(false), 
+		iWidth(0), iHeight(0),pWrapper(nullptr), pFactory(nullptr),eUsage(VK_BUFFER_USAGE_TRANSFER_SRC_BIT),eProperties(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT), eAspect(VK_IMAGE_ASPECT_COLOR_BIT) {}
 
 		VkSampleCountFlagBits eSampleFlag;
 		GraphicWrapper* pWrapper = nullptr;

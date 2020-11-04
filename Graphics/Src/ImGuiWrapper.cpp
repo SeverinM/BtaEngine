@@ -60,7 +60,7 @@ ImGuiWrapper::ImGuiWrapper(Desc& oDesc)
 	init_info.DescriptorPool = oDesc.pWrapper->m_pPool->GetPool();
 	init_info.Allocator = nullptr;
 	init_info.MinImageCount = 2;
-	init_info.ImageCount = oDesc.pWrapper->m_pSwapchain->GetImageViews().size();
+	init_info.ImageCount = (uint32_t)oDesc.pWrapper->m_pSwapchain->GetImageViews().size();
 	init_info.CheckVkResultFn = ImGuiWrapper::CheckError;
 	ImGui_ImplVulkan_Init(&init_info, *m_pRenderpass->GetRenderPass());
 

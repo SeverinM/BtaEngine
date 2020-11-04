@@ -12,9 +12,9 @@ public:
 	enum E_BINDING_TYPE
 	{
 		E_NONE = 0,
-		E_TEXTURE,
-		E_UNIFORM_BUFFER,
-		E_STORAGE_BUFFER
+		E_TEXTURE = 1,
+		E_UNIFORM_BUFFER = 2,
+		E_STORAGE_BUFFER = 3
 	};
 
 	struct Desc

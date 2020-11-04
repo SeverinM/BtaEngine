@@ -46,6 +46,14 @@ public :
 
 	BasicWrapper(GraphicWrapper::Desc& oDesc)
 	{
+		m_pHandling = nullptr;
+		m_pHandler = nullptr;
+		m_pSwapchain = nullptr;
+		m_pRenderpass = nullptr;
+		m_pPool = nullptr;
+		m_pImGui = nullptr;
+		m_pFactory = nullptr;
+		m_pCamera = nullptr;
 		m_pDesc = &oDesc;
 		m_pDevice = nullptr;
 	}
@@ -62,10 +70,11 @@ protected:
 	ImGuiWrapper* m_pImGui;
 	InputHandling* m_pHandling;
 
-	Mesh* m_pMesh;
-	Mesh* m_pMeshSky;
+	Mesh::StrongPtr m_xMesh;
+	Mesh::StrongPtr m_xMeshSky;
 
 	static bool s_bFramebufferResized;
+	bool m_bAdd;
 
 	RenderBatchesHandler* m_pHandler;
 

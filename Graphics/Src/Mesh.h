@@ -9,11 +9,13 @@
 #include <string>
 #include <unordered_map>
 #include "Transform.h"
+#include <memory>
 
 class Mesh
 {
 public:
 
+	typedef std::shared_ptr<Mesh> StrongPtr;
 	typedef uint32_t BufferElementsFlag;
 	enum eVerticesAttributes
 	{
@@ -44,9 +46,20 @@ public:
 	inline std::shared_ptr<Buffer> GetVerticesBuffer() { return m_xCachedVerticesBuffer; }
 	inline std::shared_ptr<Buffer> GetIndexesBuffer() { return m_xCachedIndexesBuffer; }
 	inline std::shared_ptr<BasicBuffer> GetModelMatrices() { return m_xAllModelMatrices; }
-	inline std::vector< std::shared_ptr<BufferedTransform>>& GetModels() { return m_oModels; }
-	inline uint64_t GetVerticeCount() { return m_oPositions.size(); }
-	inline int GetInstanceCount() { return m_oModels.size(); }
+	inline std::vector< std::shared_ptr<BufferedTransform>> GetModels() { return m_oModels; }
+	inline size_t GetVerticeCount() { return m_oPositions.size(); }
+	inline size_t GetInstanceCount() { return m_oModels.size(); }
+	void SetTransforms(std::vector< std::shared_ptr<BufferedTransform>> oValues, GraphicWrapper* pWrapper)
+	{
+		std::vector<std::shared_ptr< Transform >> oTrsfs;
+		for (std::shared_ptr<BufferedTransform> xTrsf : oValues)
+		{
+			oTrsfs.push_back(std::static_pointer_cast<Transform>(xTrsf));
+		}
+
+		m_xAllModelMatrices = BufferedTransform::MergeTransform(oTrsfs, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, pWrapper, m_oModels);
+	}
+	inline std::vector< std::shared_ptr<BufferedTransform>> GetTransforms() { return m_oModels; }
 
 	BufferElementsFlag GetBufferFlags();
 

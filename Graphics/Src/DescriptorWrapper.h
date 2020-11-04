@@ -17,7 +17,7 @@ class DescriptorSetWrapper
 public:
 	struct MemorySlot
 	{
-		MemorySlot() : pData(nullptr) {};
+		MemorySlot() : pData(nullptr), eType(DescriptorPool::E_NONE), sTag(""){};
 		Buffer* pData;
 		DescriptorPool::E_BINDING_TYPE eType;
 		std::vector<size_t> oElementsSize;
@@ -33,10 +33,11 @@ public:
 protected:
 	DescriptorPool* m_pPool;
 	GraphicDevice* m_pDevice;
-	DescriptorSetWrapper() {};
+	DescriptorSetWrapper() : m_pPool(nullptr), m_pDevice(nullptr), m_pLayoutFrom(nullptr){};
 	std::vector<MemorySlot> m_oSlots;
-	VkDescriptorSet m_oSet;
+	VkDescriptorSet m_oSet{};
 	VkDescriptorSetLayout* m_pLayoutFrom;
+	bool m_bDelete;
 };
 
 class DescriptorLayoutWrapper
@@ -47,10 +48,7 @@ public:
 	typedef std::vector<size_t> BindingSizes;
 	struct Bindings
 	{
-		Bindings()
-		{
-			eType = DescriptorPool::E_NONE;
-		};
+		Bindings() : eType(DescriptorPool::E_NONE), eStages(VK_SAMPLE_COUNT_1_BIT), oAllSizes(0), sTag("") {};
 		DescriptorPool::E_BINDING_TYPE eType;
 		VkShaderStageFlags eStages;
 		BindingSizes oAllSizes;

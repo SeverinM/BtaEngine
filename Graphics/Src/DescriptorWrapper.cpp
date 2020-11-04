@@ -24,7 +24,7 @@ DescriptorLayoutWrapper::DescriptorLayoutWrapper(std::vector<Bindings>& oBinding
 
 	VkDescriptorSetLayoutCreateInfo oLayoutCreateInfo{};
 	oLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	oLayoutCreateInfo.bindingCount = oDescriptorBindings.size();
+	oLayoutCreateInfo.bindingCount = (uint32_t)oDescriptorBindings.size();
 	oLayoutCreateInfo.pBindings = oDescriptorBindings.data();
 
 	m_pLayout = new VkDescriptorSetLayout();
@@ -49,10 +49,12 @@ DescriptorSetWrapper* DescriptorLayoutWrapper::InstantiateDescriptorSet(Descript
 		DescriptorSetWrapper::MemorySlot oSlot;
 		oSlot.eType = oBinding.eType;
 		oSlot.pData = nullptr;
+		oSlot.sTag = oBinding.sTag;
 		oSlot.oElementsSize = oBinding.oAllSizes;
 		pDescriptor->m_oSlots.push_back(oSlot);
 	}
 
+	pDescriptor->m_bDelete = false;
 	pDescriptor->m_pPool = &oPool;
 	pDescriptor->m_pDevice = &oDevice;
 	oPool.CreateDescriptorSet(pDescriptor->m_oSet, *m_pLayout);
@@ -92,7 +94,8 @@ DescriptorLayoutWrapper* DescriptorLayoutWrapper::ParseShaderFiles(ShaderMap& oM
 		{
 			if (oBindings.size() <= oPair.first)
 			{
-				oBindings.resize(oPair.first + 1);
+				int iNewSize = oPair.first + 1;
+				oBindings.resize(iNewSize);
 
 				oPair.second.eStages = oParse.first;
 				oBindings[oPair.first] = oPair.second;
@@ -225,6 +228,12 @@ bool DescriptorSetWrapper::FillSlotAtTag(Buffer* pBuffer, std::string sTag)
 
 void DescriptorSetWrapper::CommitSlots(DescriptorPool* pPool)
 {
+	if (m_bDelete)
+	{
+		vkFreeDescriptorSets(*m_pDevice->GetLogicalDevice(), pPool->GetPool(), 1, &m_oSet);
+		pPool->CreateDescriptorSet(m_oSet, *m_pLayoutFrom);
+	}
+
 	for (MemorySlot& oSlot : m_oSlots)
 	{
 		if (oSlot.pData == nullptr)
@@ -234,6 +243,7 @@ void DescriptorSetWrapper::CommitSlots(DescriptorPool* pPool)
 	}
 
 	pPool->WriteDescriptor(this);
+	m_bDelete = true;
 }
 
 DescriptorSetWrapper::~DescriptorSetWrapper()

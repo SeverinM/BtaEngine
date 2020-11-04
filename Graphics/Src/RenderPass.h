@@ -10,10 +10,10 @@ public :
 
 	struct SubDesc
 	{
-		SubDesc() : pDependency(nullptr) {}
-		int iColorAttachmentIndex;
-		int iDepthStencilAttachmentIndex;
-		int iColorResolveAttachmentIndex;
+		SubDesc() : pDependency(nullptr), iDepthStencilAttachmentIndex(-1), iColorResolveAttachmentIndex(-1), iColorAttachmentIndex(-1) {}
+		int iColorAttachmentIndex{};
+		int iDepthStencilAttachmentIndex{};
+		int iColorResolveAttachmentIndex{};
 		VkSubpassDependency* pDependency;
 	};
 

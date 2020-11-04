@@ -11,7 +11,7 @@ class CommandFactory
 public:
 	struct Desc
 	{
-		Desc() : bResettable(false) {};
+		Desc() : bResettable(false), pWrapper(nullptr) {};
 		GraphicWrapper* pWrapper;
 		bool bResettable;
 	};

@@ -127,11 +127,11 @@ void RenderPass::Create(Desc& oDesc)
 		oAttachments.push_back(oColorAttachmentResolve);
 	}
 
-	oRenderPassInfo.attachmentCount = oAttachments.size();
+	oRenderPassInfo.attachmentCount = (uint32_t)oAttachments.size();
 	oRenderPassInfo.pAttachments = oAttachments.data();
-	oRenderPassInfo.subpassCount = oSubpasses.size();
+	oRenderPassInfo.subpassCount =(uint32_t)oSubpasses.size();
 	oRenderPassInfo.pSubpasses = oSubpasses.data();
-	oRenderPassInfo.dependencyCount = oDependencies.size();
+	oRenderPassInfo.dependencyCount = (uint32_t)oDependencies.size();
 	oRenderPassInfo.pDependencies = oDependencies.data();
 
 	if (vkCreateRenderPass(*oDesc.pWrapper->GetDevice()->GetLogicalDevice(), &oRenderPassInfo, nullptr, &m_oRenderpass) != VK_SUCCESS)

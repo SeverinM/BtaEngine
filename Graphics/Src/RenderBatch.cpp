@@ -4,6 +4,7 @@
 
 RenderBatch::RenderBatch(Desc& oDesc)
 {
+	m_bEnabled = true;
 	m_bDirty = false;
 	m_pWrapper = oDesc.pWrapper;
 	m_pFactory = oDesc.pFactory;
@@ -20,7 +21,7 @@ RenderBatch::~RenderBatch()
 			vkFreeCommandBuffers(*m_pWrapper->GetDevice()->GetLogicalDevice(), *m_pFactory->GetCommandPool(), 1, oCmds.second);
 	}
 
-	for (std::pair<Mesh*, DescriptorSetWrapper*> oEntity : m_oEntities)
+	for (std::pair<Mesh::StrongPtr, DescriptorSetWrapper*> oEntity : m_oEntities)
 	{
 		delete oEntity.second;
 	}
@@ -46,8 +47,7 @@ VkCommandBuffer* RenderBatch::GetDrawCommand(Framebuffer* pFramebuffer)
 			vkFreeCommandBuffers(*m_pWrapper->GetDevice()->GetLogicalDevice(), *m_pFactory->GetCommandPool(), 1, m_oCachedCommandBuffer[pFramebuffer]);
 			delete m_oCachedCommandBuffer[pFramebuffer];
 		}
-		else
-			m_oCachedCommandBuffer[pFramebuffer] = m_pFactory->CreateCommand();
+		m_oCachedCommandBuffer[pFramebuffer] = m_pFactory->CreateCommand();
 
 		ReconstructCommand(pFramebuffer);
 		m_bDirty = false;
@@ -55,19 +55,19 @@ VkCommandBuffer* RenderBatch::GetDrawCommand(Framebuffer* pFramebuffer)
 	return m_oCachedCommandBuffer[pFramebuffer];
 }
 
-void RenderBatch::AddMesh(Mesh* pMesh, DescriptorSetWrapper* pWrapper)
+void RenderBatch::AddMesh(Mesh::StrongPtr xMesh, DescriptorSetWrapper* pWrapper)
 {
-	if (m_oEntities.find(pMesh) == m_oEntities.end())
+	if (m_oEntities.find(xMesh) == m_oEntities.end())
 	{
-		m_oEntities[pMesh] = pWrapper;
+		m_oEntities[xMesh] = pWrapper;
 		MarkAsDirty();
 	}
 }
 
-uint64_t RenderBatch::GetVerticesCount()
+size_t RenderBatch::GetVerticesCount()
 {
-	uint64_t iOutput = 0;
-	for (std::pair<Mesh*, DescriptorSetWrapper*> oPair : m_oEntities)
+	size_t iOutput = 0;
+	for (std::pair<Mesh::StrongPtr, DescriptorSetWrapper*> oPair : m_oEntities)
 	{
 		iOutput += oPair.first->GetVerticeCount();
 	}
@@ -77,7 +77,7 @@ uint64_t RenderBatch::GetVerticesCount()
 uint64_t RenderBatch::GetInstancesCount()
 {
 	uint64_t iOutput = 0;
-	for (std::pair<Mesh*, DescriptorSetWrapper*> oPair : m_oEntities)
+	for (std::pair<Mesh::StrongPtr, DescriptorSetWrapper*> oPair : m_oEntities)
 	{
 		iOutput += oPair.first->GetInstanceCount();
 	}
@@ -146,26 +146,30 @@ void RenderBatch::ReconstructCommand(Framebuffer* pFramebuffer)
 
 void RenderBatch::ChainSubpass(VkCommandBuffer* pBuffer)
 {
-	vkCmdBindPipeline(*pBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, *m_pPipeline->GetPipeline());
-
-	for (std::pair<Mesh*, DescriptorSetWrapper*> pEntity : m_oEntities)
+	if (m_bEnabled)
 	{
-		vkCmdBindDescriptorSets(*pBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, *m_pPipeline->GetPipelineLayout(), 0, 1, pEntity.second->GetDescriptorSet(), 0, nullptr);
+		vkCmdBindPipeline(*pBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, *m_pPipeline->GetPipeline());
 
-		VkDeviceSize oOffsets[] = { 0 };
-		std::shared_ptr<BasicBuffer> xBasicBuffer = std::static_pointer_cast<BasicBuffer>(pEntity.first->GetVerticesBuffer());
-		vkCmdBindVertexBuffers(*pBuffer, 0, 1, xBasicBuffer->GetBuffer(), oOffsets);
-
-		if (pEntity.first->GetIndexesBuffer() != nullptr)
+		for (std::pair<Mesh::StrongPtr, DescriptorSetWrapper*> pEntity : m_oEntities)
 		{
-			std::shared_ptr<BasicBuffer> xBasicBufferIndex = std::static_pointer_cast<BasicBuffer>(pEntity.first->GetIndexesBuffer());
-			vkCmdBindIndexBuffer(*pBuffer, *xBasicBufferIndex->GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
+			vkCmdBindDescriptorSets(*pBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, *m_pPipeline->GetPipelineLayout(), 0, 1, pEntity.second->GetDescriptorSet(), 0, nullptr);
 
-			vkCmdDrawIndexed(*pBuffer, pEntity.first->GetIndexesBuffer()->GetUnitCount(), pEntity.first->GetInstanceCount(), 0, 0, 0);
-		}
-		else
-		{
-			vkCmdDraw(*pBuffer, pEntity.first->GetVerticesBuffer()->GetUnitCount(), pEntity.first->GetInstanceCount(), 0, 0);
+			VkDeviceSize oOffsets[] = { 0 };
+			std::shared_ptr<BasicBuffer> xBasicBuffer = std::static_pointer_cast<BasicBuffer>(pEntity.first->GetVerticesBuffer());
+			vkCmdBindVertexBuffers(*pBuffer, 0, 1, xBasicBuffer->GetBuffer(), oOffsets);
+
+			if (pEntity.first->GetIndexesBuffer() != nullptr)
+			{
+				std::shared_ptr<BasicBuffer> xBasicBufferIndex = std::static_pointer_cast<BasicBuffer>(pEntity.first->GetIndexesBuffer());
+				vkCmdBindIndexBuffer(*pBuffer, *xBasicBufferIndex->GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
+
+				size_t iInstanceCount = pEntity.first->GetInstanceCount();
+				vkCmdDrawIndexed(*pBuffer, (uint32_t)pEntity.first->GetIndexesBuffer()->GetUnitCount(), iInstanceCount, 0, 0, 0);
+			}
+			else
+			{
+				vkCmdDraw(*pBuffer, (uint32_t)pEntity.first->GetVerticesBuffer()->GetUnitCount(), (uint32_t)pEntity.first->GetInstanceCount(), 0, 0);
+			}
 		}
 	}
 
@@ -181,7 +185,7 @@ RenderBatchesHandler::RenderBatchesHandler(Desc& oDesc)
 	m_pDevice = oDesc.pWrapper->GetModifiableDevice();
 	int i = 0;
 	m_eSamples = oDesc.eSamples;
-	m_pRenderpass = oDesc.m_pPass;
+	m_pRenderpass = oDesc.pPass;
 	for (CreationBatchDesc& oBatchCreateDesc : oDesc.oBatches)
 	{
 		Pipeline::Desc oPipelineDesc;
@@ -196,14 +200,14 @@ RenderBatchesHandler::RenderBatchesHandler(Desc& oDesc)
 		oMap[VK_SHADER_STAGE_VERTEX_BIT] = oBatchCreateDesc.oShaderSources[0];
 		oMap[VK_SHADER_STAGE_FRAGMENT_BIT] = oBatchCreateDesc.oShaderSources[1];
 		oPipelineDesc.pInputDatas = DescriptorLayoutWrapper::ParseShaderFiles(oMap, oDesc.pWrapper->GetModifiableDevice());
-		oPipelineDesc.pRenderPass = oDesc.m_pPass;
+		oPipelineDesc.pRenderPass = oDesc.pPass;
 		oPipelineDesc.pWrapper = oDesc.pWrapper;
 		
 		Pipeline* pPipeline = new Pipeline(oPipelineDesc);
 
 		RenderBatch::Desc oBatchDesc;
 		oBatchDesc.pWrapper = oDesc.pWrapper;
-		oBatchDesc.pRenderpass = oDesc.m_pPass;
+		oBatchDesc.pRenderpass = oDesc.pPass;
 		oBatchDesc.pPipeline = pPipeline;
 		oBatchDesc.pFactory = oDesc.pFactory;
 		oBatchDesc.pNext = nullptr;
@@ -221,15 +225,20 @@ RenderBatchesHandler::RenderBatchesHandler(Desc& oDesc)
 	}
 }
 
-void RenderBatchesHandler::AddMesh(Mesh* pMesh, int iIndex, DescriptorPool* pPool)
+void RenderBatchesHandler::AddMesh(Mesh::StrongPtr xMesh, int iIndex, DescriptorPool* pPool)
 {
 	Pipeline* pPipeline = GetPipeline(iIndex);
 	RenderBatch* pBatch = GetRenderBatch(iIndex);
 
 	if (pPipeline != nullptr && pBatch != nullptr)
 	{
-		pBatch->AddMesh(pMesh, pPipeline->GetDescriptorSetLayout()->InstantiateDescriptorSet(*pPool, *m_pDevice));
+		pBatch->AddMesh(xMesh, pPipeline->GetDescriptorSetLayout()->InstantiateDescriptorSet(*pPool, *m_pDevice));
 	}
+}
+
+VkCommandBuffer* RenderBatchesHandler::GetCommand(Framebuffer* pFramebuffer)
+{
+	return m_oBatches[0]->GetDrawCommand(pFramebuffer);
 }
 
 void RenderBatchesHandler::ReconstructPipelines(GraphicWrapper* pWrapper)

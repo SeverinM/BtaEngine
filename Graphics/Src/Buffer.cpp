@@ -300,8 +300,8 @@ void Image::TransitionLayout(VkImageLayout eOldLayout, VkImageLayout eNewLayout,
 	oBarrier.subresourceRange.baseArrayLayer = 0;
 	oBarrier.subresourceRange.layerCount = m_bIsCubemap ? 6 : 1;
 	
-	VkPipelineStageFlags oSourceStage;
-	VkPipelineStageFlags oDestinationStage;
+	VkPipelineStageFlags oSourceStage(VK_PIPELINE_STAGE_VERTEX_INPUT_BIT);
+	VkPipelineStageFlags oDestinationStage(VK_PIPELINE_STAGE_VERTEX_INPUT_BIT);
 
 	if (eOldLayout == VK_IMAGE_LAYOUT_UNDEFINED && eNewLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
 	{
@@ -356,7 +356,7 @@ void Image::GenerateMips(MipDesc& oDesc)
 	int32_t iMipWidth = m_iWidth;
 	int32_t iMipHeight = m_iHeight;
 
-	for (uint32_t i = 1; i < m_iMipLevel; i++)
+	for (int i = 1; i < m_iMipLevel; i++)
 	{
 		oBarrier.subresourceRange.baseMipLevel = i - 1;
 		oBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;

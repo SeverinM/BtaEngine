@@ -14,7 +14,7 @@ Framebuffer::Framebuffer(Desc& oDesc)
 
 	//define compatibility
 	oFramebufferInfo.renderPass = *oDesc.pRenderPass->GetRenderPass();
-	oFramebufferInfo.attachmentCount = oDesc.pImageView->size();
+	oFramebufferInfo.attachmentCount = (uint32_t)oDesc.pImageView->size();
 	oFramebufferInfo.pAttachments = oDesc.pImageView->data();
 	oFramebufferInfo.width = iWidth;
 	oFramebufferInfo.height = iHeight;

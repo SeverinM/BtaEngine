@@ -2,7 +2,7 @@
 #include <iostream>
 #include "GLM/gtx/string_cast.hpp"
 
-Transform::Transform(glm::mat4& mInitialModel)
+Transform::Transform(glm::mat4& mInitialModel) : m_xParent(nullptr)
 {
 	m_mModel = mInitialModel;
 }
@@ -14,6 +14,7 @@ Transform::Transform()
 
 void Transform::SetPosition(glm::vec3 vNewPosition, bool bRelative /*= false*/)
 {
+	glm::vec3 vPos = GetPosition();
 	if (!bRelative)
 	{
 		m_mModel[3][0] = 0.0f;
@@ -22,6 +23,11 @@ void Transform::SetPosition(glm::vec3 vNewPosition, bool bRelative /*= false*/)
 	}
 
 	m_mModel = glm::translate(m_mModel, vNewPosition);
+
+	for (std::shared_ptr< Transform> xChild : m_oChilds)
+	{
+		xChild->SetPosition( bRelative ? vPos : GetPosition() - vPos, true);
+	}
 }
 
 void Transform::SetScale(glm::vec3 vNewScale, bool bRelative /*= false*/)
@@ -59,6 +65,29 @@ glm::vec3 Transform::GetPosition() const
 	return glm::vec3(m_mModel[3][0], m_mModel[3][1], m_mModel[3][2]);
 }
 
+void Transform::SetParent(std::shared_ptr<Transform> xParent)
+{
+	if (m_xParent != nullptr)
+	{
+		std::vector< std::shared_ptr<Transform>>::iterator pIt = std::find(m_xParent->m_oChilds.begin(), m_xParent->m_oChilds.end(), std::shared_ptr<Transform>(this));
+		if (pIt != m_xParent->m_oChilds.end())
+			xParent->m_oChilds.erase(pIt);
+	}
+
+	m_xParent = xParent;
+
+	if (xParent != nullptr)
+	{
+		xParent->m_oChilds.push_back(std::shared_ptr<Transform>(this));
+	}
+}
+
+void Transform::AddChild(std::shared_ptr<Transform> xChild)
+{
+	m_oChilds.push_back(xChild);
+	xChild->m_xParent = std::shared_ptr<Transform>(this);
+}
+
 BufferedTransform::BufferedTransform(glm::mat4& mInitialMode, uint64_t iOffset, std::shared_ptr<Buffer> xBuffer, GraphicDevice* pDevice) : Transform(mInitialMode)
 {
 	m_iOffset = iOffset;
@@ -92,11 +121,12 @@ void BufferedTransform::ForceMatrix(glm::mat4 mMatrix)
 
 std::shared_ptr<BasicBuffer> BufferedTransform::MergeTransform(std::vector<std::shared_ptr<Transform>> oTrsf, VkBufferUsageFlags eUsage, GraphicWrapper* pWrapper, std::vector<std::shared_ptr<BufferedTransform>>& oBufferedTransform)
 {
+	oBufferedTransform.clear();
 	BasicBuffer::Desc oDesc;
 	oDesc.eUsage = eUsage;
 	oDesc.oPropertyFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
 	oDesc.iUnitSize = sizeof(glm::mat4);
-	oDesc.iUnitCount = oTrsf.size();
+	oDesc.iUnitCount = (uint32_t)oTrsf.size();
 	oDesc.pWrapper = pWrapper;
 	std::shared_ptr<BasicBuffer> xBuffer = std::shared_ptr<BasicBuffer>( new BasicBuffer(oDesc) );
 	uint64_t iOffset = 0;

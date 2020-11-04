@@ -18,7 +18,7 @@ public:
 	Swapchain(Desc& oDesc);
 	void Create(Desc& oDesc);
 	~Swapchain();
-	int GetNumberImages() const { return m_oImages.size(); }
+	size_t GetNumberImages() const { return m_oImages.size(); }
 	const VkSwapchainKHR* GetSwapchain() const { return &m_oSwapchain; }
 	VkFormat GetFormat() const { return m_eFormat; }
 	std::vector<VkImageView> GetImageViews()const { return m_oViews; }

@@ -15,7 +15,7 @@ int main()
 
 	SyncObjects::Desc oSyncDesc;
 	oSyncDesc.iFrameOnFlight = 2;
-	oSyncDesc.iNumberImages = oWrapper.GetSwapchain()->GetImageViews().size();
+	oSyncDesc.iNumberImages = (int)oWrapper.GetSwapchain()->GetImageViews().size();
 	oSyncDesc.pWrapper = &oWrapper;
 	SyncObjects* pSyncObj = new SyncObjects(oSyncDesc);
 

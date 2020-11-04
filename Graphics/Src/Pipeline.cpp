@@ -72,7 +72,7 @@ void Pipeline::Create(Desc& oDesc)
 
 	oVertexInputInfo.vertexBindingDescriptionCount = 1;
 	oVertexInputInfo.pVertexBindingDescriptions = &oDesc.oBindingDescription;
-	oVertexInputInfo.vertexAttributeDescriptionCount = oDesc.oAttributeDescriptions.size();
+	oVertexInputInfo.vertexAttributeDescriptionCount = (uint32_t)oDesc.oAttributeDescriptions.size();
 	oVertexInputInfo.pVertexAttributeDescriptions = oDesc.oAttributeDescriptions.data();
 
 	VkPipelineInputAssemblyStateCreateInfo oInputVertex{};
@@ -85,8 +85,8 @@ void Pipeline::Create(Desc& oDesc)
 	VkViewport oViewport{};
 	oViewport.x = 0.0f;
 	oViewport.y = 0.0f;
-	oViewport.width = iWidth;
-	oViewport.height = iHeight;
+	oViewport.width = (float)iWidth;
+	oViewport.height = (float)iHeight;
 	oViewport.minDepth = 0.0f;
 	oViewport.maxDepth = 1.0f;
 
@@ -243,7 +243,7 @@ void Pipeline::FillVerticesDescription(VkVertexInputBindingDescription& oBinding
 			{
 				oAttribute.format = VK_FORMAT_R32G32B32A32_SFLOAT;
 			}
-			iOffset += iSize;
+			iOffset += (int)iSize;
 			oAttributeDescription.push_back(oAttribute);
 		}
 	}

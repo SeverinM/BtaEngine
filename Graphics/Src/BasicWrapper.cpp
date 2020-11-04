@@ -17,6 +17,7 @@ bool BasicWrapper::s_bFramebufferResized(false);
 
 void BasicWrapper::CreateInstance()
 {
+	m_bAdd = false;
 	Window::RenderSurface::Init();
 
 	VkApplicationInfo oAppInfo{};
@@ -165,14 +166,14 @@ void BasicWrapper::CreateGraphicPipeline()
 	
 	RenderBatchesHandler::Desc oBatchesHandler;
 	oBatchesHandler.eSamples = VK_SAMPLE_COUNT_8_BIT;
-	oBatchesHandler.m_pPass = m_pRenderpass;
+	oBatchesHandler.pPass = m_pRenderpass;
 	oBatchesHandler.pWrapper = this;
 	oBatchesHandler.pFactory = m_pFactory;
 	oBatchesHandler.oBatches = { oCreationBatchSky, oCreationBatch };
 	m_pHandler = new RenderBatchesHandler(oBatchesHandler);
 
 	DescriptorPool::Desc oDescPool;
-	oDescPool.iImageCount = m_pSwapchain->GetImageViews().size();
+	oDescPool.iImageCount = (int)m_pSwapchain->GetImageViews().size();
 	oDescPool.iSize = 1000;
 	oDescPool.pWrapper = this;
 	m_pPool = new DescriptorPool(oDescPool);
@@ -185,17 +186,17 @@ void BasicWrapper::CreateGraphicPipeline()
 	oMeshDesc.oModels[1]->SetPosition(glm::vec3(2.5f, 0, 0), true);
 	oMeshDesc.eFlag = Mesh::eVerticesAttributes::E_UV | Mesh::eVerticesAttributes::E_POSITIONS;
 
-	m_pMesh = new Mesh(oMeshDesc);
-	m_pMesh->ConvertToVerticesBuffer(m_pMesh->GetBufferFlags(), true, oMeshDesc.pWrapper);
-	m_pHandler->AddMesh(m_pMesh, 1,m_pPool);
+	m_xMesh = Mesh::StrongPtr( new Mesh(oMeshDesc) );
+	m_xMesh->ConvertToVerticesBuffer(m_xMesh->GetBufferFlags(), true, oMeshDesc.pWrapper);
+	m_pHandler->AddMesh( m_xMesh, 1,m_pPool);
 
 	oMeshDesc.sFilenameModel = { "./Models/cube.obj" };
 	oMeshDesc.oModels = { std::shared_ptr<Transform>(new Transform()) };
 	oMeshDesc.eFlag = Mesh::eVerticesAttributes::E_POSITIONS;
 
-	m_pMeshSky = new Mesh(oMeshDesc);
-	m_pMeshSky->ConvertToVerticesBuffer(m_pMeshSky->GetBufferFlags(), true, this);
-	m_pHandler->AddMesh(m_pMeshSky, 0, m_pPool);
+	m_xMeshSky = Mesh::StrongPtr( new Mesh(oMeshDesc) );
+	m_xMeshSky->ConvertToVerticesBuffer(m_xMeshSky->GetBufferFlags(), true, this);
+	m_pHandler->AddMesh( m_xMeshSky, 0, m_pPool);
 
 	InitFramebuffer();
 	FillDescriptorsBuffer();
@@ -207,13 +208,13 @@ void BasicWrapper::FillDescriptorsBuffer()
 	std::shared_ptr<BasicBuffer> xVPMatrice(m_pCamera->GetVPMatriceBuffer());
 	xVPMatrice->CopyFromMemory(oVP.data(), GetModifiableDevice());
 	
-	DescriptorSetWrapper* pMainRender = m_pHandler->GetRenderBatch(1)->GetDescriptor(m_pMesh);
+	DescriptorSetWrapper* pMainRender = m_pHandler->GetRenderBatch(1)->GetDescriptor(m_xMesh);
 
 	//0 -> Uniform buffer
 	pMainRender->FillSlot(0, m_pCamera->GetVPMatriceBuffer().get());
 
 	//1 -> Storage buffer 
-	pMainRender->FillSlot(1, m_pMesh->GetModelMatrices().get());
+	pMainRender->FillSlot(1, m_xMesh->GetModelMatrices().get());
 
 	//2 -> Texture
 	Image::FromFileDesc oFileDesc;
@@ -242,7 +243,7 @@ void BasicWrapper::FillDescriptorsBuffer()
 	std::string sFilenames[6] = { "./Textures/bkg1_back.png", "./Textures/bkg1_bot.png", "./Textures/bkg1_front.png", "./Textures/bkg1_left.png", "./Textures/bkg1_right.png", "./Textures/bkg1_top.png" };
 	Image* pImage = Image::CreateCubeMap(sFilenames, oFileDescSky);
 
-	DescriptorSetWrapper* pRenderSky = m_pHandler->GetRenderBatch(0)->GetDescriptor(m_pMeshSky);
+	DescriptorSetWrapper* pRenderSky = m_pHandler->GetRenderBatch(0)->GetDescriptor(m_xMeshSky);
 
 	//0 -> Uniform Buffer
 	BasicBuffer::Desc oBuffer;
@@ -342,15 +343,41 @@ void BasicWrapper::InitFramebuffer()
 
 bool BasicWrapper::Render(SyncObjects* pSync)
 {
-	m_pMesh->GetModels()[1]->Rotate(glm::vec3(0, 0, 1), 0.1f);
+	m_xMesh->GetModels()[1]->Rotate(glm::vec3(0, 0, 1), 0.1f);
 
 	auto start = std::chrono::system_clock::now();
 	VkResult eResult = VK_SUCCESS;
 	if (!s_bFramebufferResized)
 	{
-
 		int iFrame = pSync->GetFrame();
 		vkWaitForFences(*GetDevice()->GetLogicalDevice(), 1, &pSync->GetInFlightFences()[iFrame], VK_TRUE, UINT64_MAX);
+
+		if (m_bAdd)
+		{
+			vkDeviceWaitIdle(*m_pDevice->GetLogicalDevice());
+
+			BasicBuffer::Desc oDesc;
+			oDesc.eUsage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+			oDesc.oPropertyFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
+			oDesc.iUnitSize = sizeof(glm::mat4);
+			oDesc.iUnitCount = 1;
+			oDesc.pWrapper = this;
+			std::shared_ptr<BasicBuffer> xBuffer = std::shared_ptr<BasicBuffer>(new BasicBuffer(oDesc));
+
+			glm::mat4 mInitial(1.0f);
+			BufferedTransform* pTrsf = new BufferedTransform(mInitial, 0, std::static_pointer_cast<Buffer>(xBuffer), m_pDevice);
+			pTrsf->SetScale(glm::vec3(0.5f), true);
+			pTrsf->SetPosition(glm::vec3(std::rand() % 10, std::rand() % 10, std::rand() % 10));
+
+			std::vector<std::shared_ptr<BufferedTransform>> oTransforms = m_xMesh->GetModels();
+			oTransforms.push_back(std::shared_ptr<BufferedTransform>(pTrsf));
+			m_xMesh->SetTransforms(oTransforms, this);
+
+			m_pHandler->GetRenderBatch(1)->GetDescriptor(m_xMesh)->FillSlot(1,m_xMesh->GetModelMatrices().get());
+			m_pHandler->GetRenderBatch(1)->GetDescriptor(m_xMesh)->CommitSlots(m_pPool);
+			m_pHandler->MarkAllAsDirty();
+			m_bAdd = false;
+		}
 
 		uint32_t iImageIndex;
 		eResult = vkAcquireNextImageKHR(*GetDevice()->GetLogicalDevice(), *GetSwapchain()->GetSwapchain(), UINT64_MAX, pSync->GetImageAcquiredSemaphore()[iFrame], VK_NULL_HANDLE, &iImageIndex);
@@ -365,11 +392,11 @@ bool BasicWrapper::Render(SyncObjects* pSync)
 			throw std::runtime_error("Failed to acquire swap chain images");
 		}
 
-		if (pSync->GetSwapChainImagesFences()[iImageIndex] != VK_NULL_HANDLE)
+		/*if (pSync->GetSwapChainImagesFences()[iImageIndex] != VK_NULL_HANDLE)
 		{
 			vkWaitForFences(*GetDevice()->GetLogicalDevice(), 1, &pSync->GetSwapChainImagesFences()[iImageIndex], VK_TRUE, UINT64_MAX);
 		}
-		pSync->GetSwapChainImagesFences()[iImageIndex] = pSync->GetInFlightFences()[pSync->GetFrame()];
+		pSync->GetSwapChainImagesFences()[iImageIndex] = pSync->GetInFlightFences()[iFrame];*/
 
 		ImGuiWrapper::Desc oDesc;
 		oDesc.iImageIndex = iImageIndex;
@@ -383,7 +410,7 @@ bool BasicWrapper::Render(SyncObjects* pSync)
 
 		std::vector<VkCommandBuffer> oCmds = { *m_pHandler->GetCommand( m_oFramebuffers[iImageIndex] ), *m_pImGui->GetDrawCommand(oDesc) };
 		oSubmit.pWaitDstStageMask = waitStages;
-		oSubmit.commandBufferCount = oCmds.size();
+		oSubmit.commandBufferCount = (uint32_t)oCmds.size();
 		oSubmit.pCommandBuffers = oCmds.data();
 		oSubmit.signalSemaphoreCount = 1;
 		oSubmit.pSignalSemaphores = &pSync->GetRenderFinishedSemaphore()[pSync->GetFrame()];
@@ -440,6 +467,22 @@ void BasicWrapper::RenderGui(BasicWrapper* pWrapper)
 	ImGui::Text("Camera forward : %f / %f / %f", vForward.x, vForward.y, vForward.z);
 	ImGui::SliderFloat("Move speed camera", &pWrapper->m_pCamera->GetModifiableMoveSpeed(), 1.0f, 100.0f);
 	ImGui::SliderFloat("Rotate speed camera", &pWrapper->m_pCamera->GetModifiableRotateSpeed(), 50.0f, 5000.0f);
+	if (ImGui::Button("Toggle skybox"))
+	{
+		pWrapper->m_pHandler->MarkAllAsDirty();
+		pWrapper->m_pHandler->GetRenderBatch(0)->SetEnabled(!pWrapper->m_pHandler->GetRenderBatch(0)->IsEnabled());
+	}
+	if (ImGui::Button("Toggle models"))
+	{
+		pWrapper->m_pHandler->MarkAllAsDirty();
+		pWrapper->m_pHandler->GetRenderBatch(1)->SetEnabled(!pWrapper->m_pHandler->GetRenderBatch(1)->IsEnabled());
+	}
+
+	if (ImGui::Button("Add random room"))
+	{
+		pWrapper->m_bAdd = true;
+	}
+
 	ImGui::End();
 }
 

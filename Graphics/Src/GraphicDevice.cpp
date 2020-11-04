@@ -189,9 +189,9 @@ GraphicDevice::GraphicDevice(Desc& oDesc)
 	VkDeviceCreateInfo oCreateInfo{};
 	oCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 	oCreateInfo.pQueueCreateInfos = oQueuesCreateInfos.data();
-	oCreateInfo.queueCreateInfoCount = oQueuesCreateInfos.size();
+	oCreateInfo.queueCreateInfoCount = (uint32_t)oQueuesCreateInfos.size();
 	oCreateInfo.pEnabledFeatures = &oDeviceFeatures;
-	oCreateInfo.enabledExtensionCount = oDesc.oExtensions.size();
+	oCreateInfo.enabledExtensionCount = (uint32_t)oDesc.oExtensions.size();
 	oCreateInfo.ppEnabledExtensionNames = oDesc.oExtensions.data();
 
 	if (vkCreateDevice(*m_pPhysicalDevice, &oCreateInfo, nullptr, &m_oDevice) != VK_SUCCESS)
