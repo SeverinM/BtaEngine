@@ -236,12 +236,11 @@ void BasicWrapper::FillDescriptorsBuffer()
 	oFileDescSky.eTiling = VK_IMAGE_TILING_OPTIMAL;
 	oFileDescSky.pFactory = m_pFactory;
 	oFileDescSky.pWrapper = this;
-	std::string sFilenames[6] = { "./Textures/bkg1_back.png", "./Textures/bkg1_bot.png", "./Textures/bkg1_front.png", "./Textures/bkg1_left.png", "./Textures/bkg1_right.png", "./Textures/bkg1_top.png" };
+	std::string sFilenames[6] = { "./Textures/bkg1_right.png", "./Textures/bkg1_left.png", "./Textures/bkg1_top.png", "./Textures/bkg1_bot.png", "./Textures/bkg1_front.png", "./Textures/bkg1_back.png" };
 	Image* pImage = Image::CreateCubeMap(sFilenames, oFileDescSky);
 
 	DescriptorSetWrapper* pRenderSky = m_pHandler->GetRenderBatch(0)->GetDescriptor(m_xMeshSky);
 
-	//0 -> Uniform Buffer
 	BasicBuffer::Desc oBuffer;
 	oBuffer.iUnitSize = sizeof(glm::mat4);
 	oBuffer.iUnitCount = 2;
