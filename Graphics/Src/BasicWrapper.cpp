@@ -199,6 +199,24 @@ void BasicWrapper::CreateGraphicPipeline()
 	m_xMeshSky->ConvertToVerticesBuffer(m_xMeshSky->GetBufferFlags(), true, this);
 	m_pHandler->AddMesh( m_xMeshSky, 0, m_pPool);
 
+	oMeshDesc.oPositions = { glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec3(0.0f, 0.5f, 0.0f), glm::vec3(0.5f, -0.5f, 0.0f), glm::vec3(0,0,1) };
+	oMeshDesc.oUVs = { glm::vec2(0,0) , glm::vec2(1,0) , glm::vec2(0,0) , glm::vec2(0,1) };
+	oMeshDesc.oIndexes = { 0,1,3, 1,2,3, 2,0,3, 0,1,2 };
+
+	oMeshDesc.oModels = { std::shared_ptr<Transform>(new Transform()) };
+	oMeshDesc.eFlag = Mesh::eVerticesAttributes::E_UV | Mesh::eVerticesAttributes::E_POSITIONS;
+	m_xCubeMesh = Mesh::StrongPtr(new Mesh(oMeshDesc));
+	m_xCubeMesh->ConvertToVerticesBuffer(m_xCubeMesh->GetBufferFlags(), true, this);
+	m_xCubeMesh->GetTransforms()[0]->SetPosition(glm::vec3(-1), true);
+	m_pHandler->AddMesh(m_xCubeMesh, 1, m_pPool);
+
+	oMeshDesc.oModels = { std::shared_ptr<Transform>(new Transform()) };
+	m_xCubeMeshChild = Mesh::StrongPtr(new Mesh(oMeshDesc));
+	m_xCubeMeshChild->ConvertToVerticesBuffer(m_xCubeMeshChild->GetBufferFlags(), true, this);
+	m_xCubeMeshChild->GetTransforms()[0]->SetPosition(glm::vec3(0), false);
+	m_pHandler->AddMesh(m_xCubeMeshChild, 1, m_pPool);
+	m_xCubeMesh->GetTransforms()[0]->AddChild(m_xCubeMeshChild->GetTransforms()[0]);
+
 	InitFramebuffer();
 	FillDescriptorsBuffer();
 }
@@ -225,6 +243,16 @@ void BasicWrapper::FillDescriptorsBuffer()
 	pMainRender->FillSlotAtTag(Image::CreateFromFile("./Textures/viking_room.png", oFileDesc), TAG_COLORMAP);
 
 	pMainRender->CommitSlots(m_pPool);
+
+	DescriptorSetWrapper* pMainRenderGun = m_pHandler->GetRenderBatch(1)->GetDescriptor(m_xCubeMesh);
+	pMainRenderGun->FillSlotAtTag(m_pCamera->GetVPMatriceBuffer().get(), TAG_VP);
+	pMainRenderGun->FillSlotAtTag(Image::CreateFromFile("./Textures/test.png", oFileDesc), TAG_COLORMAP);
+	pMainRenderGun->CommitSlots(m_pPool);
+
+	DescriptorSetWrapper* pMainRenderGunChild = m_pHandler->GetRenderBatch(1)->GetDescriptor(m_xCubeMeshChild);
+	pMainRenderGunChild->FillSlotAtTag(m_pCamera->GetVPMatriceBuffer().get(), TAG_VP);
+	pMainRenderGunChild->FillSlotAtTag(Image::CreateFromFile("./Textures/test.png", oFileDesc), TAG_COLORMAP);
+	pMainRenderGunChild->CommitSlots(m_pPool);
 
 	std::vector<glm::mat4> oMPMatrices = { glm::mat4(1.0f), m_pCamera->GetProjectionMatrix() };
 
@@ -337,7 +365,8 @@ void BasicWrapper::InitFramebuffer()
 
 bool BasicWrapper::Render(SyncObjects* pSync)
 {
-	m_xMesh->GetModels()[1]->Rotate(glm::vec3(0, 0, 1), 0.1f);
+	m_xMesh->GetTransforms()[1]->Rotate(glm::vec3(0, 0, 1), 0.1f);
+
 	glm::mat4 mCam = m_pCamera->GetViewMatrix();
 	mCam[3][0] = 0.0f;
 	mCam[3][1] = 0.0f;
@@ -369,7 +398,7 @@ bool BasicWrapper::Render(SyncObjects* pSync)
 			pTrsf->SetScale(glm::vec3(0.5f), true);
 			pTrsf->SetPosition(glm::vec3(std::rand() % 10, std::rand() % 10, std::rand() % 10));
 
-			std::vector<std::shared_ptr<BufferedTransform>> oTransforms = m_xMesh->GetModels();
+			std::vector<std::shared_ptr<BufferedTransform>> oTransforms = m_xMesh->GetTransforms();
 			oTransforms.push_back(std::shared_ptr<BufferedTransform>(pTrsf));
 			m_xMesh->SetTransforms(oTransforms, this);
 

@@ -76,7 +76,8 @@ protected:
 	Mesh::StrongPtr m_xMesh;
 	Mesh::StrongPtr m_xMeshSky;
 
-	Mesh::StrongPtr m_xGunMesh;
+	Mesh::StrongPtr m_xCubeMesh;
+	Mesh::StrongPtr m_xCubeMeshChild;
 
 	static bool s_bFramebufferResized;
 	bool m_bAdd;

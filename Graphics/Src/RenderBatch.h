@@ -57,8 +57,8 @@ public:
 	{
 		CreationBatchDesc() : bWriteDepth(false), bTestDepth(false) {};
 		std::vector<std::string> oShaderCompiled;
-		bool bWriteDepth{};
-		bool bTestDepth{};
+		bool bWriteDepth;
+		bool bTestDepth;
 		std::vector<std::string> oShaderSources;
 	};
 

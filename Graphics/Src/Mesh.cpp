@@ -170,10 +170,21 @@ void Mesh::LoadModel(Desc& oDesc)
 			glm::vec3 vPos = glm::vec3(0.0f);
 			glm::vec2 vTex = glm::vec2(0.0f);
 			glm::vec3 vNormal = glm::vec3(0.0f);
-		
-			vPos = { oAttrib.vertices[3 * oIndex.vertex_index + 0], oAttrib.vertices[3 * oIndex.vertex_index + 1], oAttrib.vertices[3 * oIndex.vertex_index + 2] };
-			vTex = { oAttrib.texcoords[2 * oIndex.texcoord_index + 0], 1.0f - oAttrib.texcoords[2 * oIndex.texcoord_index + 1] };
-			vNormal = { oAttrib.normals[3 * oIndex.normal_index + 0], oAttrib.vertices[3 * oIndex.normal_index + 1], oAttrib.vertices[3 * oIndex.normal_index + 2] };
+			
+			if (oIndex.vertex_index >= 0)
+			{
+				vPos = { oAttrib.vertices[3 * oIndex.vertex_index + 0], oAttrib.vertices[3 * oIndex.vertex_index + 1], oAttrib.vertices[3 * oIndex.vertex_index + 2] };
+			}
+
+			if (oIndex.texcoord_index >= 0)
+			{
+				vTex = { oAttrib.texcoords[2 * oIndex.texcoord_index + 0], 1.0f - oAttrib.texcoords[2 * oIndex.texcoord_index + 1] };
+			}
+
+			if (oIndex.normal_index >= 0)
+			{
+				vNormal = { oAttrib.normals[3 * oIndex.normal_index + 0], oAttrib.vertices[3 * oIndex.normal_index + 1], oAttrib.vertices[3 * oIndex.normal_index + 2] };
+			}
 
 			size_t iHash = std::hash<glm::vec3>()(vPos) ^ (std::hash<glm::vec2>()(vTex) << 1);
 			if (oUniqueVertices.count(iHash) == 0)

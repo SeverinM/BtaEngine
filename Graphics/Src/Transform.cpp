@@ -26,7 +26,7 @@ void Transform::SetPosition(glm::vec3 vNewPosition, bool bRelative /*= false*/)
 
 	for (std::shared_ptr< Transform> xChild : m_oChilds)
 	{
-		xChild->SetPosition( bRelative ? vPos : GetPosition() - vPos, true);
+		xChild->SetPosition(GetPosition() - vPos , true);
 	}
 }
 
@@ -98,6 +98,15 @@ BufferedTransform::BufferedTransform(glm::mat4& mInitialMode, uint64_t iOffset, 
 void BufferedTransform::SetPosition(glm::vec3 vNewPosition, bool bRelative /*= false*/)
 {
 	Transform::SetPosition(vNewPosition, bRelative);
+
+	for (std::shared_ptr< Transform> xChild : m_oChilds)
+	{
+		if (std::dynamic_pointer_cast<BufferedTransform>(xChild) != nullptr)
+		{
+			std::dynamic_pointer_cast<BufferedTransform>(xChild)->UpdateBuffer();
+		}
+	}
+
 	UpdateBuffer();
 }
 

@@ -46,7 +46,6 @@ public:
 	inline std::shared_ptr<Buffer> GetVerticesBuffer() { return m_xCachedVerticesBuffer; }
 	inline std::shared_ptr<Buffer> GetIndexesBuffer() { return m_xCachedIndexesBuffer; }
 	inline std::shared_ptr<BasicBuffer> GetModelMatrices() { return m_xAllModelMatrices; }
-	inline std::vector< std::shared_ptr<BufferedTransform>> GetModels() { return m_oModels; }
 	inline size_t GetVerticeCount() { return m_oPositions.size(); }
 	inline size_t GetInstanceCount() { return m_oModels.size(); }
 	void SetTransforms(std::vector< std::shared_ptr<BufferedTransform>> oValues, GraphicWrapper* pWrapper)
