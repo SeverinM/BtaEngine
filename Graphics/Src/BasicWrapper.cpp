@@ -12,6 +12,7 @@
 #include <memory>
 #include "Globals.h"
 #include "RenderBatch.h"
+#include "ShaderTags.h"
 
 bool BasicWrapper::s_bFramebufferResized(false);
 
@@ -210,13 +211,8 @@ void BasicWrapper::FillDescriptorsBuffer()
 	
 	DescriptorSetWrapper* pMainRender = m_pHandler->GetRenderBatch(1)->GetDescriptor(m_xMesh);
 
-	//0 -> Uniform buffer
-	pMainRender->FillSlot(0, m_pCamera->GetVPMatriceBuffer().get());
+	pMainRender->FillSlotAtTag(m_pCamera->GetVPMatriceBuffer().get(), TAG_VP);
 
-	//1 -> Storage buffer 
-	pMainRender->FillSlot(1, m_xMesh->GetModelMatrices().get());
-
-	//2 -> Texture
 	Image::FromFileDesc oFileDesc;
 	oFileDesc.bEnableMip = true;
 	oFileDesc.eAspect = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -226,7 +222,7 @@ void BasicWrapper::FillDescriptorsBuffer()
 	oFileDesc.pFactory = m_pFactory;
 	oFileDesc.pWrapper = this;
 
-	pMainRender->FillSlot(2, Image::CreateFromFile("./Textures/viking_room.png", oFileDesc));
+	pMainRender->FillSlotAtTag(Image::CreateFromFile("./Textures/viking_room.png", oFileDesc), TAG_COLORMAP);
 
 	pMainRender->CommitSlots(m_pPool);
 
@@ -254,14 +250,14 @@ void BasicWrapper::FillDescriptorsBuffer()
 	oBuffer.oPropertyFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 
 	BasicBuffer* pBuffer = new BasicBuffer(oBuffer);
-	pRenderSky->FillSlot(0, pBuffer);
+	pRenderSky->FillSlotAtTag(pBuffer, TAG_MP);
 
 	glm::mat4 mMat = glm::mat4(1.0f);
 	pBuffer->CopyFromMemory(&mMat, m_pDevice, 0, sizeof(glm::mat4));
 	pBuffer->CopyFromMemory(&m_pCamera->GetProjectionMatrix(),m_pDevice, sizeof(glm::mat4), sizeof(glm::mat4));
 
 	//1-> texture
-	pRenderSky->FillSlot(1, pImage);
+	pRenderSky->FillSlotAtTag(pImage, TAG_COLORMAP);
 	
 	pRenderSky->CommitSlots(m_pPool);
 

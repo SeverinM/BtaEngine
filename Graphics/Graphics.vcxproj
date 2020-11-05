@@ -196,6 +196,7 @@
     <ClInclude Include="Src\RenderBatch.h" />
     <ClInclude Include="Src\RenderPass.h" />
     <ClInclude Include="Src\RenderSurface.h" />
+    <ClInclude Include="Src\ShaderTags.h" />
     <ClInclude Include="Src\Swapchain.h" />
     <ClInclude Include="Src\SyncObjects.h" />
     <ClInclude Include="Src\Transform.h" />

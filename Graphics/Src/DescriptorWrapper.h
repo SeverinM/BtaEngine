@@ -5,10 +5,6 @@
 #include <unordered_map>
 #include <string>
 
-#define TAG_MVP "MVP"
-#define TAG_MODELS "DataModels"
-
-
 class DescriptorSetWrapper
 {
 	friend class DescriptorLayoutWrapper;

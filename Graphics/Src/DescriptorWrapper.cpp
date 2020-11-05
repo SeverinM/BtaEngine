@@ -5,6 +5,7 @@
 #include "VectorUtils.h"
 #include "GLM/glm.hpp"
 
+
 DescriptorLayoutWrapper::DescriptorLayoutWrapper(std::vector<Bindings>& oBindings, GraphicDevice& oDevice)
 {
 	m_oAllBindings = oBindings;
@@ -150,7 +151,7 @@ std::unordered_map<int, DescriptorLayoutWrapper::Bindings> DescriptorLayoutWrapp
 			
 			if (oValues[6] == "uniform")
 			{
-				if (oValues[7] == "sampler2D" || oValues[7] == "samplerCube")
+				if ( Bta::Utils::StringUtils::Contains(oValues[7], "sampler") )
 				{
 					pCurrentBind->eType = DescriptorPool::E_TEXTURE;
 				}
@@ -164,7 +165,7 @@ std::unordered_map<int, DescriptorLayoutWrapper::Bindings> DescriptorLayoutWrapp
 				pCurrentBind->eType = DescriptorPool::E_STORAGE_BUFFER;
 			}
 
-			pCurrentBind->sTag = Bta::Utils::StringUtils::Split(oValues[7], ';')[0];
+			pCurrentBind->sTag = Bta::Utils::StringUtils::Split(oValues[pCurrentBind->eType == DescriptorPool::E_TEXTURE ? 8 : 7], ';')[0];
 
 			if (!Bta::Utils::StringUtils::Contains(sLine, "{"))
 			{

@@ -1,6 +1,7 @@
 #include "RenderBatch.h"
 #include <iostream>
 #include "CommandFactory.h"
+#include "ShaderTags.h"
 
 RenderBatch::RenderBatch(Desc& oDesc)
 {
@@ -60,6 +61,7 @@ void RenderBatch::AddMesh(Mesh::StrongPtr xMesh, DescriptorSetWrapper* pWrapper)
 	if (m_oEntities.find(xMesh) == m_oEntities.end())
 	{
 		m_oEntities[xMesh] = pWrapper;
+		TryFillModelsBuffer(xMesh);
 		MarkAsDirty();
 	}
 }
@@ -91,6 +93,14 @@ void RenderBatch::ClearCache()
 		vkFreeCommandBuffers(*m_pWrapper->GetModifiableDevice()->GetLogicalDevice(), *m_pFactory->GetCommandPool(), 1, oCmd.second);
 	}
 	m_oCachedCommandBuffer.clear();
+}
+
+void RenderBatch::TryFillModelsBuffer(Mesh::StrongPtr xMesh)
+{
+	if (!(m_oEntities.count(xMesh) != 0 && m_oEntities[xMesh]->FillSlotAtTag(xMesh->GetModelMatrices().get(), TAG_MODELS)))
+	{
+		std::cout << "Error ,could not find the tag or the mesh does not exist in the batch" << std::endl;
+	}
 }
 
 void RenderBatch::ReconstructCommand(Framebuffer* pFramebuffer)

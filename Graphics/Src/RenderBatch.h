@@ -38,6 +38,7 @@ protected :
 	bool m_bDirty;
 	std::unordered_map<Framebuffer*, VkCommandBuffer*> m_oCachedCommandBuffer;
 
+	void TryFillModelsBuffer(Mesh::StrongPtr xMesh);
 	void ReconstructCommand(Framebuffer* pFramebuffer);
 	void ChainSubpass(VkCommandBuffer* pBuffer);
 	GraphicWrapper* m_pWrapper;
