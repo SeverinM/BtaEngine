@@ -12,6 +12,8 @@ class Pipeline
 public:
 	struct Desc
 	{
+		Desc() : pViewportOverride(nullptr), pScissorOverride(nullptr), eDepthTestMethod(VK_COMPARE_OP_LESS), eCulling(VK_CULL_MODE_NONE), eFillMode(VK_POLYGON_MODE_FILL), eVerticesAssemblyMode(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST), fLineWidth(1.0f) {};
+
 		DescriptorLayoutWrapper* pInputDatas;
 		std::vector<std::string> oShaderFilenames;
 		GraphicWrapper* pWrapper;
@@ -19,9 +21,18 @@ public:
 		std::vector<VkVertexInputAttributeDescription> oAttributeDescriptions;
 		VkSampleCountFlagBits eSample;
 		bool bEnableTransparent;
-		bool bEnableDepth;
+		bool bWriteDepth;
+		bool bTestDepth;
 		RenderPass* pRenderPass;
 		int iSubPassIndex;
+		bool bRestartPrimitives;
+		VkPrimitiveTopology eVerticesAssemblyMode;
+		VkViewport* pViewportOverride;
+		VkRect2D* pScissorOverride;
+		VkPolygonMode eFillMode;
+		float fLineWidth;
+		VkCullModeFlags eCulling;
+		VkCompareOp eDepthTestMethod;
 	};
 	Pipeline(Desc& oDesc);
 	void Create(Desc& oDesc);

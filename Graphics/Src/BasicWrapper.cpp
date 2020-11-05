@@ -461,8 +461,8 @@ void BasicWrapper::RenderGui(BasicWrapper* pWrapper)
 
 	ImGui::Begin("Bta Debug");
 	ImGui::Text("FPS : %i", (int)(1.0f / Graphics::Globals::s_fElapsed));
-	ImGui::Text("Instances rendered : %i", pWrapper->m_pHandler->GetInstancesCount() + pWrapper->m_pHandler->GetInstancesCount());
-	ImGui::Text("Vertices count : %i", pWrapper->m_pHandler->GetVerticesCount() + pWrapper->m_pHandler->GetVerticesCount());
+	ImGui::Text("Instances rendered : %i", pWrapper->m_pHandler->GetInstancesCount());
+	ImGui::Text("Vertices count : %i", pWrapper->m_pHandler->GetVerticesCount());
 	ImGui::Text("Camera position : %f / %f / %f", vPos.x, vPos.y, vPos.z);
 	ImGui::Text("Camera forward : %f / %f / %f", vForward.x, vForward.y, vForward.z);
 	ImGui::SliderFloat("Move speed camera", &pWrapper->m_pCamera->GetModifiableMoveSpeed(), 1.0f, 100.0f);

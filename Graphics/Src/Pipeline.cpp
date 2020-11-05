@@ -101,17 +101,17 @@ void Pipeline::Create(Desc& oDesc)
 	VkPipelineViewportStateCreateInfo oViewportState{};
 	oViewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
 	oViewportState.viewportCount = 1;
-	oViewportState.pViewports = &oViewport;
+	oViewportState.pViewports = ( oDesc.pViewportOverride == nullptr ? &oViewport : oDesc.pViewportOverride );
 	oViewportState.scissorCount = 1;
-	oViewportState.pScissors = &oScissor;
+	oViewportState.pScissors = ( oDesc.pScissorOverride == nullptr ? &oScissor : oDesc.pScissorOverride );
 
 	VkPipelineRasterizationStateCreateInfo oRasterize{};
 	oRasterize.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
 	oRasterize.depthClampEnable = VK_FALSE;
 	oRasterize.rasterizerDiscardEnable = VK_FALSE;
-	oRasterize.polygonMode = VK_POLYGON_MODE_FILL;
-	oRasterize.lineWidth = 1.0f;
-	oRasterize.cullMode = VK_CULL_MODE_NONE;
+	oRasterize.polygonMode = oDesc.eFillMode;
+	oRasterize.lineWidth = oDesc.fLineWidth;
+	oRasterize.cullMode = oDesc.eCulling;
 	oRasterize.frontFace = VK_FRONT_FACE_CLOCKWISE;
 	oRasterize.depthBiasEnable = VK_FALSE;
 
@@ -144,9 +144,9 @@ void Pipeline::Create(Desc& oDesc)
 
 	VkPipelineDepthStencilStateCreateInfo oDepthStencil{};
 	oDepthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-	oDepthStencil.depthTestEnable = oDesc.bEnableDepth ? VK_TRUE : VK_FALSE;
-	oDepthStencil.depthWriteEnable = oDesc.bEnableDepth ? VK_TRUE : VK_FALSE;
-	oDepthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
+	oDepthStencil.depthTestEnable = oDesc.bTestDepth ? VK_TRUE : VK_FALSE;
+	oDepthStencil.depthWriteEnable = oDesc.bWriteDepth ? VK_TRUE : VK_FALSE;
+	oDepthStencil.depthCompareOp = oDesc.eDepthTestMethod;
 	oDepthStencil.depthBoundsTestEnable = VK_FALSE;
 	oDepthStencil.minDepthBounds = 0.0f;
 	oDepthStencil.maxDepthBounds = 1.0f;

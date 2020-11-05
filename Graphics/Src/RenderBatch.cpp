@@ -191,7 +191,8 @@ RenderBatchesHandler::RenderBatchesHandler(Desc& oDesc)
 		Pipeline::Desc oPipelineDesc;
 		oPipelineDesc.oShaderFilenames = oBatchCreateDesc.oShaderCompiled;
 		Pipeline::FillVerticesDescription(oPipelineDesc.oBindingDescription, oPipelineDesc.oAttributeDescriptions, oBatchCreateDesc.oShaderSources[0]);
-		oPipelineDesc.bEnableDepth = oBatchCreateDesc.bTestDepth;
+		oPipelineDesc.bTestDepth = oBatchCreateDesc.bTestDepth;
+		oPipelineDesc.bWriteDepth = oBatchCreateDesc.bWriteDepth;
 		oPipelineDesc.bEnableTransparent = false;
 		oPipelineDesc.eSample = oDesc.eSamples;
 		oPipelineDesc.iSubPassIndex = i;
@@ -256,7 +257,8 @@ void RenderBatchesHandler::ReconstructPipelines(GraphicWrapper* pWrapper)
 		Pipeline::Desc oPipelineDesc;
 		oPipelineDesc.oShaderFilenames = oBatchCreateDesc.oShaderCompiled;
 		Pipeline::FillVerticesDescription(oPipelineDesc.oBindingDescription, oPipelineDesc.oAttributeDescriptions, oBatchCreateDesc.oShaderSources[0]);
-		oPipelineDesc.bEnableDepth = oBatchCreateDesc.bTestDepth;
+		oPipelineDesc.bTestDepth = oBatchCreateDesc.bTestDepth;
+		oPipelineDesc.bWriteDepth = oBatchCreateDesc.bWriteDepth;
 		oPipelineDesc.bEnableTransparent = false;
 		oPipelineDesc.eSample = m_eSamples;
 		oPipelineDesc.iSubPassIndex = i;
