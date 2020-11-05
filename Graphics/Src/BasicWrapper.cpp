@@ -339,6 +339,12 @@ void BasicWrapper::InitFramebuffer()
 bool BasicWrapper::Render(SyncObjects* pSync)
 {
 	m_xMesh->GetModels()[1]->Rotate(glm::vec3(0, 0, 1), 0.1f);
+	glm::mat4 mCam = m_pCamera->GetViewMatrix();
+	mCam[3][0] = 0.0f;
+	mCam[3][1] = 0.0f;
+	mCam[3][2] = 0.0f;
+	m_pSkyBuffer->CopyFromMemory(&mCam, m_pDevice, 0, sizeof(glm::mat4));
+
 
 	auto start = std::chrono::system_clock::now();
 	VkResult eResult = VK_SUCCESS;
