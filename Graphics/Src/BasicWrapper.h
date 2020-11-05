@@ -70,8 +70,13 @@ protected:
 	ImGuiWrapper* m_pImGui;
 	InputHandling* m_pHandling;
 
+	BasicBuffer* m_pSkyBuffer;
+	glm::mat4 m_mModel;
+
 	Mesh::StrongPtr m_xMesh;
 	Mesh::StrongPtr m_xMeshSky;
+
+	Mesh::StrongPtr m_xGunMesh;
 
 	static bool s_bFramebufferResized;
 	bool m_bAdd;

@@ -248,14 +248,13 @@ void BasicWrapper::FillDescriptorsBuffer()
 	oBuffer.eUsage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
 	oBuffer.oPropertyFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 
-	BasicBuffer* pBuffer = new BasicBuffer(oBuffer);
-	pRenderSky->FillSlotAtTag(pBuffer, TAG_MP);
+	m_pSkyBuffer = new BasicBuffer(oBuffer);
+	pRenderSky->FillSlotAtTag(m_pSkyBuffer, TAG_MP);
 
-	glm::mat4 mMat = glm::mat4(1.0f);
-	pBuffer->CopyFromMemory(&mMat, m_pDevice, 0, sizeof(glm::mat4));
-	pBuffer->CopyFromMemory(&m_pCamera->GetProjectionMatrix(),m_pDevice, sizeof(glm::mat4), sizeof(glm::mat4));
+	m_mModel = glm::mat4(1.0f);
+	m_pSkyBuffer->CopyFromMemory(&m_mModel, m_pDevice, 0, sizeof(glm::mat4));
+	m_pSkyBuffer->CopyFromMemory(&m_pCamera->GetProjectionMatrix(),m_pDevice, sizeof(glm::mat4), sizeof(glm::mat4));
 
-	//1-> texture
 	pRenderSky->FillSlotAtTag(pImage, TAG_COLORMAP);
 	
 	pRenderSky->CommitSlots(m_pPool);
