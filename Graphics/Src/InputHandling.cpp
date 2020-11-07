@@ -3,6 +3,7 @@
 #include "glm/gtx/string_cast.hpp"
 #include "Globals.h"
 #include "RenderBatch.h"
+#include "GraphicUtils.h"
 
 InputHandling::InputHandling(Desc& oDesc)
 {
@@ -41,6 +42,11 @@ void InputHandling::ProcessKeyboard(GLFWwindow* pwindow, int iKey, int iScancode
 	if (glfwGetKey(pwindow, GLFW_KEY_D) == GLFW_PRESS)
 	{
 		vTranslate += -vCamRight * pHandling->m_pWrapper->m_pCamera->GetMoveSpeed() * Graphics::Globals::s_fElapsed;
+	}
+
+	if (glfwGetKey(pwindow, GLFW_KEY_U) == GLFW_PRESS)
+	{
+		Bta::Utils::GraphicUtils::DisplayDebugLine(glm::vec3(0), glm::vec3(0, 0, 10), glm::vec4(1, 1, 1, 1), 10.0f, pHandling->m_pWrapper);
 	}
 
 	if (vTranslate.length() != 0)

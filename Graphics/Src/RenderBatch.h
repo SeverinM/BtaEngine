@@ -59,12 +59,13 @@ class RenderBatchesHandler
 public:
 	struct CreationBatchDesc
 	{
-		CreationBatchDesc() : bWriteDepth(false), bTestDepth(false) {};
+		CreationBatchDesc() : bWriteDepth(false), bTestDepth(false), eTopology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST){};
 		std::vector<std::string> oShaderCompiled;
 		bool bWriteDepth;
 		bool bTestDepth;
 		std::vector<std::string> oShaderSources;
 		std::string sTag;
+		VkPrimitiveTopology eTopology;
 	};
 
 	struct Desc

@@ -146,6 +146,7 @@ Mesh::BufferElementsFlag Mesh::GetBufferFlags()
 	eFlag |= (m_oPositions.size() == 0 ? 0 : eVerticesAttributes::E_POSITIONS);
 	eFlag |= (m_oNormals.size() == 0 ? 0 : eVerticesAttributes::E_NORMALS);
 	eFlag |= (m_oUVs.size() == 0 ? 0 : eVerticesAttributes::E_UV);
+	eFlag |= (m_oColors.size() == 0 ? 0 : eVerticesAttributes::E_COLOR);
 	return eFlag;
 }
 

@@ -39,7 +39,7 @@ public:
 		CreateCommandBuffer();
 	}
 
-	const GraphicDevice* GetDevice() const { return m_pDevice; }
+	GraphicDevice* GetDevice() const { return m_pDevice; }
 	GraphicDevice* GetModifiableDevice() { return m_pDevice; }
 
 protected :

@@ -5,7 +5,7 @@
 #include "StringUtils.h"
 #include <fstream>
 
-VkShaderModule* CompileShader(std::string sFilename, const GraphicDevice& oDevice)
+VkShaderModule* Pipeline::CompileShader(std::string sFilename, GraphicDevice& oDevice)
 {
 	std::ifstream oFile(sFilename, std::ios::ate | std::ios::binary);
 
@@ -77,7 +77,7 @@ void Pipeline::Create(Desc& oDesc)
 
 	VkPipelineInputAssemblyStateCreateInfo oInputVertex{};
 	oInputVertex.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-	oInputVertex.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+	oInputVertex.topology = oDesc.eVerticesAssemblyMode;
 	oInputVertex.primitiveRestartEnable = VK_FALSE;
 
 	int iWidth, iHeight;

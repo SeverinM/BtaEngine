@@ -5,7 +5,6 @@
 #include <string>
 #include "BasicWrapper.h"
 
-static VkShaderModule* CompileShader(std::string sFilename, GraphicDevice& oDevice);
 
 class Pipeline
 {
@@ -47,6 +46,7 @@ public:
 	static void FillVerticesDescription(VkVertexInputBindingDescription& oBindingDescription, std::vector<VkVertexInputAttributeDescription>& oAttributeDescription, std::string sFilename);
 
 private:
+	VkShaderModule* CompileShader(std::string sFilename, GraphicDevice& oDevice);
 	DescriptorLayoutWrapper* m_pDescriptorLayout;
 	VkPipelineLayout m_oPipelineLayout;
 	VkPipeline m_oPipeline;

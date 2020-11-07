@@ -136,12 +136,17 @@ void BasicWrapper::CreateRenderPass()
 	oSkyboxDesc.iColorResolveAttachmentIndex = 2;
 	oSkyboxDesc.iDepthStencilAttachmentIndex = -1;
 
+	RenderPass::SubDesc oDebugDesc;
+	oDebugDesc.iColorAttachmentIndex = 0;
+	oDebugDesc.iDepthStencilAttachmentIndex = -1;
+	oDebugDesc.iColorResolveAttachmentIndex = 2;
+
 	RenderPass::Desc oDesc;
 	oDesc.eSample = VK_SAMPLE_COUNT_8_BIT;
 	oDesc.pWrapper = this;
 	oDesc.bEnableColor = true;
 	oDesc.bEnableDepth = true;
-	oDesc.oSubpasses = { oSkyboxDesc, oSubDesc };
+	oDesc.oSubpasses = { oSkyboxDesc, oSubDesc, oDebugDesc };
 	oDesc.eInitialLayoutColorAttachment = VK_IMAGE_LAYOUT_UNDEFINED;
 	oDesc.bClearColorAttachmentAtBegin = true;
 	oDesc.bPresentable = false;
@@ -164,13 +169,21 @@ void BasicWrapper::CreateGraphicPipeline()
 	oCreationBatchSky.bWriteDepth = false;
 	oCreationBatchSky.oShaderCompiled = { "./Shader/Skybox/vert.spv","./Shader/Skybox/frag.spv" };
 	oCreationBatchSky.oShaderSources = { "./Shader/Skybox/Src/vs.vert", "./Shader/Skybox/Src/fs.frag" };
+
+	RenderBatchesHandler::CreationBatchDesc oCreationBatchDebug;
+	oCreationBatchDebug.bTestDepth = false;
+	oCreationBatchDebug.bWriteDepth = false;
+	oCreationBatchDebug.eTopology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+	oCreationBatchDebug.oShaderCompiled = { "./Shader/Debug/vert.spv", "./Shader/Debug/frag.spv" };
+	oCreationBatchDebug.oShaderSources = { "./Shader/Debug/Src/vs.vert", "./Shader/Debug/Src/fs.frag" };
+	oCreationBatchDebug.sTag = DEBUG_TAG;
 	
 	RenderBatchesHandler::Desc oBatchesHandler;
 	oBatchesHandler.eSamples = VK_SAMPLE_COUNT_8_BIT;
 	oBatchesHandler.pPass = m_pRenderpass;
 	oBatchesHandler.pWrapper = this;
 	oBatchesHandler.pFactory = m_pFactory;
-	oBatchesHandler.oBatches = { oCreationBatchSky, oCreationBatch };
+	oBatchesHandler.oBatches = { oCreationBatchSky, oCreationBatch, oCreationBatchDebug };
 	m_pHandler = new RenderBatchesHandler(oBatchesHandler);
 
 	DescriptorPool::Desc oDescPool;
@@ -214,7 +227,6 @@ void BasicWrapper::CreateGraphicPipeline()
 	m_xCubeMeshChild = Mesh::StrongPtr(new Mesh(oMeshDesc));
 	m_xCubeMeshChild->ConvertToVerticesBuffer(m_xCubeMeshChild->GetBufferFlags(), true, this);
 	m_xCubeMeshChild->GetTransforms()[0]->SetPosition(glm::vec3(0), false);
-	//m_pHandler->AddMesh(m_xCubeMeshChild, 1, m_pPool);
 	m_xCubeMesh->GetTransforms()[0]->AddChild(m_xCubeMeshChild->GetTransforms()[0]);
 
 	DelayedCommands::QueueCommands oCmds;
@@ -227,7 +239,7 @@ void BasicWrapper::CreateGraphicPipeline()
 	{
 		m_pHandler->RemoveMesh(m_xCubeMeshChild, 1);
 	};
-	m_oCommansQueue.PushCommand(oCmds, 5.0f);
+	m_oCommandsQueue.PushCommand(oCmds, 5.0f);
 
 	InitFramebuffer();
 	FillDescriptorsBuffer();
@@ -381,7 +393,7 @@ void BasicWrapper::InitFramebuffer()
 
 bool BasicWrapper::Render(SyncObjects* pSync)
 {
-	m_oCommansQueue.Update(Graphics::Globals::s_fElapsed);
+	m_oCommandsQueue.Update(Graphics::Globals::s_fElapsed);
 	m_xMesh->GetTransforms()[1]->Rotate(glm::vec3(0, 0, 1), 0.1f);
 
 	glm::mat4 mCam = m_pCamera->GetViewMatrix();

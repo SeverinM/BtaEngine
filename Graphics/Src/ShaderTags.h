@@ -5,4 +5,6 @@
 #define TAG_COLORMAP "Colormap"
 #define TAG_MP "ModelProjection"
 
+#define DEBUG_TAG "Debug"
+
 #endif TAG_MODELS

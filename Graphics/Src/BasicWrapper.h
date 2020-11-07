@@ -45,6 +45,12 @@ public :
 	static void RenderGui(BasicWrapper* pWrapper);
 	void RecreateSwapChain();
 
+	RenderBatchesHandler* GetHandler() { return m_pHandler; }
+	DelayedCommands* GetDelayedCommands() { return &m_oCommandsQueue; }
+	CommandFactory* GetFactory() { return m_pFactory; }
+	DescriptorPool* GetDescriptorPool() { return m_pPool; }
+	Camera* GetCamera() { return m_pCamera; }
+
 	BasicWrapper(GraphicWrapper::Desc& oDesc)
 	{
 		m_pHandling = nullptr;
@@ -80,7 +86,7 @@ protected:
 	Mesh::StrongPtr m_xCubeMesh;
 	Mesh::StrongPtr m_xCubeMeshChild;
 
-	DelayedCommands m_oCommansQueue;
+	DelayedCommands m_oCommandsQueue;
 
 	static bool s_bFramebufferResized;
 	bool m_bAdd;

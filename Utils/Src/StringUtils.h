@@ -120,6 +120,10 @@ namespace Bta
 				{
 					return sizeof(glm::mat4);
 				}
+				else if (Bta::Utils::StringUtils::StartWith(sText, "vec4"))
+				{
+					return sizeof(glm::vec4);
+				}
 				else if (Bta::Utils::StringUtils::StartWith(sText, "vec3"))
 				{
 					return sizeof(glm::vec3);

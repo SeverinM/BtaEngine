@@ -212,6 +212,7 @@ RenderBatchesHandler::RenderBatchesHandler(Desc& oDesc)
 		oPipelineDesc.bEnableTransparent = false;
 		oPipelineDesc.eSample = oDesc.eSamples;
 		oPipelineDesc.iSubPassIndex = i;
+		oPipelineDesc.eVerticesAssemblyMode = oBatchCreateDesc.eTopology;
 
 		DescriptorLayoutWrapper::ShaderMap oMap;
 		oMap[VK_SHADER_STAGE_VERTEX_BIT] = oBatchCreateDesc.oShaderSources[0];
