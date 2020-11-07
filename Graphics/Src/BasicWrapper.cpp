@@ -100,7 +100,7 @@ void BasicWrapper::CreateGraphicDevice()
 	oCamDesc.fNearPlane = 0.1f;
 	oCamDesc.fFarPlane = 10.0f;
 	oCamDesc.pWrapper = this;
-	oCamDesc.mInitialMatrix = glm::lookAt(glm::vec3(2, 2, 2), glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	oCamDesc.mInitialMatrix = glm::lookAt(glm::vec3(0, 0, 0), glm::vec3(0, 1, 0), glm::vec3(0.0f, 0.0f, 1.0f));
 
 	m_pCamera = new Camera(oCamDesc);
 
@@ -214,8 +214,20 @@ void BasicWrapper::CreateGraphicPipeline()
 	m_xCubeMeshChild = Mesh::StrongPtr(new Mesh(oMeshDesc));
 	m_xCubeMeshChild->ConvertToVerticesBuffer(m_xCubeMeshChild->GetBufferFlags(), true, this);
 	m_xCubeMeshChild->GetTransforms()[0]->SetPosition(glm::vec3(0), false);
-	m_pHandler->AddMesh(m_xCubeMeshChild, 1, m_pPool);
+	//m_pHandler->AddMesh(m_xCubeMeshChild, 1, m_pPool);
 	m_xCubeMesh->GetTransforms()[0]->AddChild(m_xCubeMeshChild->GetTransforms()[0]);
+
+	DelayedCommands::QueueCommands oCmds;
+	oCmds.oOnStart = [this]()
+	{
+		 m_pHandler->AddMesh(m_xCubeMeshChild, 1, m_pPool);
+	};
+
+	oCmds.oTimeOutFunction = [this]()
+	{
+		m_pHandler->RemoveMesh(m_xCubeMeshChild, 1);
+	};
+	m_oCommansQueue.PushCommand(oCmds, 5.0f);
 
 	InitFramebuffer();
 	FillDescriptorsBuffer();
@@ -250,9 +262,13 @@ void BasicWrapper::FillDescriptorsBuffer()
 	pMainRenderGun->CommitSlots(m_pPool);
 
 	DescriptorSetWrapper* pMainRenderGunChild = m_pHandler->GetRenderBatch(1)->GetDescriptor(m_xCubeMeshChild);
-	pMainRenderGunChild->FillSlotAtTag(m_pCamera->GetVPMatriceBuffer().get(), TAG_VP);
-	pMainRenderGunChild->FillSlotAtTag(Image::CreateFromFile("./Textures/test.png", oFileDesc), TAG_COLORMAP);
-	pMainRenderGunChild->CommitSlots(m_pPool);
+
+	if (pMainRenderGunChild)
+	{
+		pMainRenderGunChild->FillSlotAtTag(m_pCamera->GetVPMatriceBuffer().get(), TAG_VP);
+		pMainRenderGunChild->FillSlotAtTag(Image::CreateFromFile("./Textures/test.png", oFileDesc), TAG_COLORMAP);
+		pMainRenderGunChild->CommitSlots(m_pPool);
+	}
 
 	std::vector<glm::mat4> oMPMatrices = { glm::mat4(1.0f), m_pCamera->GetProjectionMatrix() };
 
@@ -365,6 +381,7 @@ void BasicWrapper::InitFramebuffer()
 
 bool BasicWrapper::Render(SyncObjects* pSync)
 {
+	m_oCommansQueue.Update(Graphics::Globals::s_fElapsed);
 	m_xMesh->GetTransforms()[1]->Rotate(glm::vec3(0, 0, 1), 0.1f);
 
 	glm::mat4 mCam = m_pCamera->GetViewMatrix();

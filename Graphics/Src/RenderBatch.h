@@ -16,6 +16,7 @@ public:
 		CommandFactory* pFactory;
 		GraphicWrapper* pWrapper;
 		RenderBatch* pNext;
+		std::string sTag;
 	};
 	RenderBatch(Desc& oDesc);
 	~RenderBatch();
@@ -23,6 +24,7 @@ public:
 	VkCommandBuffer* GetDrawCommand(Framebuffer* pFramebuffer);
 	inline void MarkAsDirty() { m_bDirty = true; m_oCachedCommandBuffer.clear(); }
 	void AddMesh(Mesh::StrongPtr xMesh, DescriptorSetWrapper* pWrapper);
+	void RemoveMesh(Mesh::StrongPtr xMesh);
 	inline DescriptorSetWrapper* GetDescriptor(Mesh::StrongPtr xMesh) { if (m_oEntities.count(xMesh) == 0) return nullptr; return m_oEntities[xMesh]; }
 	inline bool IsEnabled() { return m_bEnabled; }
 	inline void SetEnabled(bool bValue) { m_bEnabled = bValue; MarkAsDirty(); }
@@ -32,6 +34,7 @@ public:
 	void SetPipeline(Pipeline* pNew) { m_pPipeline = pNew; }
 	void SetNext(RenderBatch* pBatch) { m_pNext = pBatch; }
 	void ClearCache();
+	std::string GetTag() { return m_sTag; }
 
 protected :
 	bool m_bEnabled;
@@ -46,6 +49,7 @@ protected :
 	RenderPass* m_pRenderpass;
 	Pipeline* m_pPipeline;
 	RenderBatch* m_pNext;
+	std::string m_sTag;
 
 	std::unordered_map<Mesh::StrongPtr, DescriptorSetWrapper*> m_oEntities;
 };
@@ -60,6 +64,7 @@ public:
 		bool bWriteDepth;
 		bool bTestDepth;
 		std::vector<std::string> oShaderSources;
+		std::string sTag;
 	};
 
 	struct Desc
@@ -73,8 +78,21 @@ public:
 	};
 	RenderBatchesHandler(Desc& oDesc);
 	RenderBatch* GetRenderBatch(int iIndex) { if (iIndex < 0 || iIndex >= m_oBatches.size()) return nullptr; return m_oBatches[iIndex]; }
+	RenderBatch* FindRenderBatch(std::string sTag)
+	{
+		for (RenderBatch* pBatch : m_oBatches)
+		{
+			if (pBatch->GetTag() == sTag)
+			{
+				return pBatch;
+			}
+		}
+		return nullptr;
+	}
+
 	Pipeline* GetPipeline(int iIndex) { if (iIndex < 0 || iIndex >= m_oBatches.size()) return nullptr; return m_oBatches[iIndex]->GetPipeline(); }
 	void AddMesh(Mesh::StrongPtr xMesh, int iIndex, DescriptorPool* pPool);
+	void RemoveMesh(Mesh::StrongPtr xMesh, int iIndex);
 	VkCommandBuffer* GetCommand(Framebuffer* pFramebuffer);
 	void ReconstructPipelines(GraphicWrapper* pWrapper);
 	void MarkAllAsDirty() { for (RenderBatch* pBatch : m_oBatches) { pBatch->MarkAsDirty(); } }

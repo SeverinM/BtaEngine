@@ -2,6 +2,7 @@
 #include <iostream>
 #include "glm/gtx/string_cast.hpp"
 #include "Globals.h"
+#include "RenderBatch.h"
 
 InputHandling::InputHandling(Desc& oDesc)
 {

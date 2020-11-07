@@ -13,6 +13,7 @@
 #include "ImGuiWrapper.h"
 #include <queue>
 #include "DescriptorWrapper.h"
+#include "DelayedCommands.h"
 
 class Pipeline;
 class CommandFactory;
@@ -78,6 +79,8 @@ protected:
 
 	Mesh::StrongPtr m_xCubeMesh;
 	Mesh::StrongPtr m_xCubeMeshChild;
+
+	DelayedCommands m_oCommansQueue;
 
 	static bool s_bFramebufferResized;
 	bool m_bAdd;

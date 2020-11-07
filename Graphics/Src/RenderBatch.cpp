@@ -12,6 +12,7 @@ RenderBatch::RenderBatch(Desc& oDesc)
 	m_pRenderpass = oDesc.pRenderpass;
 	m_pPipeline = oDesc.pPipeline;
 	m_pNext = oDesc.pNext;
+	m_sTag = oDesc.sTag;
 }
 
 RenderBatch::~RenderBatch()
@@ -64,6 +65,11 @@ void RenderBatch::AddMesh(Mesh::StrongPtr xMesh, DescriptorSetWrapper* pWrapper)
 		TryFillModelsBuffer(xMesh);
 		MarkAsDirty();
 	}
+}
+
+void RenderBatch::RemoveMesh(Mesh::StrongPtr xMesh)
+{
+	m_oEntities.erase(xMesh);
 }
 
 size_t RenderBatch::GetVerticesCount()
@@ -222,6 +228,7 @@ RenderBatchesHandler::RenderBatchesHandler(Desc& oDesc)
 		oBatchDesc.pPipeline = pPipeline;
 		oBatchDesc.pFactory = oDesc.pFactory;
 		oBatchDesc.pNext = nullptr;
+		oBatchDesc.sTag = oBatchCreateDesc.sTag;
 
 		m_oBatches.push_back(new RenderBatch(oBatchDesc));
 
@@ -245,6 +252,18 @@ void RenderBatchesHandler::AddMesh(Mesh::StrongPtr xMesh, int iIndex, Descriptor
 	{
 		pBatch->AddMesh(xMesh, pPipeline->GetDescriptorSetLayout()->InstantiateDescriptorSet(*pPool, *m_pDevice));
 	}
+}
+
+void RenderBatchesHandler::RemoveMesh(Mesh::StrongPtr xMesh, int iIndex)
+{
+	RenderBatch* pBatch = GetRenderBatch(iIndex);
+
+	if (pBatch != nullptr)
+	{
+		pBatch->RemoveMesh(xMesh);
+	}
+
+	MarkAllAsDirty();
 }
 
 VkCommandBuffer* RenderBatchesHandler::GetCommand(Framebuffer* pFramebuffer)
