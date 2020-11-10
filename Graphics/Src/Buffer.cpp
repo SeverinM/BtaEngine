@@ -66,6 +66,31 @@ BasicBuffer::BasicBuffer(Desc& oDesc)
 	vkBindBufferMemory(*oDesc.pWrapper->GetDevice()->GetLogicalDevice(), *m_pBuffer, *m_pMemory, 0);
 }
 
+size_t Buffer::GetMemorySize(VkFormat eFormat)
+{
+	if (eFormat >= VK_FORMAT_R8G8B8A8_UNORM && eFormat <= VK_FORMAT_A2B10G10R10_SINT_PACK32)
+	{
+		return 4;
+	}
+
+	if (eFormat >= VK_FORMAT_R8G8B8_UNORM && eFormat <= VK_FORMAT_B8G8R8_SRGB)
+	{
+		return 3;
+	}
+
+	if (eFormat >= VK_FORMAT_R8G8_UNORM && eFormat <= VK_FORMAT_R8G8_SRGB)
+	{
+		return 2;
+	}
+
+	if (eFormat >= VK_FORMAT_R8_UNORM && eFormat <= VK_FORMAT_R8_SRGB)
+	{
+		return 1;
+	}
+
+	throw std::runtime_error("Could not find a size for the specified format");
+}
+
 void Buffer::CopyFromMemory(void* pData, GraphicDevice* pDevice)
 {
 	void* pGpuData;
@@ -131,9 +156,8 @@ void BasicBuffer::SendCopyCommand(BasicBuffer* pDst, CommandFactory* pFactory)
 }
 
 Image* Image::CreateFromFile(std::string sFilename, FromFileDesc& oDesc)
-{
-	std::vector<Image*> oOutput;
-
+{	
+	Image* pOutput = nullptr;
 	int iWidth, iHeight, iTexChannels;
 	stbi_uc* pPixels = stbi_load(sFilename.c_str(), &iWidth, &iHeight, &iTexChannels, STBI_rgb_alpha);
 
@@ -142,42 +166,21 @@ Image* Image::CreateFromFile(std::string sFilename, FromFileDesc& oDesc)
 		throw std::runtime_error("Failed to load texture image");
 	}
 
-	BasicBuffer::Desc oBufferDesc;
-	oBufferDesc.eUsage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-	oBufferDesc.oPropertyFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-	oBufferDesc.iUnitCount = iWidth * iHeight;
-	oBufferDesc.iUnitSize = 4; //TODO , change after
+	Image::FromBufferDesc oBufferDesc;
+	oBufferDesc.bEnableMip = oDesc.bEnableMip;
+	oBufferDesc.eAspect = oDesc.eAspect;
+	oBufferDesc.eFormat = oDesc.eFormat;
+	oBufferDesc.eSampleFlag = oDesc.eSampleFlag;
+	oBufferDesc.eTiling = oDesc.eTiling;
+	oBufferDesc.iHeight = iHeight;
+	oBufferDesc.iWidth = iWidth;
+	oBufferDesc.pBuffer = pPixels;
 	oBufferDesc.pWrapper = oDesc.pWrapper;
+	oBufferDesc.pFactory = oDesc.pFactory;
 
-	BasicBuffer* pBasicBuffer = new BasicBuffer(oBufferDesc);
-	pBasicBuffer->CopyFromMemory(pPixels, oDesc.pWrapper->GetModifiableDevice());
+	pOutput = CreateFromBuffer(oBufferDesc);
 	stbi_image_free(pPixels);
-
-	Image::Desc oImgDesc;
-	oImgDesc.iHeight = iHeight;
-	oImgDesc.iWidth = iWidth;
-	oImgDesc.eFormat = oDesc.eFormat;
-	oImgDesc.eAspect = oDesc.eAspect;
-	oImgDesc.eProperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-	oImgDesc.eTiling = VK_IMAGE_TILING_OPTIMAL;
-	oImgDesc.eUsage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-	oImgDesc.pWrapper = oDesc.pWrapper;
-	oImgDesc.bEnableMip = oDesc.bEnableMip;
-	oImgDesc.eSampleFlag = oDesc.eSampleFlag;
-	oImgDesc.pFactory = oDesc.pFactory;
-	oImgDesc.iLayerCount = 1;
-
-	Image* pImage = new Image(oImgDesc);
-	pImage->TransitionLayout(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, oDesc.pFactory, pImage->GetMipLevel());
-	pImage->SendCopyCommand(pBasicBuffer, oDesc.pFactory);
-
-	Image::MipDesc oMipDesc;
-	oMipDesc.eFormat = oDesc.eFormat;
-	oMipDesc.pFactory = oDesc.pFactory;
-	oMipDesc.pWrapper = oDesc.pWrapper;
-	pImage->GenerateMipsInterface(oMipDesc);
-	delete pBasicBuffer;
-	return pImage;
+	return pOutput;
 }
 
 Image* Image::CreateCubeMap(std::string sFilenames[6], FromFileDesc& oDesc)
@@ -329,6 +332,48 @@ void Image::TransitionLayout(VkImageLayout eOldLayout, VkImageLayout eNewLayout,
 	vkCmdPipelineBarrier(oCommandBuffer, oSourceStage, oDestinationStage, 0, 0, nullptr, 0, nullptr, 1, &oBarrier);
 
 	pFactory->EndSingleTimeCommands(oCommandBuffer);
+}
+
+Image* Image::CreateFromBuffer(FromBufferDesc& oDesc)
+{
+	BasicBuffer::Desc oBufferDesc;
+	oBufferDesc.eUsage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+	oBufferDesc.oPropertyFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+	oBufferDesc.iUnitCount = oDesc.iWidth * oDesc.iHeight;
+	oBufferDesc.iUnitSize = GetMemorySize(oDesc.eFormat);
+	oBufferDesc.pWrapper = oDesc.pWrapper;
+
+	BasicBuffer* pBasicBuffer = new BasicBuffer(oBufferDesc);
+	pBasicBuffer->CopyFromMemory(oDesc.pBuffer, oDesc.pWrapper->GetModifiableDevice());
+
+	Image::Desc oImgDesc;
+	oImgDesc.iHeight = oDesc.iHeight;
+	oImgDesc.iWidth = oDesc.iWidth;
+	oImgDesc.eFormat = oDesc.eFormat;
+	oImgDesc.eAspect = oDesc.eAspect;
+	oImgDesc.eProperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+	oImgDesc.eTiling = VK_IMAGE_TILING_OPTIMAL;
+	oImgDesc.eUsage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+	oImgDesc.pWrapper = oDesc.pWrapper;
+	oImgDesc.bEnableMip = oDesc.bEnableMip;
+	oImgDesc.eSampleFlag = oDesc.eSampleFlag;
+	oImgDesc.pFactory = oDesc.pFactory;
+	oImgDesc.iLayerCount = 1;
+
+	Image* pImage = new Image(oImgDesc);
+	pImage->TransitionLayout(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, oDesc.pFactory, pImage->GetMipLevel());
+	pImage->SendCopyCommand(pBasicBuffer, oDesc.pFactory);
+
+	if (oDesc.bEnableMip)
+	{
+		Image::MipDesc oMipDesc;
+		oMipDesc.eFormat = oDesc.eFormat;
+		oMipDesc.pFactory = oDesc.pFactory;
+		oMipDesc.pWrapper = oDesc.pWrapper;
+		pImage->GenerateMipsInterface(oMipDesc);
+	}
+	delete pBasicBuffer;
+	return pImage;
 }
 
 void Image::GenerateMips(MipDesc& oDesc)

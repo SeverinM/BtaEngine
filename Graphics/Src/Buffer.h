@@ -14,6 +14,7 @@ public:
 		E_VERTEX
 	};
 
+	static size_t GetMemorySize(VkFormat eFormat);
 	const VkDeviceMemory* GetMemory() { return m_pMemory; }
 	VkDeviceSize GetMemorySize() { return m_iSizeUnit * (VkDeviceSize)m_iUnitCount; }
 	VkDeviceSize GetSizeUnit() { return m_iSizeUnit; }
@@ -92,10 +93,25 @@ public:
 		bool bEnableMip;
 	};
 
+	struct FromBufferDesc
+	{
+		VkSampleCountFlagBits eSampleFlag;
+		GraphicWrapper* pWrapper;
+		VkFormat eFormat;
+		VkImageTiling eTiling;
+		VkImageAspectFlags eAspect;
+		CommandFactory* pFactory;
+		bool bEnableMip;
+		void* pBuffer;
+		uint16_t iHeight;
+		uint16_t iWidth;
+	};
+
 	Image(Desc& oDesc);
 	virtual ~Image();
 	static Image* CreateFromFile(std::string sFilename, FromFileDesc& oDesc);
 	static Image* CreateCubeMap(std::string sFilenames[6], FromFileDesc& oDesc);
+	static Image* CreateFromBuffer(FromBufferDesc& oDesc);
 
 	void TransitionLayout(VkImageLayout eOldLayout, VkImageLayout eNewLayout,CommandFactory* pFactory, int iMipLevel);
 
@@ -112,6 +128,7 @@ public:
 	void GenerateMipsInterface(MipDesc& oDesc);
 
 protected :
+
 	void GenerateMips(MipDesc& oDesc);
 	void CreateSampler(Desc& oDesc);
 	void CreateView(Desc& oDesc, VkImageAspectFlags oAspect);

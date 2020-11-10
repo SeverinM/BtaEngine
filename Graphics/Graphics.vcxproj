@@ -106,8 +106,8 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(VULKAN_SDK)/Lib;$(ProjectDir)/Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>glfw3dll.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(VULKAN_SDK)/Lib;$(ProjectDir)Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>glfw3dll.lib;vulkan-1.lib;freetype.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -155,6 +155,7 @@
     <ClCompile Include="Src\CommandFactory.cpp" />
     <ClCompile Include="Src\DescriptorPool.cpp" />
     <ClCompile Include="Src\DescriptorWrapper.cpp" />
+    <ClCompile Include="Src\Font.cpp" />
     <ClCompile Include="Src\Framebuffer.cpp" />
     <ClCompile Include="Src\Globals.cpp" />
     <ClCompile Include="Src\GraphicDevice.cpp" />
@@ -186,6 +187,7 @@
     <ClInclude Include="Src\DelayedCommands.h" />
     <ClInclude Include="Src\DescriptorPool.h" />
     <ClInclude Include="Src\DescriptorWrapper.h" />
+    <ClInclude Include="Src\Font.h" />
     <ClInclude Include="Src\Framebuffer.h" />
     <ClInclude Include="Src\Globals.h" />
     <ClInclude Include="Src\GraphicDevice.h" />

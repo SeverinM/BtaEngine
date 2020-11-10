@@ -13,6 +13,7 @@
 #include "Globals.h"
 #include "RenderBatch.h"
 #include "ShaderTags.h"
+#include "Font.h"
 
 bool BasicWrapper::s_bFramebufferResized(false);
 
@@ -136,22 +137,39 @@ void BasicWrapper::CreateRenderPass()
 	oSkyboxDesc.iColorResolveAttachmentIndex = 2;
 	oSkyboxDesc.iDepthStencilAttachmentIndex = -1;
 
-	RenderPass::SubDesc oDebugDesc;
-	oDebugDesc.iColorAttachmentIndex = 0;
-	oDebugDesc.iDepthStencilAttachmentIndex = -1;
-	oDebugDesc.iColorResolveAttachmentIndex = 2;
-
 	RenderPass::Desc oDesc;
 	oDesc.eSample = VK_SAMPLE_COUNT_8_BIT;
 	oDesc.pWrapper = this;
 	oDesc.bEnableColor = true;
 	oDesc.bEnableDepth = true;
-	oDesc.oSubpasses = { oSkyboxDesc, oSubDesc, oDebugDesc };
+	oDesc.oSubpasses = { oSkyboxDesc, oSubDesc };
 	oDesc.eInitialLayoutColorAttachment = VK_IMAGE_LAYOUT_UNDEFINED;
 	oDesc.bClearColorAttachmentAtBegin = true;
 	oDesc.bPresentable = false;
 
 	m_pRenderpass = new RenderPass(oDesc);
+
+	RenderPass::SubDesc oDebugDesc;
+	oDebugDesc.iColorAttachmentIndex = 0;
+	oDebugDesc.iDepthStencilAttachmentIndex = -1;
+	oDebugDesc.iColorResolveAttachmentIndex = -1;
+
+	RenderPass::SubDesc oTextDesc;
+	oTextDesc.iColorAttachmentIndex = 0;
+	oTextDesc.iDepthStencilAttachmentIndex = -1;
+	oTextDesc.iColorResolveAttachmentIndex = -1;
+
+	RenderPass::Desc oDebugRenderPassDesc;
+	oDebugRenderPassDesc.eSample = VK_SAMPLE_COUNT_1_BIT;
+	oDebugRenderPassDesc.pWrapper = this;
+	oDebugRenderPassDesc.bEnableColor = true;
+	oDebugRenderPassDesc.bEnableDepth = false;
+	oDebugRenderPassDesc.oSubpasses = { /*oDebugDesc,*/ oTextDesc };
+	oDebugRenderPassDesc.eInitialLayoutColorAttachment = VK_IMAGE_LAYOUT_UNDEFINED;
+	oDebugRenderPassDesc.bClearColorAttachmentAtBegin = false;
+	oDebugRenderPassDesc.bPresentable = false;
+
+	m_pDebugRenderpass = new RenderPass(oDebugRenderPassDesc);
 
 	std::cout << "Renderpass created" << std::endl;
 }
@@ -169,28 +187,54 @@ void BasicWrapper::CreateGraphicPipeline()
 	oCreationBatchSky.bWriteDepth = false;
 	oCreationBatchSky.oShaderCompiled = { "./Shader/Skybox/vert.spv","./Shader/Skybox/frag.spv" };
 	oCreationBatchSky.oShaderSources = { "./Shader/Skybox/Src/vs.vert", "./Shader/Skybox/Src/fs.frag" };
-
-	RenderBatchesHandler::CreationBatchDesc oCreationBatchDebug;
-	oCreationBatchDebug.bTestDepth = false;
-	oCreationBatchDebug.bWriteDepth = false;
-	oCreationBatchDebug.eTopology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
-	oCreationBatchDebug.oShaderCompiled = { "./Shader/Debug/vert.spv", "./Shader/Debug/frag.spv" };
-	oCreationBatchDebug.oShaderSources = { "./Shader/Debug/Src/vs.vert", "./Shader/Debug/Src/fs.frag" };
-	oCreationBatchDebug.sTag = DEBUG_TAG;
 	
 	RenderBatchesHandler::Desc oBatchesHandler;
 	oBatchesHandler.eSamples = VK_SAMPLE_COUNT_8_BIT;
 	oBatchesHandler.pPass = m_pRenderpass;
 	oBatchesHandler.pWrapper = this;
 	oBatchesHandler.pFactory = m_pFactory;
-	oBatchesHandler.oBatches = { oCreationBatchSky, oCreationBatch, oCreationBatchDebug };
+	oBatchesHandler.oBatches = { oCreationBatchSky, oCreationBatch };
 	m_pHandler = new RenderBatchesHandler(oBatchesHandler);
+
+	/*RenderBatchesHandler::CreationBatchDesc oCreationBatchDebug;
+	oCreationBatchDebug.bTestDepth = false;
+	oCreationBatchDebug.bWriteDepth = false;
+	oCreationBatchDebug.eTopology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+	oCreationBatchDebug.oShaderCompiled = { "./Shader/Debug/vert.spv", "./Shader/Debug/frag.spv" };
+	oCreationBatchDebug.oShaderSources = { "./Shader/Debug/Src/vs.vert", "./Shader/Debug/Src/fs.frag" };
+	oCreationBatchDebug.sTag = DEBUG_TAG;*/
+
+	RenderBatchesHandler::CreationBatchDesc oCreationTextDebug;
+	oCreationTextDebug.bTestDepth = false;
+	oCreationTextDebug.bWriteDepth = false;
+	oCreationTextDebug.oShaderCompiled = { "./Shader/Text/vert.spv", "./Shader/Text/frag.spv" };
+	oCreationTextDebug.oShaderSources = { "./Shader/Text/Src/vs.vert", "./Shader/Text/Src/fs.frag" };
+	oCreationTextDebug.sTag = TEXT_TAG;
+
+	RenderBatchesHandler::Desc oBatchesHandlerDebug;
+	oBatchesHandlerDebug.eSamples = VK_SAMPLE_COUNT_1_BIT;
+	oBatchesHandlerDebug.pPass = m_pDebugRenderpass;
+	oBatchesHandlerDebug.pWrapper = this;
+	oBatchesHandlerDebug.pFactory = m_pFactory;
+	oBatchesHandlerDebug.oBatches = { oCreationTextDebug };
+	m_pDebugHandler = new RenderBatchesHandler(oBatchesHandlerDebug);
 
 	DescriptorPool::Desc oDescPool;
 	oDescPool.iImageCount = (int)m_pSwapchain->GetImageViews().size();
 	oDescPool.iSize = 1000;
+	oDescPool.iMaxSet = 150;
 	oDescPool.pWrapper = this;
 	m_pPool = new DescriptorPool(oDescPool);
+
+	Font::Desc oFontDesc;
+	oFontDesc.pFactory = m_pFactory;
+	oFontDesc.pPipeline = m_pDebugHandler->GetRenderBatch(0)->GetPipeline();
+	oFontDesc.pPool = m_pPool;
+	oFontDesc.pRenderpass = m_pDebugRenderpass;
+	oFontDesc.pWrapper = this;
+	oFontDesc.sFontName = "Font/ElaineSans-Black.ttf";
+
+	m_pFont = new Font(oFontDesc);
 
 	Mesh::Desc oMeshDesc;
 	oMeshDesc.pFactory = m_pFactory;
@@ -387,7 +431,16 @@ void BasicWrapper::InitFramebuffer()
 		oDesc.pRenderPass = m_pRenderpass;
 
 		m_oFramebuffers.push_back(new Framebuffer(oDesc));
+
+		Framebuffer::Desc oDebugDesc;
+		oDebugDesc.pGraphicDevice = m_pDevice;
+		oDebugDesc.pRenderPass = m_pDebugRenderpass;
+
+		std::vector<VkImageView> oImagesDebug = { m_pSwapchain->GetImageViews()[i] };
+		oDebugDesc.pImageView = &oImagesDebug;
+		m_oFramebuffersDebug.push_back(new Framebuffer(oDebugDesc));
 	}
+
 	std::cout << "Framebuffer created" << std::endl;
 }
 
@@ -466,7 +519,14 @@ bool BasicWrapper::Render(SyncObjects* pSync)
 		oSubmit.pWaitSemaphores = &pSync->GetImageAcquiredSemaphore()[pSync->GetFrame()];
 		VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 
+		VkCommandBuffer* pCmd = m_pDebugHandler->GetCommand(m_oFramebuffersDebug[iImageIndex]);
 		std::vector<VkCommandBuffer> oCmds = { *m_pHandler->GetCommand( m_oFramebuffers[iImageIndex] ), *m_pImGui->GetDrawCommand(oDesc) };
+		if (pCmd != nullptr)
+		{
+			//oCmds.insert(oCmds.begin() + 1, *pCmd);
+		}
+		oCmds.insert(oCmds.begin() + 1, m_pFont->GetDrawCommand("SEVERIN",m_oFramebuffersDebug[iImageIndex],500, 500, 1.f));
+
 		oSubmit.pWaitDstStageMask = waitStages;
 		oSubmit.commandBufferCount = (uint32_t)oCmds.size();
 		oSubmit.pCommandBuffers = oCmds.data();

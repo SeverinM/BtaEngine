@@ -21,6 +21,7 @@ class RenderPass;
 class InputHandling;
 class RenderBatch;
 class RenderBatchesHandler;
+class Font;
 
 class BasicWrapper : public GraphicWrapper
 {
@@ -46,10 +47,12 @@ public :
 	void RecreateSwapChain();
 
 	RenderBatchesHandler* GetHandler() { return m_pHandler; }
+	RenderBatchesHandler* GetDebugHandler() { return m_pDebugHandler; }
 	DelayedCommands* GetDelayedCommands() { return &m_oCommandsQueue; }
 	CommandFactory* GetFactory() { return m_pFactory; }
 	DescriptorPool* GetDescriptorPool() { return m_pPool; }
 	Camera* GetCamera() { return m_pCamera; }
+	RenderPass* GetRenderpass() { return m_pRenderpass; }
 
 	BasicWrapper(GraphicWrapper::Desc& oDesc)
 	{
@@ -77,6 +80,9 @@ protected:
 	ImGuiWrapper* m_pImGui;
 	InputHandling* m_pHandling;
 
+	RenderPass* m_pDebugRenderpass;
+
+
 	BasicBuffer* m_pSkyBuffer;
 	glm::mat4 m_mModel;
 
@@ -92,10 +98,14 @@ protected:
 	bool m_bAdd;
 
 	RenderBatchesHandler* m_pHandler;
+	RenderBatchesHandler* m_pDebugHandler;
+
+	Font* m_pFont;
 
 	std::vector< std::shared_ptr<Image> > m_oAllDepths;
 	std::vector< std::shared_ptr<Image> > m_oAllMultisample;
 	std::vector< Framebuffer* > m_oFramebuffers;
+	std::vector< Framebuffer* > m_oFramebuffersDebug;
 };
 
 #endif

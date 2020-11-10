@@ -6,5 +6,6 @@
 #define TAG_MP "ModelProjection"
 
 #define DEBUG_TAG "Debug"
+#define TEXT_TAG "Text"
 
 #endif TAG_MODELS
