@@ -21,6 +21,22 @@ public:
 	int GetUnitCount() { return m_iUnitCount; }
 	void CopyFromMemory(void* pData, GraphicDevice* pDevice);
 	void CopyFromMemory(void* pData, GraphicDevice* pDevice, uint64_t iOffset, uint64_t iSize);
+	void CopyFromMemory(void* pSrc, GraphicDevice* pDevice, int iWidth, int iPitch, int iHeight)
+	{
+		char* pSrcChar = (char*)pSrc;
+		void* pDst;
+		vkMapMemory(*pDevice->GetLogicalDevice(), *m_pMemory, 0, GetMemorySize(), 0, &pDst);
+		char* pDstChar = (char*)pDst;
+
+		for (int i = 0; i < iHeight; i++)
+		{
+			memcpy(pDstChar, pSrcChar, iWidth);
+			pDstChar += iPitch;
+			pSrcChar += iWidth;
+		}
+
+		vkUnmapMemory(*pDevice->GetLogicalDevice(), *m_pMemory);
+	}
 
 protected:
 	uint32_t FindMemoryType(GraphicWrapper* pWrapper, uint32_t iTypeFilter, VkMemoryPropertyFlags oProperties);
@@ -105,6 +121,7 @@ public:
 		void* pBuffer;
 		uint16_t iHeight;
 		uint16_t iWidth;
+		bool bForceSize;
 	};
 
 	Image(Desc& oDesc);
@@ -140,6 +157,7 @@ protected :
 	int m_iHeight;
 	int m_iWidth;
 	bool m_bIsCubemap;
+	int m_iRowPitch;
 	GraphicDevice* m_pDevice;
 	BasicBuffer* m_pBuffer;
 };

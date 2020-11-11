@@ -185,6 +185,7 @@ GraphicDevice::GraphicDevice(Desc& oDesc)
 	VkPhysicalDeviceFeatures oDeviceFeatures{};
 	oDeviceFeatures.samplerAnisotropy = VK_TRUE;
 	oDeviceFeatures.sampleRateShading = VK_TRUE;
+	oDeviceFeatures.logicOp = VK_TRUE;
 
 	VkDeviceCreateInfo oCreateInfo{};
 	oCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;

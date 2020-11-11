@@ -49,11 +49,12 @@ BasicBuffer::BasicBuffer(Desc& oDesc)
 		throw std::runtime_error("Failed to create buffer");
 	}
 
+	VkMemoryAllocateInfo oAllocInfo{};
+	oAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+
 	VkMemoryRequirements oMemoryRequirements;
 	vkGetBufferMemoryRequirements(*oDesc.pWrapper->GetDevice()->GetLogicalDevice(), *m_pBuffer, &oMemoryRequirements);
 
-	VkMemoryAllocateInfo oAllocInfo{};
-	oAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 	oAllocInfo.allocationSize = oMemoryRequirements.size;
 	oAllocInfo.memoryTypeIndex = FindMemoryType(oDesc.pWrapper, oMemoryRequirements.memoryTypeBits, oDesc.oPropertyFlags);
 
@@ -86,6 +87,11 @@ size_t Buffer::GetMemorySize(VkFormat eFormat)
 	if (eFormat >= VK_FORMAT_R8_UNORM && eFormat <= VK_FORMAT_R8_SRGB)
 	{
 		return 1;
+	}
+
+	if (eFormat == VK_FORMAT_D32_SFLOAT)
+	{
+		return 4;
 	}
 
 	throw std::runtime_error("Could not find a size for the specified format");
@@ -344,6 +350,7 @@ Image* Image::CreateFromBuffer(FromBufferDesc& oDesc)
 	oBufferDesc.pWrapper = oDesc.pWrapper;
 
 	BasicBuffer* pBasicBuffer = new BasicBuffer(oBufferDesc);
+
 	pBasicBuffer->CopyFromMemory(oDesc.pBuffer, oDesc.pWrapper->GetModifiableDevice());
 
 	Image::Desc oImgDesc;
@@ -352,7 +359,7 @@ Image* Image::CreateFromBuffer(FromBufferDesc& oDesc)
 	oImgDesc.eFormat = oDesc.eFormat;
 	oImgDesc.eAspect = oDesc.eAspect;
 	oImgDesc.eProperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-	oImgDesc.eTiling = VK_IMAGE_TILING_OPTIMAL;
+	oImgDesc.eTiling = oDesc.eTiling;
 	oImgDesc.eUsage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
 	oImgDesc.pWrapper = oDesc.pWrapper;
 	oImgDesc.bEnableMip = oDesc.bEnableMip;
@@ -361,6 +368,11 @@ Image* Image::CreateFromBuffer(FromBufferDesc& oDesc)
 	oImgDesc.iLayerCount = 1;
 
 	Image* pImage = new Image(oImgDesc);
+	/*if (oDesc.eTiling == VK_IMAGE_TILING_LINEAR)
+	{
+		pBasicBuffer->CopyFromMemory(oDesc.pBuffer, oDesc.pWrapper->GetModifiableDevice(), oDesc.iWidth, pImage->m_iRowPitch, oDesc.iHeight);
+	}*/
+
 	pImage->TransitionLayout(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, oDesc.pFactory, pImage->GetMipLevel());
 	pImage->SendCopyCommand(pBasicBuffer, oDesc.pFactory);
 
@@ -451,8 +463,9 @@ void Image::GenerateMips(MipDesc& oDesc)
 
 Image::Image(Desc& oDesc)
 {
+	m_iSizeUnit = GetMemorySize(oDesc.eFormat);
 	m_pDevice = oDesc.pWrapper->GetModifiableDevice();
-	m_iWidth = oDesc.iWidth;
+	m_iRowPitch = m_iWidth = oDesc.iWidth;
 	m_iHeight = oDesc.iHeight;
 	m_bIsCubemap = oDesc.bIsCubemap;
 
@@ -486,14 +499,13 @@ Image::Image(Desc& oDesc)
 		throw std::runtime_error("Create image");
 	}
 
-	VkMemoryRequirements oMemRequirements;
-	vkGetImageMemoryRequirements(*oDesc.pWrapper->GetDevice()->GetLogicalDevice(), m_oImage, &oMemRequirements);
-
 	VkMemoryAllocateInfo oAllocInfo{};
 	oAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	VkMemoryRequirements oMemRequirements;
+	vkGetImageMemoryRequirements(*oDesc.pWrapper->GetDevice()->GetLogicalDevice(), m_oImage, &oMemRequirements);
 	oAllocInfo.allocationSize = oMemRequirements.size;
 	oAllocInfo.memoryTypeIndex = FindMemoryType(oDesc.pWrapper, oMemRequirements.memoryTypeBits, oDesc.eProperties);
-
+	
 	m_pMemory = new VkDeviceMemory();
 	if (vkAllocateMemory(*oDesc.pWrapper->GetDevice()->GetLogicalDevice(), &oAllocInfo, nullptr, m_pMemory) != VK_SUCCESS)
 	{
@@ -504,6 +516,20 @@ Image::Image(Desc& oDesc)
 
 	CreateSampler(oDesc);
 	CreateView(oDesc, oDesc.eAspect);
+
+	if (oDesc.eTiling == VK_IMAGE_TILING_LINEAR)
+	{
+		VkImageSubresource subRes = {};
+		subRes.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		subRes.mipLevel = 0;
+		subRes.arrayLayer = 0;
+
+		VkSubresourceLayout subResLayout;
+		vkGetImageSubresourceLayout(*m_pDevice->GetLogicalDevice(), m_oImage, &subRes, &subResLayout);
+
+		m_iRowPitch = subResLayout.rowPitch;
+		std::cout << "Pitch : " << m_iRowPitch << std::endl;
+	}
 }
 
 Image::~Image()

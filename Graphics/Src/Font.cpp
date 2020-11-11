@@ -51,24 +51,15 @@ Font::Font(Desc& oDesc)
 		if (m_oFace->glyph->bitmap.width == 0)
 			continue;
 
-		std::vector<unsigned char> oOnlyRedMemory;
-		for (int i = 0; i < m_oFace->glyph->bitmap.width * m_oFace->glyph->bitmap.rows; i++)
-		{
-			oOnlyRedMemory.push_back(m_oFace->glyph->bitmap.buffer[i]);
-			oOnlyRedMemory.push_back(0);
-			oOnlyRedMemory.push_back(0);
-			oOnlyRedMemory.push_back(0);
-		}
-
 		Image::FromBufferDesc oBufferCreateDesc;
 		oBufferCreateDesc.eAspect = VK_IMAGE_ASPECT_COLOR_BIT;
-		oBufferCreateDesc.eTiling = VK_IMAGE_TILING_OPTIMAL;
+		oBufferCreateDesc.eTiling = VK_IMAGE_TILING_LINEAR;
 		oBufferCreateDesc.bEnableMip = false;
-		oBufferCreateDesc.eFormat = VK_FORMAT_R8G8B8A8_SRGB;
+		oBufferCreateDesc.eFormat = VK_FORMAT_R8_SRGB;
 		oBufferCreateDesc.eSampleFlag = VK_SAMPLE_COUNT_1_BIT;
-		oBufferCreateDesc.iHeight = m_oFace->glyph->bitmap.width;
-		oBufferCreateDesc.iWidth = m_oFace->glyph->bitmap.rows;
-		oBufferCreateDesc.pBuffer = oOnlyRedMemory.data();
+		oBufferCreateDesc.iHeight = m_oFace->glyph->bitmap.rows; 
+		oBufferCreateDesc.iWidth = m_oFace->glyph->bitmap.width;
+		oBufferCreateDesc.pBuffer = m_oFace->glyph->bitmap.buffer;
 		oBufferCreateDesc.pWrapper = oDesc.pWrapper;
 		oBufferCreateDesc.pFactory = oDesc.pFactory;
 
@@ -132,10 +123,20 @@ VkCommandBuffer Font::GetDrawCommand(std::string sText,Framebuffer* pFramebuffer
 	int i = 0;
 	for (char sCharacter : sText)
 	{
+		if (sCharacter == ' ')
+		{
+			x += 2000 >> 6;
+			continue;
+		}
+
 		Character oCh = m_oCacheTextures[sCharacter];
 
-		float xPos = x + oCh.vBearing.x;
-		float yPos = y - (oCh.vSize.y - oCh.vBearing.y) * fScale;
+		float xPos = x + ( oCh.vBearing.x * fScale );
+		float yPos = y - ( oCh.vSize.y * fScale);
+		yPos -= (oCh.vBearing.y - oCh.vSize.y) * fScale;
+
+		std::cout << sCharacter << std::endl;
+		std::cout << oCh.vBearing.y - oCh.vSize.y << std::endl;
 
 		float w = oCh.vSize.x * fScale;
 		float h = oCh.vSize.y * fScale; 
@@ -144,7 +145,7 @@ VkCommandBuffer Font::GetDrawCommand(std::string sText,Framebuffer* pFramebuffer
 		{
 			xPos, yPos +h, 0,0,
 			xPos, yPos, 0,1,
-			xPos + h, yPos, 1,1,
+			xPos + w, yPos, 1,1,
 			xPos, yPos + h, 0,0,
 			xPos + w, yPos, 1,1,
 			xPos + w, yPos + h, 1,0

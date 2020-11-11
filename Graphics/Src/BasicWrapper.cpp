@@ -525,7 +525,7 @@ bool BasicWrapper::Render(SyncObjects* pSync)
 		{
 			//oCmds.insert(oCmds.begin() + 1, *pCmd);
 		}
-		oCmds.insert(oCmds.begin() + 1, m_pFont->GetDrawCommand("SEVERIN",m_oFramebuffersDebug[iImageIndex],500, 500, 1.f));
+		oCmds.insert(oCmds.begin() + 1, m_pFont->GetDrawCommand("192.168.0.1",m_oFramebuffersDebug[iImageIndex],0, 500, 1.f));
 
 		oSubmit.pWaitDstStageMask = waitStages;
 		oSubmit.commandBufferCount = (uint32_t)oCmds.size();

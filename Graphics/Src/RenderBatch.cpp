@@ -209,7 +209,7 @@ RenderBatchesHandler::RenderBatchesHandler(Desc& oDesc)
 		Pipeline::FillVerticesDescription(oPipelineDesc.oBindingDescription, oPipelineDesc.oAttributeDescriptions, oBatchCreateDesc.oShaderSources[0]);
 		oPipelineDesc.bTestDepth = oBatchCreateDesc.bTestDepth;
 		oPipelineDesc.bWriteDepth = oBatchCreateDesc.bWriteDepth;
-		oPipelineDesc.bEnableTransparent = false;
+		oPipelineDesc.bEnableTransparent = true;
 		oPipelineDesc.eSample = oDesc.eSamples;
 		oPipelineDesc.iSubPassIndex = i;
 		oPipelineDesc.eVerticesAssemblyMode = oBatchCreateDesc.eTopology;

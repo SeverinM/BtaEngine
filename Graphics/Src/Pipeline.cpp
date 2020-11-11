@@ -124,10 +124,17 @@ void Pipeline::Create(Desc& oDesc)
 	VkPipelineColorBlendAttachmentState oColorBlendAttachment{};
 	oColorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 	oColorBlendAttachment.blendEnable = (oDesc.bEnableTransparent ? VK_TRUE : VK_FALSE);
+	oColorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+	oColorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+	oColorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
+	oColorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+	oColorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+	oColorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
 
 	VkPipelineColorBlendStateCreateInfo oColorBlending{};
 	oColorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-	oColorBlending.logicOpEnable = (oDesc.bEnableTransparent ? VK_TRUE : VK_FALSE);
+	oColorBlending.logicOpEnable = VK_FALSE;
+	oColorBlending.logicOp = VK_LOGIC_OP_COPY;
 	oColorBlending.attachmentCount = 1;
 	oColorBlending.pAttachments = &oColorBlendAttachment;
 
