@@ -135,9 +135,6 @@ VkCommandBuffer Font::GetDrawCommand(std::string sText,Framebuffer* pFramebuffer
 		float yPos = y - ( oCh.vSize.y * fScale);
 		yPos -= (oCh.vBearing.y - oCh.vSize.y) * fScale;
 
-		std::cout << sCharacter << std::endl;
-		std::cout << oCh.vBearing.y - oCh.vSize.y << std::endl;
-
 		float w = oCh.vSize.x * fScale;
 		float h = oCh.vSize.y * fScale; 
 

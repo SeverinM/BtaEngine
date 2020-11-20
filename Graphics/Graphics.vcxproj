@@ -143,6 +143,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="AbstractRenderBatch.cpp" />
     <ClCompile Include="Include\imgui.cpp" />
     <ClCompile Include="Include\imgui_demo.cpp" />
     <ClCompile Include="Include\imgui_draw.cpp" />
@@ -172,6 +173,7 @@
     <ClCompile Include="Src\Transform.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AbstractRenderBatch.h" />
     <ClInclude Include="Include\imconfig.h" />
     <ClInclude Include="Include\imgui.h" />
     <ClInclude Include="Include\imgui_impl_glfw.h" />

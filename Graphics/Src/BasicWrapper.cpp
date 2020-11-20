@@ -64,7 +64,7 @@ void BasicWrapper::CreateInstance()
 	oCreateInfo.ppEnabledExtensionNames = oExtensions.data();
 	oCreateInfo.enabledExtensionCount = static_cast<uint32_t>( oExtensions.size() );
 
-	if (vkCreateInstance(&oCreateInfo, nullptr, &Graphics::Globals::s_oInstance) != VK_SUCCESS)
+	if (vkCreateInstance(&oCreateInfo, nullptr, &Graphics::Globals::g_oInstance) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Cannot create instance");
 	}
@@ -73,7 +73,7 @@ void BasicWrapper::CreateInstance()
 	oDesc.iHeight = 1000;
 	oDesc.iWidth = 1000;
 	oDesc.sWindowName = "Bta";
-	oDesc.pInstance = &Graphics::Globals::s_oInstance;
+	oDesc.pInstance = &Graphics::Globals::g_oInstance;
 	oDesc.pCallback = BasicWrapper::ResizeWindow;
 	m_pDesc->pSurface = new Window::RenderSurface(oDesc);
 	std::cout << "Instance created" << std::endl;
@@ -83,7 +83,7 @@ void BasicWrapper::CreateGraphicDevice()
 {
 	GraphicDevice::Desc oDesc;
 	oDesc.bEnableAnisotropy = true;
-	oDesc.pInstance = &Graphics::Globals::s_oInstance;
+	oDesc.pInstance = &Graphics::Globals::g_oInstance;
 	oDesc.oExtensions = m_pDesc->oRequiredExtensionsDevice;
 	oDesc.pSurface = m_pDesc->pSurface;
 	m_pDevice = new GraphicDevice(oDesc);
@@ -446,7 +446,7 @@ void BasicWrapper::InitFramebuffer()
 
 bool BasicWrapper::Render(SyncObjects* pSync)
 {
-	m_oCommandsQueue.Update(Graphics::Globals::s_fElapsed);
+	m_oCommandsQueue.Update(Graphics::Globals::g_fElapsed);
 	m_xMesh->GetTransforms()[1]->Rotate(glm::vec3(0, 0, 1), 0.1f);
 
 	glm::mat4 mCam = m_pCamera->GetViewMatrix();
@@ -563,7 +563,7 @@ bool BasicWrapper::Render(SyncObjects* pSync)
 
 	pSync->NextFrame();
 	auto end = std::chrono::system_clock::now();
-	Graphics::Globals::s_fElapsed = std::chrono::duration<float>(end - start).count();
+	Graphics::Globals::g_fElapsed = std::chrono::duration<float>(end - start).count();
 	return true;
 }
 
@@ -578,7 +578,7 @@ void BasicWrapper::RenderGui(BasicWrapper* pWrapper)
 	glm::vec3 vForward = pWrapper->m_pCamera->GetTransform()->GetForward();
 
 	ImGui::Begin("Bta Debug");
-	ImGui::Text("FPS : %i", (int)(1.0f / Graphics::Globals::s_fElapsed));
+	ImGui::Text("FPS : %i", (int)(1.0f / Graphics::Globals::g_fElapsed));
 	ImGui::Text("Instances rendered : %i", pWrapper->m_pHandler->GetInstancesCount());
 	ImGui::Text("Vertices count : %i", pWrapper->m_pHandler->GetVerticesCount());
 	ImGui::Text("Camera position : %f / %f / %f", vPos.x, vPos.y, vPos.z);

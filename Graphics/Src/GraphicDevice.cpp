@@ -142,7 +142,7 @@ GraphicDevice::GraphicDevice(Desc& oDesc)
 	int iMaxScore = 0;
 
 	uint32_t iPhysicalDeviceCount = 0;
-	vkEnumeratePhysicalDevices(Graphics::Globals::s_oInstance, &iPhysicalDeviceCount, nullptr);
+	vkEnumeratePhysicalDevices(Graphics::Globals::g_oInstance, &iPhysicalDeviceCount, nullptr);
 
 	if (iPhysicalDeviceCount == 0)
 	{
@@ -150,7 +150,7 @@ GraphicDevice::GraphicDevice(Desc& oDesc)
 	}
 
 	std::vector<VkPhysicalDevice> oDevices(iPhysicalDeviceCount);
-	vkEnumeratePhysicalDevices(Graphics::Globals::s_oInstance, &iPhysicalDeviceCount, oDevices.data());
+	vkEnumeratePhysicalDevices(Graphics::Globals::g_oInstance, &iPhysicalDeviceCount, oDevices.data());
 
 	for (auto& oPhysicalDevice : oDevices)
 	{

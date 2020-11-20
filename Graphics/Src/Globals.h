@@ -3,12 +3,15 @@
 #include "vulkan/vulkan_core.h"
 #include <iostream>
 
+class GraphicDevice;
+
 namespace Graphics
 {
 	struct Globals
 	{
-		static VkInstance s_oInstance;
-		static float s_fElapsed;
+		static VkInstance g_oInstance;
+		static float g_fElapsed;
+		static GraphicDevice* g_pDevice;
 	};
 
 	static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback

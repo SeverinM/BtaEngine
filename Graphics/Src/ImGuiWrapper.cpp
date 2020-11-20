@@ -51,7 +51,7 @@ ImGuiWrapper::ImGuiWrapper(Desc& oDesc)
 
 	ImGui_ImplGlfw_InitForVulkan(oDesc.pWrapper->GetModifiableDevice()->GetModifiableRenderSurface()->GetWindow(), true);
 	ImGui_ImplVulkan_InitInfo init_info = {};
-	init_info.Instance = Graphics::Globals::s_oInstance;
+	init_info.Instance = Graphics::Globals::g_oInstance;
 	init_info.PhysicalDevice = *oDesc.pWrapper->GetDevice()->GetPhysicalDevice();
 	init_info.Device = *oDesc.pWrapper->GetDevice()->GetLogicalDevice();
 	init_info.QueueFamily = oDesc.pWrapper->GetDevice()->GetGraphicQueueIndex();
