@@ -5,6 +5,7 @@
 
 class GraphicDevice;
 class DescriptorPool;
+class Camera;
 
 namespace Graphics
 {
@@ -14,6 +15,7 @@ namespace Graphics
 		static float g_fElapsed;
 		static GraphicDevice* g_pDevice;
 		static DescriptorPool* g_pPool;
+		static Camera* g_pCamera;
 	};
 
 	static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback

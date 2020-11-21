@@ -14,7 +14,6 @@ public:
 		RenderPass* pRenderpass;
 		Pipeline* pPipeline;
 		CommandFactory* pFactory;
-		GraphicWrapper* pWrapper;
 		RenderBatch* pNext;
 		std::string sTag;
 	};
@@ -38,7 +37,6 @@ protected :
 
 	void TryFillModelsBuffer(Mesh::StrongPtr xMesh);
 	void ReconstructCommand(Framebuffer* pFramebuffer);
-	GraphicWrapper* m_pWrapper;
 
 	std::unordered_map<Mesh::StrongPtr, DescriptorSetWrapper*> m_oEntities;
 };
@@ -118,7 +116,6 @@ protected:
 	RenderPass* m_pRenderpass;
 	std::vector<CreationBatchDesc> m_oPipelineDesc;
 	std::vector<AbstractRenderBatch*> m_oBatches;
-	GraphicDevice* m_pDevice;
 };
 
 #endif

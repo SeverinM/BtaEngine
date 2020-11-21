@@ -1,6 +1,7 @@
 #include "Transform.h"
 #include <iostream>
 #include "GLM/gtx/string_cast.hpp"
+#include "Globals.h"
 
 Transform::Transform(glm::mat4& mInitialModel) : m_xParent(nullptr)
 {
@@ -92,7 +93,6 @@ BufferedTransform::BufferedTransform(glm::mat4& mInitialMode, uint64_t iOffset, 
 {
 	m_iOffset = iOffset;
 	m_xBuffer = xBuffer;
-	m_pDevice = pDevice;
 }
 
 void BufferedTransform::SetPosition(glm::vec3 vNewPosition, bool bRelative /*= false*/)
@@ -136,14 +136,13 @@ std::shared_ptr<BasicBuffer> BufferedTransform::MergeTransform(std::vector<std::
 	oDesc.oPropertyFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
 	oDesc.iUnitSize = sizeof(glm::mat4);
 	oDesc.iUnitCount = (uint32_t)oTrsf.size();
-	oDesc.pWrapper = pWrapper;
 	std::shared_ptr<BasicBuffer> xBuffer = std::shared_ptr<BasicBuffer>( new BasicBuffer(oDesc) );
 	uint64_t iOffset = 0;
 
 	for (std::shared_ptr<Transform> xTrans : oTrsf)
 	{
 		glm::mat4 mInput = xTrans->GetModelMatrix();
-		oBufferedTransform.push_back(std::make_shared<BufferedTransform> (BufferedTransform( mInput, iOffset, std::static_pointer_cast<Buffer>(xBuffer), pWrapper->GetModifiableDevice())));
+		oBufferedTransform.push_back(std::make_shared<BufferedTransform> (BufferedTransform( mInput, iOffset, std::static_pointer_cast<Buffer>(xBuffer), Graphics::Globals::g_pDevice)));
 		iOffset += sizeof(glm::mat4);
 		oBufferedTransform[oBufferedTransform.size() - 1]->UpdateBuffer();
 	}
@@ -154,5 +153,5 @@ std::shared_ptr<BasicBuffer> BufferedTransform::MergeTransform(std::vector<std::
 void BufferedTransform::UpdateBuffer()
 {
 	void* pData = &m_mModel;
-	m_xBuffer->CopyFromMemory(pData, m_pDevice, m_iOffset, sizeof(glm::mat4));
+	m_xBuffer->CopyFromMemory(pData, Graphics::Globals::g_pDevice, m_iOffset, sizeof(glm::mat4));
 }

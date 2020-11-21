@@ -5,6 +5,7 @@
 #include "GLM/glm.hpp"
 #include <string>
 #include <vector>
+#include "Globals.h"
 
 bool FontRenderBatch::s_bIsInitialized(false);
 FT_Library FontRenderBatch::s_oFt;
@@ -15,7 +16,6 @@ FontRenderBatch::FontRenderBatch(Desc& oDesc)
 	m_pPipeline = oDesc.pPipeline;
 	m_pFactory = oDesc.pFactory;
 	m_pPool = oDesc.pPool;
-	m_pWrapper = oDesc.pWrapper;
 	m_bEnabled = true;
 
 	if (!s_bIsInitialized)
@@ -49,14 +49,13 @@ FontRenderBatch::FontRenderBatch(Desc& oDesc)
 		oBufferCreateDesc.iHeight = m_oFace->glyph->bitmap.rows;
 		oBufferCreateDesc.iWidth = m_oFace->glyph->bitmap.width;
 		oBufferCreateDesc.pBuffer = m_oFace->glyph->bitmap.buffer;
-		oBufferCreateDesc.pWrapper = oDesc.pWrapper;
 		oBufferCreateDesc.pFactory = oDesc.pFactory;
 
 
 		CharacterUnit oChar;
 		oChar.pImage = Image::CreateFromBuffer(oBufferCreateDesc);
 		oChar.pImage->TransitionLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, m_pFactory, 1);
-		oChar.pDescriptorSet = m_pPipeline->GetDescriptorSetLayout()->InstantiateDescriptorSet(*m_pPool, *m_pWrapper->GetDevice());
+		oChar.pDescriptorSet = m_pPipeline->GetDescriptorSetLayout()->InstantiateDescriptorSet(*m_pPool, *Graphics::Globals::g_pDevice);
 		oChar.pDescriptorSet->FillSlotAtTag(oChar.pImage, TAG_COLORMAP);
 		
 		BasicBuffer::Desc oBufferDesc;
@@ -64,13 +63,12 @@ FontRenderBatch::FontRenderBatch(Desc& oDesc)
 		oBufferDesc.iUnitCount = 3;
 		oBufferDesc.iUnitSize = sizeof(glm::mat4);
 		oBufferDesc.oPropertyFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
-		oBufferDesc.pWrapper = oDesc.pWrapper;
 		BasicBuffer* pProjectionBuffer = new BasicBuffer(oBufferDesc);
 
 		int iWidth, iHeight;
-		oDesc.pWrapper->GetModifiableDevice()->GetModifiableRenderSurface()->GetWindowSize(iWidth, iHeight);
+		Graphics::Globals::g_pDevice->GetModifiableRenderSurface()->GetWindowSize(iWidth, iHeight);
 		std::vector<glm::mat4> oMats = { glm::mat4(1.0f) , glm::mat4(1.0f), glm::ortho(0.0f, (float)iWidth, 0.0f, (float)iHeight) };
-		pProjectionBuffer->CopyFromMemory(oMats.data(), m_pWrapper->GetDevice());
+		pProjectionBuffer->CopyFromMemory(oMats.data(), Graphics::Globals::g_pDevice);
 		oChar.pDescriptorSet->FillSlot(1, pProjectionBuffer);
 
 		oChar.pDescriptorSet->CommitSlots(m_pPool);
@@ -87,7 +85,6 @@ FontRenderBatch::FontRenderBatch(Desc& oDesc)
 	oBufferDesc.iUnitCount = 6;
 	oBufferDesc.iUnitSize = sizeof(glm::vec2) * 2;
 	oBufferDesc.oPropertyFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
-	oBufferDesc.pWrapper = oDesc.pWrapper;
 	for (int i = 0; i < 50; i++)
 	{
 		m_oBuffers.push_back(new BasicBuffer(oBufferDesc));
@@ -127,7 +124,7 @@ VkCommandBuffer* FontRenderBatch::GetDrawCommand(Framebuffer* pFramebuffer)
 	oBeginInfo.framebuffer = *pFramebuffer->GetFramebuffer();
 
 	int iWidth, iHeight;
-	m_pWrapper->GetModifiableDevice()->GetModifiableRenderSurface()->GetWindowSize(iWidth, iHeight);
+	Graphics::Globals::g_pDevice->GetModifiableRenderSurface()->GetWindowSize(iWidth, iHeight);
 
 	VkExtent2D oExtent;
 	oExtent.height = iHeight;
@@ -199,7 +196,7 @@ void FontRenderBatch::ChainSubpass(VkCommandBuffer* pCommand)
 					xPos + w, yPos, 1,1,
 					xPos + w, yPos + h, 1,0
 				};
-				m_oBuffers[i]->CopyFromMemory(vPositions, m_pWrapper->GetDevice());
+				m_oBuffers[i]->CopyFromMemory(vPositions, Graphics::Globals::g_pDevice);
 
 				VkDeviceSize oOffsets[] = { 0 };
 				vkCmdBindVertexBuffers(*pCommand, 0, 1,m_oBuffers[i]->GetBuffer(), oOffsets);

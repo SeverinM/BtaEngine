@@ -14,7 +14,6 @@ public:
 		RenderPass* pRenderpass;
 		Pipeline* pPipeline;
 		std::string sFontName;
-		GraphicWrapper* pWrapper;
 		CommandFactory* pFactory;
 		DescriptorPool* pPool;
 		uint16_t iFilterMVP;
@@ -68,7 +67,6 @@ public:
 		FT_Face m_oFace;
 
 		DescriptorPool* m_pPool;
-		GraphicWrapper* m_pWrapper;
 };
 
 #endif H_FONT_RENDER_BATCH

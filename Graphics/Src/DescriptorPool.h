@@ -21,7 +21,6 @@ public:
 	{
 		int iSize;
 		int iImageCount;
-		BasicWrapper* pWrapper;
 		int iMaxSet;
 	};
 

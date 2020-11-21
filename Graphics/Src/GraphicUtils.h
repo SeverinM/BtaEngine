@@ -42,15 +42,15 @@ namespace Bta
 					DelayedCommands::QueueCommands oCmds;
 					oCmds.oOnStart = [pWrapper, pBatch, xMesh]()
 					{
-						pBatch->AddMesh(xMesh, pBatch->GetPipeline()->GetDescriptorSetLayout()->InstantiateDescriptorSet(*pWrapper->GetDescriptorPool(), *pWrapper->GetDevice()));
-						pBatch->GetDescriptor(xMesh)->FillSlotAtTag(pWrapper->GetCamera()->GetVPMatriceBuffer().get(), TAG_VP);
+						pBatch->AddMesh(xMesh, pBatch->GetPipeline()->GetDescriptorSetLayout()->InstantiateDescriptorSet(*pWrapper->GetDescriptorPool(), *Graphics::Globals::g_pDevice));
+						pBatch->GetDescriptor(xMesh)->FillSlotAtTag(Graphics::Globals::g_pCamera->GetVPMatriceBuffer().get(), TAG_VP);
 						pBatch->GetDescriptor(xMesh)->CommitSlots(pWrapper->GetDescriptorPool());
 						pWrapper->GetHandler()->MarkAllAsDirty();
 					};
 
 					oCmds.oTimeOutFunction = [pWrapper, pBatch, xMesh]()
 					{
-						vkDeviceWaitIdle(*pWrapper->GetModifiableDevice()->GetLogicalDevice());
+						vkDeviceWaitIdle(*Graphics::Globals::g_pDevice->GetLogicalDevice());
 						pBatch->RemoveMesh(xMesh);
 						pWrapper->GetHandler()->MarkAllAsDirty();
 					};

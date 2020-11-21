@@ -42,7 +42,6 @@ public:
 		uint64_t m_iOffset;
 	 	std::shared_ptr<Buffer> m_xBuffer;
 		void UpdateBuffer();
-		GraphicDevice* m_pDevice;
 };
 
 

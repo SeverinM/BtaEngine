@@ -16,16 +16,15 @@ int main()
 	SyncObjects::Desc oSyncDesc;
 	oSyncDesc.iFrameOnFlight = 2;
 	oSyncDesc.iNumberImages = (int)oWrapper.GetSwapchain()->GetImageViews().size();
-	oSyncDesc.pWrapper = &oWrapper;
 	SyncObjects* pSyncObj = new SyncObjects(oSyncDesc);
 
 	bool bExit = true;
-	while (bExit && !glfwWindowShouldClose(oWrapper.GetModifiableDevice()->GetModifiableRenderSurface()->GetModifiableWindow()))
+	while (bExit && !glfwWindowShouldClose(Graphics::Globals::g_pDevice->GetModifiableRenderSurface()->GetModifiableWindow()))
 	{
 		glfwPollEvents();
 		bExit = oWrapper.Render(pSyncObj);
 	}
-	vkDeviceWaitIdle(*oWrapper.GetDevice()->GetLogicalDevice());
+	vkDeviceWaitIdle(*Graphics::Globals::g_pDevice->GetLogicalDevice());
 
 	return 0;
 }

@@ -15,7 +15,6 @@ public:
 
 		DescriptorLayoutWrapper* pInputDatas;
 		std::vector<std::string> oShaderFilenames;
-		GraphicWrapper* pWrapper;
 		VkVertexInputBindingDescription oBindingDescription;
 		std::vector<VkVertexInputAttributeDescription> oAttributeDescriptions;
 		VkSampleCountFlagBits eSample;

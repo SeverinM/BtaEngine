@@ -9,7 +9,6 @@ RenderBatch::RenderBatch(Desc& oDesc)
 {
 	m_bEnabled = true;
 	m_bDirty = false;
-	m_pWrapper = oDesc.pWrapper;
 	m_pFactory = oDesc.pFactory;
 	m_pRenderpass = oDesc.pRenderpass;
 	m_pPipeline = oDesc.pPipeline;
@@ -22,7 +21,7 @@ RenderBatch::~RenderBatch()
 	for (std::pair<Framebuffer*, VkCommandBuffer*> oCmds : m_oCachedCommandBuffer)
 	{
 		if ( oCmds.second != nullptr)
-			vkFreeCommandBuffers(*m_pWrapper->GetDevice()->GetLogicalDevice(), *m_pFactory->GetCommandPool(), 1, oCmds.second);
+			vkFreeCommandBuffers(*Graphics::Globals::g_pDevice->GetLogicalDevice(), *m_pFactory->GetCommandPool(), 1, oCmds.second);
 	}
 
 	for (std::pair<Mesh::StrongPtr, DescriptorSetWrapper*> oEntity : m_oEntities)
@@ -43,7 +42,7 @@ VkCommandBuffer* RenderBatch::GetDrawCommand(Framebuffer* pFramebuffer)
 	{
 		if (m_oCachedCommandBuffer[pFramebuffer] != nullptr)
 		{
-			vkFreeCommandBuffers(*m_pWrapper->GetDevice()->GetLogicalDevice(), *m_pFactory->GetCommandPool(), 1, m_oCachedCommandBuffer[pFramebuffer]);
+			vkFreeCommandBuffers(*Graphics::Globals::g_pDevice->GetLogicalDevice(), *m_pFactory->GetCommandPool(), 1, m_oCachedCommandBuffer[pFramebuffer]);
 			delete m_oCachedCommandBuffer[pFramebuffer];
 		}
 		m_oCachedCommandBuffer[pFramebuffer] = m_pFactory->CreateCommand();
@@ -93,7 +92,7 @@ void RenderBatch::ClearCache()
 {
 	for (std::pair<Framebuffer*, VkCommandBuffer*> oCmd : m_oCachedCommandBuffer)
 	{
-		vkFreeCommandBuffers(*m_pWrapper->GetModifiableDevice()->GetLogicalDevice(), *m_pFactory->GetCommandPool(), 1, oCmd.second);
+		vkFreeCommandBuffers(*Graphics::Globals::g_pDevice->GetLogicalDevice(), *m_pFactory->GetCommandPool(), 1, oCmd.second);
 	}
 	m_oCachedCommandBuffer.clear();
 }
@@ -128,7 +127,7 @@ void RenderBatch::ReconstructCommand(Framebuffer* pFramebuffer)
 	oBeginInfo.framebuffer = *pFramebuffer->GetFramebuffer();
 
 	int iWidth, iHeight;
-	m_pWrapper->GetModifiableDevice()->GetModifiableRenderSurface()->GetWindowSize(iWidth, iHeight);
+	Graphics::Globals::g_pDevice->GetModifiableRenderSurface()->GetWindowSize(iWidth, iHeight);
 
 	VkExtent2D oExtent;
 	oExtent.height = iHeight;
@@ -200,7 +199,6 @@ void RenderBatch::ChainSubpass(VkCommandBuffer* pBuffer)
 
 RenderBatchesHandler::RenderBatchesHandler(Desc& oDesc)
 {
-	m_pDevice = oDesc.pWrapper->GetModifiableDevice();
 	int i = 0;
 	m_eSamples = oDesc.eSamples;
 	m_pRenderpass = oDesc.pPass;
@@ -219,14 +217,12 @@ RenderBatchesHandler::RenderBatchesHandler(Desc& oDesc)
 		DescriptorLayoutWrapper::ShaderMap oMap;
 		oMap[VK_SHADER_STAGE_VERTEX_BIT] = oBatchCreateDesc.oShaderSources[0];
 		oMap[VK_SHADER_STAGE_FRAGMENT_BIT] = oBatchCreateDesc.oShaderSources[1];
-		oPipelineDesc.pInputDatas = DescriptorLayoutWrapper::ParseShaderFiles(oMap, oDesc.pWrapper->GetModifiableDevice());
+		oPipelineDesc.pInputDatas = DescriptorLayoutWrapper::ParseShaderFiles(oMap, Graphics::Globals::g_pDevice);
 		oPipelineDesc.pRenderPass = oDesc.pPass;
-		oPipelineDesc.pWrapper = oDesc.pWrapper;
 		
 		Pipeline* pPipeline = new Pipeline(oPipelineDesc);
 
 		RenderBatch::Desc oBatchDesc;
-		oBatchDesc.pWrapper = oDesc.pWrapper;
 		oBatchDesc.pRenderpass = oDesc.pPass;
 		oBatchDesc.pPipeline = pPipeline;
 		oBatchDesc.pFactory = oDesc.pFactory;
@@ -242,7 +238,6 @@ RenderBatchesHandler::RenderBatchesHandler(Desc& oDesc)
 			oTextDesc.pPipeline = pPipeline;
 			oTextDesc.pPool = Graphics::Globals::g_pPool;
 			oTextDesc.pRenderpass = m_pRenderpass;
-			oTextDesc.pWrapper = oDesc.pWrapper;
 			oTextDesc.sFontName = "Font/ElaineSans-Black.ttf";
 			oTextDesc.iFilterMVP = AbstractRenderBatch::E_PROJECTION;
 
@@ -289,9 +284,8 @@ void RenderBatchesHandler::ReconstructPipelines(GraphicWrapper* pWrapper)
 		DescriptorLayoutWrapper::ShaderMap oMap;
 		oMap[VK_SHADER_STAGE_VERTEX_BIT] = oBatchCreateDesc.oShaderSources[0];
 		oMap[VK_SHADER_STAGE_FRAGMENT_BIT] = oBatchCreateDesc.oShaderSources[1];
-		oPipelineDesc.pInputDatas = DescriptorLayoutWrapper::ParseShaderFiles(oMap, pWrapper->GetModifiableDevice());
+		oPipelineDesc.pInputDatas = DescriptorLayoutWrapper::ParseShaderFiles(oMap, Graphics::Globals::g_pDevice);
 		oPipelineDesc.pRenderPass = m_pRenderpass;
-		oPipelineDesc.pWrapper = pWrapper;
 
 		Pipeline* pPipeline = new Pipeline(oPipelineDesc);
 		m_oBatches[i]->SetPipeline(pPipeline);

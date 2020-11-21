@@ -9,7 +9,6 @@
 ImGuiWrapper::ImGuiWrapper(Desc& oDesc)
 {
 	m_pCallback = oDesc.pCallback;
-	m_pWrapper = oDesc.pWrapper;
 	m_oCommandBuffer.resize(oDesc.pWrapper->m_pSwapchain->GetImageViews().size());
 
 	VkSubpassDependency oDependency{};
@@ -27,14 +26,14 @@ ImGuiWrapper::ImGuiWrapper(Desc& oDesc)
 	oSubDesc.pDependency = &oDependency;
 
 	RenderPass::Desc oPassDesc;
-	oPassDesc.pWrapper = oDesc.pWrapper;
 	oPassDesc.bEnableColor = true;
 	oPassDesc.bEnableDepth = false;
 	oPassDesc.eSample = VK_SAMPLE_COUNT_1_BIT;
-	oPassDesc.eInitialLayoutColorAttachment = VK_IMAGE_LAYOUT_UNDEFINED; //VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	oPassDesc.eInitialLayoutColorAttachment = VK_IMAGE_LAYOUT_UNDEFINED;
 	oPassDesc.bClearColorAttachmentAtBegin = false;
 	oPassDesc.oSubpasses = { oSubDesc };
 	oPassDesc.bPresentable = true;
+	oPassDesc.eFormatColor = oDesc.pWrapper->GetSwapchain()->GetFormat();
 	m_pRenderpass = new RenderPass(oPassDesc);
 
 
@@ -49,13 +48,13 @@ ImGuiWrapper::ImGuiWrapper(Desc& oDesc)
 	ImGui::StyleColorsDark();
 	//ImGui::StyleColorsClassic();
 
-	ImGui_ImplGlfw_InitForVulkan(oDesc.pWrapper->GetModifiableDevice()->GetModifiableRenderSurface()->GetWindow(), true);
+	ImGui_ImplGlfw_InitForVulkan(Graphics::Globals::g_pDevice->GetModifiableRenderSurface()->GetWindow(), true);
 	ImGui_ImplVulkan_InitInfo init_info = {};
 	init_info.Instance = Graphics::Globals::g_oInstance;
-	init_info.PhysicalDevice = *oDesc.pWrapper->GetDevice()->GetPhysicalDevice();
-	init_info.Device = *oDesc.pWrapper->GetDevice()->GetLogicalDevice();
-	init_info.QueueFamily = oDesc.pWrapper->GetDevice()->GetGraphicQueueIndex();
-	init_info.Queue = *oDesc.pWrapper->GetDevice()->GetGraphicQueue();
+	init_info.PhysicalDevice = *Graphics::Globals::g_pDevice->GetPhysicalDevice();
+	init_info.Device = *Graphics::Globals::g_pDevice->GetLogicalDevice();
+	init_info.QueueFamily = Graphics::Globals::g_pDevice->GetGraphicQueueIndex();
+	init_info.Queue = *Graphics::Globals::g_pDevice->GetGraphicQueue();
 	init_info.PipelineCache = VK_NULL_HANDLE;
 	init_info.DescriptorPool = oDesc.pWrapper->m_pPool->GetPool();
 	init_info.Allocator = nullptr;
@@ -70,14 +69,12 @@ ImGuiWrapper::ImGuiWrapper(Desc& oDesc)
 
 	CommandFactory::Desc oFactoryDesc;
 	oFactoryDesc.bResettable = true;
-	oFactoryDesc.pWrapper = oDesc.pWrapper;
 	m_pFactory = new CommandFactory(oFactoryDesc);
 
 	for (int i = 0; i < oDesc.pWrapper->m_pSwapchain->GetImageViews().size(); i++)
 	{
 		Framebuffer::Desc oFramebufferDesc;
 		oFramebufferDesc.pRenderPass = m_pRenderpass;
-		oFramebufferDesc.pGraphicDevice = oDesc.pWrapper->m_pDevice;
 
 		std::vector<VkImageView> oView;
 		oView.push_back(oDesc.pWrapper->m_pSwapchain->GetImageViews()[i]);
@@ -97,7 +94,7 @@ ImGuiWrapper::~ImGuiWrapper()
 
 	delete m_pRenderpass;
 
-	vkFreeCommandBuffers(*m_pWrapper->GetDevice()->GetLogicalDevice(), *m_pFactory->GetCommandPool(), m_oCommandBuffer.size(), m_oCommandBuffer.data());
+	vkFreeCommandBuffers(*Graphics::Globals::g_pDevice->GetLogicalDevice(), *m_pFactory->GetCommandPool(), m_oCommandBuffer.size(), m_oCommandBuffer.data());
 	delete m_pFactory;
 
 	ImGui_ImplVulkan_Shutdown();
@@ -107,8 +104,8 @@ ImGuiWrapper::~ImGuiWrapper()
 
 VkCommandBuffer* ImGuiWrapper::GetDrawCommand(Desc& oDesc)
 {
-	glm::vec3 vPos = oDesc.pWrapper->m_pCamera->GetTransform()->GetPosition();
-	glm::vec3 vForward = oDesc.pWrapper->m_pCamera->GetTransform()->GetForward();
+	glm::vec3 vPos = Graphics::Globals::g_pCamera->GetTransform()->GetPosition();
+	glm::vec3 vForward = Graphics::Globals::g_pCamera->GetTransform()->GetForward();
 
 	ImGui_ImplVulkan_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
@@ -117,9 +114,9 @@ VkCommandBuffer* ImGuiWrapper::GetDrawCommand(Desc& oDesc)
 	ImGui::Render();
 
 	int iWidth, iHeight;
-	oDesc.pWrapper->m_pDevice->GetModifiableRenderSurface()->GetWindowSize(iWidth, iHeight);
+	Graphics::Globals::g_pDevice->GetModifiableRenderSurface()->GetWindowSize(iWidth, iHeight);
 
-	vkFreeCommandBuffers(*oDesc.pWrapper->GetDevice()->GetLogicalDevice(), *m_pFactory->GetCommandPool(), 1, &m_oCommandBuffer[oDesc.iImageIndex]);
+	vkFreeCommandBuffers(*Graphics::Globals::g_pDevice->GetLogicalDevice(), *m_pFactory->GetCommandPool(), 1, &m_oCommandBuffer[oDesc.iImageIndex]);
 	m_oCommandBuffer[oDesc.iImageIndex] = m_pFactory->BeginSingleTimeCommands();
 
 	VkRenderPassBeginInfo oBegin{};

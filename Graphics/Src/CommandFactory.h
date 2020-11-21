@@ -11,11 +11,10 @@ class CommandFactory
 public:
 	struct Desc
 	{
-		Desc() : bResettable(false), pWrapper(nullptr) {};
-		GraphicWrapper* pWrapper;
+		Desc() : bResettable(false) {};
 		bool bResettable;
 	};
-	CommandFactory(Desc& oDesc);
+	CommandFactory(Desc oDesc);
 	~CommandFactory();
 
 	VkCommandBuffer BeginSingleTimeCommands();
@@ -43,7 +42,6 @@ public:
 
 protected:
 	VkCommandPool m_oCommandPool;
-	GraphicDevice* m_pDevice;
 };
 
 #endif // !H_COMMAND_FACTORY

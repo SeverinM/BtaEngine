@@ -39,7 +39,7 @@ public:
 	}
 
 protected:
-	uint32_t FindMemoryType(GraphicWrapper* pWrapper, uint32_t iTypeFilter, VkMemoryPropertyFlags oProperties);
+	uint32_t FindMemoryType(uint32_t iTypeFilter, VkMemoryPropertyFlags oProperties);
 	VkDeviceMemory* m_pMemory;
 	VkDeviceSize m_iSizeUnit;
 	uint32_t m_iUnitCount;
@@ -51,7 +51,6 @@ class BasicBuffer : public Buffer
 public:
 	struct Desc
 	{
-		GraphicWrapper* pWrapper;
 		uint32_t iUnitCount;
 		VkBufferUsageFlags eUsage;
 		VkMemoryPropertyFlags oPropertyFlags;
@@ -62,7 +61,6 @@ public:
 	const VkBuffer* GetBuffer() { return m_pBuffer; };
 	BasicBuffer(Desc& oDesc);
 	void SendCopyCommand(BasicBuffer* pDst, CommandFactory* pFactory);
-	GraphicDevice* m_pDevice;
 
 protected:
 	VkBuffer* m_pBuffer;
@@ -74,10 +72,9 @@ public:
 	struct Desc
 	{
 		Desc() : eSampleFlag(VK_SAMPLE_COUNT_1_BIT), eFormat(VK_FORMAT_R8G8B8A8_SRGB), eTiling(VK_IMAGE_TILING_OPTIMAL), iLayerCount(1), bEnableMip(false), bIsCubemap(false), 
-		iWidth(0), iHeight(0),pWrapper(nullptr), pFactory(nullptr),eUsage(VK_BUFFER_USAGE_TRANSFER_SRC_BIT),eProperties(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT), eAspect(VK_IMAGE_ASPECT_COLOR_BIT) {}
+		iWidth(0), iHeight(0), pFactory(nullptr),eUsage(VK_BUFFER_USAGE_TRANSFER_SRC_BIT),eProperties(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT), eAspect(VK_IMAGE_ASPECT_COLOR_BIT) {}
 
 		VkSampleCountFlagBits eSampleFlag;
-		GraphicWrapper* pWrapper = nullptr;
 		CommandFactory* pFactory = nullptr;
 		uint32_t iWidth;
 		uint32_t iHeight;
@@ -95,13 +92,11 @@ public:
 	{
 		VkFormat eFormat;
 		CommandFactory* pFactory;
-		GraphicWrapper* pWrapper;
 	};
 
 	struct FromFileDesc
 	{
 		VkSampleCountFlagBits eSampleFlag;
-		GraphicWrapper* pWrapper;
 		VkFormat eFormat;
 		VkImageTiling eTiling;
 		VkImageAspectFlags eAspect;
@@ -112,7 +107,6 @@ public:
 	struct FromBufferDesc
 	{
 		VkSampleCountFlagBits eSampleFlag;
-		GraphicWrapper* pWrapper;
 		VkFormat eFormat;
 		VkImageTiling eTiling;
 		VkImageAspectFlags eAspect;
@@ -158,7 +152,6 @@ protected :
 	int m_iWidth;
 	bool m_bIsCubemap;
 	int m_iRowPitch;
-	GraphicDevice* m_pDevice;
 	BasicBuffer* m_pBuffer;
 };
 

@@ -1,5 +1,6 @@
 #include "SyncObjects.h"
 #include <iostream>
+#include "Globals.h"
 
 SyncObjects::SyncObjects(Desc& oDesc)
 {
@@ -22,10 +23,10 @@ SyncObjects::SyncObjects(Desc& oDesc)
 
 	for (int i = 0; i < oDesc.iFrameOnFlight; i++)
 	{
-		if (vkCreateSemaphore(*oDesc.pWrapper->GetDevice()->GetLogicalDevice(), &oSemaphore, nullptr, &m_oImageAcquiredSemaphores[i]) != VK_SUCCESS ||
-			vkCreateSemaphore(*oDesc.pWrapper->GetDevice()->GetLogicalDevice(), &oSemaphore, nullptr, &m_oRenderFinishedSemaphores[i]) != VK_SUCCESS ||
-			vkCreateFence(*oDesc.pWrapper->GetDevice()->GetLogicalDevice(), &oFenceInfo, nullptr, &m_oInFlightFences[i]) != VK_SUCCESS ||
-			vkCreateSemaphore(*oDesc.pWrapper->GetDevice()->GetLogicalDevice(), &oSemaphore, nullptr, &m_oRenderFinishSemaphoresImGUI[i] ) )
+		if (vkCreateSemaphore(*Graphics::Globals::g_pDevice->GetLogicalDevice(), &oSemaphore, nullptr, &m_oImageAcquiredSemaphores[i]) != VK_SUCCESS ||
+			vkCreateSemaphore(*Graphics::Globals::g_pDevice->GetLogicalDevice(), &oSemaphore, nullptr, &m_oRenderFinishedSemaphores[i]) != VK_SUCCESS ||
+			vkCreateFence(*Graphics::Globals::g_pDevice->GetLogicalDevice(), &oFenceInfo, nullptr, &m_oInFlightFences[i]) != VK_SUCCESS ||
+			vkCreateSemaphore(*Graphics::Globals::g_pDevice->GetLogicalDevice(), &oSemaphore, nullptr, &m_oRenderFinishSemaphoresImGUI[i] ) )
 		{
 			throw std::runtime_error("Failed to create semaphore");
 		}

@@ -30,7 +30,6 @@ public:
 protected:
 	RenderPass* m_pRenderpass;
 	CommandFactory* m_pFactory;
-	BasicWrapper* m_pWrapper;
 	std::vector<Framebuffer*> m_oFramebuffer;
 	std::vector<VkCommandBuffer> m_oCommandBuffer;
 	ImGuiRenderCallBack m_pCallback;

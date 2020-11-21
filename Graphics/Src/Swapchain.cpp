@@ -1,5 +1,6 @@
 #include "Swapchain.h"
 #include <iostream>
+#include "Globals.h"
 
 void FetchSwapChainCapabilities(const GraphicDevice& oDevice, VkSurfaceCapabilitiesKHR& oCapabilities, std::vector<VkSurfaceFormatKHR>& oFormats, std::vector<VkPresentModeKHR>& oPresentModes)
 {
@@ -39,7 +40,7 @@ void Swapchain::Create(Desc& oDesc)
 	std::vector<VkSurfaceFormatKHR> oFormats;
 	std::vector<VkPresentModeKHR> oPresentModes;
 
-	FetchSwapChainCapabilities(*oDesc.pGraphicWrapper->GetDevice(), oCapabilities, oFormats, oPresentModes);
+	FetchSwapChainCapabilities(*Graphics::Globals::g_pDevice, oCapabilities, oFormats, oPresentModes);
 
 	VkSurfaceFormatKHR oFormat;
 	for (VkSurfaceFormatKHR& oItFormat : oFormats)
@@ -73,7 +74,7 @@ void Swapchain::Create(Desc& oDesc)
 	oCreateInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
 
 	//Where to present
-	oCreateInfo.surface = *oDesc.pGraphicWrapper->GetDevice()->GetRenderSurface()->GetSurface();
+	oCreateInfo.surface = *Graphics::Globals::g_pDevice->GetRenderSurface()->GetSurface();
 
 	oCreateInfo.minImageCount = iImageCount;
 
@@ -83,7 +84,7 @@ void Swapchain::Create(Desc& oDesc)
 
 	VkExtent2D oExtent;
 	int iHeight, iWidth;
-	oDesc.pGraphicWrapper->GetModifiableDevice()->GetModifiableRenderSurface()->GetWindowSize(iWidth, iHeight);
+	Graphics::Globals::g_pDevice->GetModifiableRenderSurface()->GetWindowSize(iWidth, iHeight);
 	oExtent.height = iHeight;
 	oExtent.width = iWidth;
 	oCreateInfo.imageExtent = oExtent;
@@ -92,9 +93,9 @@ void Swapchain::Create(Desc& oDesc)
 	//Will be used as color attachment
 	oCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-	uint32_t iQueueFamilyIndex[] = { oDesc.pGraphicWrapper->GetDevice()->GetGraphicQueueIndex(), oDesc.pGraphicWrapper->GetDevice()->GetPresentQueueIndex() };
+	uint32_t iQueueFamilyIndex[] = { Graphics::Globals::g_pDevice->GetGraphicQueueIndex(), Graphics::Globals::g_pDevice->GetPresentQueueIndex() };
 
-	if (oDesc.pGraphicWrapper->GetDevice()->GetGraphicQueueIndex() != oDesc.pGraphicWrapper->GetDevice()->GetPresentQueueIndex())
+	if (Graphics::Globals::g_pDevice->GetGraphicQueueIndex() != Graphics::Globals::g_pDevice->GetPresentQueueIndex())
 	{
 		oCreateInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
 		oCreateInfo.queueFamilyIndexCount = 2;
@@ -118,14 +119,14 @@ void Swapchain::Create(Desc& oDesc)
 	//Recreate swap chain
 	oCreateInfo.oldSwapchain = VK_NULL_HANDLE;
 
-	if (vkCreateSwapchainKHR(*oDesc.pGraphicWrapper->GetDevice()->GetLogicalDevice(), &oCreateInfo, nullptr, &m_oSwapchain) != VK_SUCCESS)
+	if (vkCreateSwapchainKHR(*Graphics::Globals::g_pDevice->GetLogicalDevice(), &oCreateInfo, nullptr, &m_oSwapchain) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to create swap chain");
 	}
 
-	vkGetSwapchainImagesKHR(*oDesc.pGraphicWrapper->GetDevice()->GetLogicalDevice(), m_oSwapchain, &iImageCount, nullptr);
+	vkGetSwapchainImagesKHR(*Graphics::Globals::g_pDevice->GetLogicalDevice(), m_oSwapchain, &iImageCount, nullptr);
 	m_oImages.resize(iImageCount);
-	vkGetSwapchainImagesKHR(*oDesc.pGraphicWrapper->GetDevice()->GetLogicalDevice(), m_oSwapchain, &iImageCount, m_oImages.data());
+	vkGetSwapchainImagesKHR(*Graphics::Globals::g_pDevice->GetLogicalDevice(), m_oSwapchain, &iImageCount, m_oImages.data());
 
 	CreateViews(oDesc);
 }
@@ -135,11 +136,11 @@ Swapchain::~Swapchain()
 	m_oImages.clear();
 	for (VkImageView& oImageView : m_oViews)
 	{
-		vkDestroyImageView(*m_pRecreate->pGraphicWrapper->GetDevice()->GetLogicalDevice(), oImageView, nullptr);
+		vkDestroyImageView(*Graphics::Globals::g_pDevice->GetLogicalDevice(), oImageView, nullptr);
 	}
 	m_oViews.clear();
 
-	vkDestroySwapchainKHR(*m_pRecreate->pGraphicWrapper->GetDevice()->GetLogicalDevice(), m_oSwapchain, nullptr);
+	vkDestroySwapchainKHR(*Graphics::Globals::g_pDevice->GetLogicalDevice(), m_oSwapchain, nullptr);
 }
 
 void Swapchain::CreateViews(Desc& oDesc)
@@ -164,7 +165,7 @@ void Swapchain::CreateViews(Desc& oDesc)
 		oViewCreateInfo.subresourceRange.baseArrayLayer = 0;
 		oViewCreateInfo.subresourceRange.layerCount = 1;
 
-		if (vkCreateImageView(*oDesc.pGraphicWrapper->GetDevice()->GetLogicalDevice(), &oViewCreateInfo, nullptr, &m_oViews[i]) != VK_SUCCESS)
+		if (vkCreateImageView(*Graphics::Globals::g_pDevice->GetLogicalDevice(), &oViewCreateInfo, nullptr, &m_oViews[i]) != VK_SUCCESS)
 		{
 			throw std::runtime_error("Cannot create image view");
 		}

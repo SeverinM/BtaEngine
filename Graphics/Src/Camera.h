@@ -14,7 +14,6 @@ public:
 		float fFarPlane;
 		float fAngleDegree;
 		float fRatio;
-		GraphicWrapper* pWrapper;
 		glm::mat4 mInitialMatrix;
 	};
 	Camera(Desc& oDesc);

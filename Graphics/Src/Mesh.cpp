@@ -4,6 +4,7 @@
 #include "tiny_obj_loader.h"
 #include <functional>
 #include <iostream>
+#include "Globals.h"
 
 Mesh::Mesh(Desc& oDesc)
 {
@@ -15,7 +16,6 @@ Mesh::Mesh(Desc& oDesc)
 	oTexDesc.eSampleFlag = VK_SAMPLE_COUNT_1_BIT;
 	oTexDesc.eTiling = VK_IMAGE_TILING_OPTIMAL;
 	oTexDesc.pFactory = oDesc.pFactory;
-	oTexDesc.pWrapper = oDesc.pWrapper;
 
 	//Load vertices
 	if (oDesc.oPositions.size() > 0)
@@ -121,22 +121,20 @@ void Mesh::ConvertToVerticesBuffer(BufferElementsFlag eFlags, bool bIncludeIndex
 	oDesc.iUnitCount = m_oPositions.size();
 	oDesc.eUsage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
 	oDesc.oPropertyFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-	oDesc.pWrapper = pWrapper;
 
 	m_xCachedVerticesBuffer = std::shared_ptr<Buffer>( new BasicBuffer(oDesc) );
-	m_xCachedVerticesBuffer->CopyFromMemory(oBytes.data(), pWrapper->GetModifiableDevice());
+	m_xCachedVerticesBuffer->CopyFromMemory(oBytes.data(), Graphics::Globals::g_pDevice);
 
 	if (bIncludeIndexes)
 	{
 		BasicBuffer::Desc oDescIndex;
 		oDescIndex.iUnitSize = sizeof(uint32_t);
 		oDescIndex.iUnitCount = m_oIndexes.size();
-		oDescIndex.pWrapper = pWrapper;
 		oDescIndex.eUsage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
 		oDescIndex.oPropertyFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 
 		m_xCachedIndexesBuffer = std::shared_ptr<Buffer>( new BasicBuffer(oDescIndex) );
-		m_xCachedIndexesBuffer->CopyFromMemory(m_oIndexes.data(), pWrapper->GetModifiableDevice());
+		m_xCachedIndexesBuffer->CopyFromMemory(m_oIndexes.data(), Graphics::Globals::g_pDevice);
 	}
 }
 

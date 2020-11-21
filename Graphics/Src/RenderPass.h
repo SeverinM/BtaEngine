@@ -22,11 +22,11 @@ public :
 		bool bEnableColor;
 		bool bEnableDepth;
 		std::vector<SubDesc> oSubpasses;
-		BasicWrapper* pWrapper;
 		VkSampleCountFlagBits eSample;
 		VkImageLayout eInitialLayoutColorAttachment;
 		bool bClearColorAttachmentAtBegin;
 		bool bPresentable;
+		VkFormat eFormatColor;
 	};
 
 	const VkRenderPass* const GetRenderPass() { return &m_oRenderpass; }
@@ -37,7 +37,6 @@ public :
 protected:
 	Desc* m_pRecreate;
 	VkRenderPass m_oRenderpass;
-	GraphicWrapper* m_pWrapper;
 };
 
 #endif

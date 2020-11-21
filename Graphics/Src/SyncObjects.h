@@ -11,7 +11,6 @@ public:
 	{
 		int iFrameOnFlight;
 		int iNumberImages;
-		GraphicWrapper* pWrapper;
 	};
 	SyncObjects(Desc& oDesc);
 

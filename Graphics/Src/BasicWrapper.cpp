@@ -86,29 +86,22 @@ void BasicWrapper::CreateGraphicDevice()
 	oDesc.pInstance = &Graphics::Globals::g_oInstance;
 	oDesc.oExtensions = m_pDesc->oRequiredExtensionsDevice;
 	oDesc.pSurface = m_pDesc->pSurface;
-	m_pDevice = new GraphicDevice(oDesc);
+	Graphics::Globals::g_pDevice = new GraphicDevice(oDesc);
 
 	std::cout << "Graphic device picked" << std::endl;
 
-	CommandFactory::Desc oFactoryDesc;
-	oFactoryDesc.pWrapper = this;
-
-	m_pFactory = new CommandFactory(oFactoryDesc);
+	m_pFactory = new CommandFactory(CommandFactory::Desc());
 
 	Camera::Desc oCamDesc;
 	oCamDesc.fAngleDegree = 45.0f;
 	oCamDesc.fRatio = 1.0f;
 	oCamDesc.fNearPlane = 0.1f;
 	oCamDesc.fFarPlane = 10.0f;
-	oCamDesc.pWrapper = this;
 	oCamDesc.mInitialMatrix = glm::lookAt(glm::vec3(0, 0, 0), glm::vec3(0, 1, 0), glm::vec3(0.0f, 0.0f, 1.0f));
 
-	m_pCamera = new Camera(oCamDesc);
+	Graphics::Globals::g_pCamera = new Camera(oCamDesc);
 
-	InputHandling::Desc oInputDesc;
-	oInputDesc.pWrapper = this;
-
-	m_pHandling = new InputHandling(oInputDesc);
+	m_pHandling = new InputHandling();
 }
 
 void BasicWrapper::CreateSwapChain()
@@ -117,7 +110,6 @@ void BasicWrapper::CreateSwapChain()
 	oDesc.eColorspace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
 	oDesc.eImagesFormat = VK_FORMAT_B8G8R8A8_SRGB;
 	oDesc.ePresentMode = VkPresentModeKHR::VK_PRESENT_MODE_MAILBOX_KHR;
-	oDesc.pGraphicWrapper = this;
 	oDesc.iImageLayers = 1;
 
 	m_pSwapchain = new Swapchain(oDesc);
@@ -139,13 +131,13 @@ void BasicWrapper::CreateRenderPass()
 
 	RenderPass::Desc oDesc;
 	oDesc.eSample = VK_SAMPLE_COUNT_8_BIT;
-	oDesc.pWrapper = this;
 	oDesc.bEnableColor = true;
 	oDesc.bEnableDepth = true;
 	oDesc.oSubpasses = { oSkyboxDesc, oSubDesc };
 	oDesc.eInitialLayoutColorAttachment = VK_IMAGE_LAYOUT_UNDEFINED;
 	oDesc.bClearColorAttachmentAtBegin = true;
 	oDesc.bPresentable = false;
+	oDesc.eFormatColor = m_pSwapchain->GetFormat();
 
 	m_pRenderpass = new RenderPass(oDesc);
 
@@ -161,13 +153,13 @@ void BasicWrapper::CreateRenderPass()
 
 	RenderPass::Desc oDebugRenderPassDesc;
 	oDebugRenderPassDesc.eSample = VK_SAMPLE_COUNT_1_BIT;
-	oDebugRenderPassDesc.pWrapper = this;
 	oDebugRenderPassDesc.bEnableColor = true;
 	oDebugRenderPassDesc.bEnableDepth = false;
 	oDebugRenderPassDesc.oSubpasses = { oDebugDesc, oTextDesc };
 	oDebugRenderPassDesc.eInitialLayoutColorAttachment = VK_IMAGE_LAYOUT_UNDEFINED;
 	oDebugRenderPassDesc.bClearColorAttachmentAtBegin = false;
 	oDebugRenderPassDesc.bPresentable = false;
+	oDebugRenderPassDesc.eFormatColor = m_pSwapchain->GetFormat();
 
 	m_pDebugRenderpass = new RenderPass(oDebugRenderPassDesc);
 
@@ -216,7 +208,6 @@ void BasicWrapper::CreateGraphicPipeline()
 	oDescPool.iImageCount = (int)m_pSwapchain->GetImageViews().size();
 	oDescPool.iSize = 1000;
 	oDescPool.iMaxSet = 150;
-	oDescPool.pWrapper = this;
 	m_pPool = new DescriptorPool(oDescPool);
 	Graphics::Globals::g_pPool = m_pPool;
 
@@ -247,7 +238,7 @@ void BasicWrapper::CreateGraphicPipeline()
 	RenderBatch* pMainHandler = (RenderBatch*)m_pHandler->GetRenderBatch(1);
 	Pipeline* pMainPipeline = m_pHandler->GetPipeline(1);
 
-	pMainHandler->AddMesh(m_xMesh, pMainPipeline->GetDescriptorSetLayout()->InstantiateDescriptorSet(*m_pPool, *m_pDevice));
+	pMainHandler->AddMesh(m_xMesh, pMainPipeline->GetDescriptorSetLayout()->InstantiateDescriptorSet(*m_pPool, *Graphics::Globals::g_pDevice));
 
 	RenderBatch* pSkyHandler = (RenderBatch*)m_pHandler->GetRenderBatch(0);
 	Pipeline* pSkyPipeline = m_pHandler->GetPipeline(0);
@@ -258,7 +249,7 @@ void BasicWrapper::CreateGraphicPipeline()
 
 	m_xMeshSky = Mesh::StrongPtr( new Mesh(oMeshDesc) );
 	m_xMeshSky->ConvertToVerticesBuffer(m_xMeshSky->GetBufferFlags(), true, this);
-	pSkyHandler->AddMesh(m_xMeshSky, pSkyPipeline->GetDescriptorSetLayout()->InstantiateDescriptorSet(*m_pPool, *m_pDevice));
+	pSkyHandler->AddMesh(m_xMeshSky, pSkyPipeline->GetDescriptorSetLayout()->InstantiateDescriptorSet(*m_pPool, *Graphics::Globals::g_pDevice));
 
 	oMeshDesc.oPositions = { glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec3(0.0f, 0.5f, 0.0f), glm::vec3(0.5f, -0.5f, 0.0f), glm::vec3(0,0,1) };
 	oMeshDesc.oUVs = { glm::vec2(0,0) , glm::vec2(1,0) , glm::vec2(0,0) , glm::vec2(0,1) };
@@ -269,21 +260,21 @@ void BasicWrapper::CreateGraphicPipeline()
 	m_xCubeMesh = Mesh::StrongPtr(new Mesh(oMeshDesc));
 	m_xCubeMesh->ConvertToVerticesBuffer(m_xCubeMesh->GetBufferFlags(), true, this);
 	m_xCubeMesh->GetTransforms()[0]->SetPosition(glm::vec3(-1), true);
-	pMainHandler->AddMesh(m_xCubeMesh, pMainPipeline->GetDescriptorSetLayout()->InstantiateDescriptorSet(*m_pPool, *m_pDevice));
+	pMainHandler->AddMesh(m_xCubeMesh, pMainPipeline->GetDescriptorSetLayout()->InstantiateDescriptorSet(*m_pPool, *Graphics::Globals::g_pDevice));
 
 	oMeshDesc.oModels = { std::shared_ptr<Transform>(new Transform()) };
 	m_xCubeMeshChild = Mesh::StrongPtr(new Mesh(oMeshDesc));
 	m_xCubeMeshChild->ConvertToVerticesBuffer(m_xCubeMeshChild->GetBufferFlags(), true, this);
 	m_xCubeMeshChild->GetTransforms()[0]->SetPosition(glm::vec3(0), false);
 	m_xCubeMesh->GetTransforms()[0]->AddChild(m_xCubeMeshChild->GetTransforms()[0]);
-	pMainHandler->AddMesh(m_xCubeMeshChild, pMainPipeline->GetDescriptorSetLayout()->InstantiateDescriptorSet(*m_pPool, *m_pDevice));
+	pMainHandler->AddMesh(m_xCubeMeshChild, pMainPipeline->GetDescriptorSetLayout()->InstantiateDescriptorSet(*m_pPool, *Graphics::Globals::g_pDevice));
 
 	DelayedCommands::QueueCommands oCmds;
 	oCmds.oOnStart = [this]()
 	{
 		RenderBatch* pMainHandler = (RenderBatch*)m_pHandler->GetRenderBatch(1);
 		Pipeline* pMainPipeline = m_pHandler->GetPipeline(1);
-		pMainHandler->AddMesh(m_xCubeMeshChild, pMainPipeline->GetDescriptorSetLayout()->InstantiateDescriptorSet(*m_pPool, *m_pDevice));
+		pMainHandler->AddMesh(m_xCubeMeshChild, pMainPipeline->GetDescriptorSetLayout()->InstantiateDescriptorSet(*m_pPool, *Graphics::Globals::g_pDevice));
 	};
 
 	oCmds.oTimeOutFunction = [this]()
@@ -320,13 +311,13 @@ void BasicWrapper::CreateGraphicPipeline()
 
 void BasicWrapper::FillDescriptorsBuffer()
 {
-	std::vector<glm::mat4> oVP{ m_pCamera->GetViewMatrix(), m_pCamera->GetProjectionMatrix() };
-	std::shared_ptr<BasicBuffer> xVPMatrice(m_pCamera->GetVPMatriceBuffer());
-	xVPMatrice->CopyFromMemory(oVP.data(), GetModifiableDevice());
+	std::vector<glm::mat4> oVP{ Graphics::Globals::g_pCamera->GetViewMatrix(), Graphics::Globals::g_pCamera->GetProjectionMatrix() };
+	std::shared_ptr<BasicBuffer> xVPMatrice(Graphics::Globals::g_pCamera->GetVPMatriceBuffer());
+	xVPMatrice->CopyFromMemory(oVP.data(), Graphics::Globals::g_pDevice);
 	
 	DescriptorSetWrapper* pMainRender = ((RenderBatch*) m_pHandler->GetRenderBatch(1))->GetDescriptor(m_xMesh);
 
-	pMainRender->FillSlotAtTag(m_pCamera->GetVPMatriceBuffer().get(), TAG_VP);
+	pMainRender->FillSlotAtTag(Graphics::Globals::g_pCamera->GetVPMatriceBuffer().get(), TAG_VP);
 
 	Image::FromFileDesc oFileDesc;
 	oFileDesc.bEnableMip = true;
@@ -335,14 +326,13 @@ void BasicWrapper::FillDescriptorsBuffer()
 	oFileDesc.eSampleFlag = VK_SAMPLE_COUNT_1_BIT;
 	oFileDesc.eTiling = VK_IMAGE_TILING_OPTIMAL;
 	oFileDesc.pFactory = m_pFactory;
-	oFileDesc.pWrapper = this;
 
 	pMainRender->FillSlotAtTag(Image::CreateFromFile("./Textures/viking_room.png", oFileDesc), TAG_COLORMAP);
 
 	pMainRender->CommitSlots(m_pPool);
 
 	DescriptorSetWrapper* pMainRenderGun = ((RenderBatch*) m_pHandler->GetRenderBatch(1))->GetDescriptor(m_xCubeMesh);
-	pMainRenderGun->FillSlotAtTag(m_pCamera->GetVPMatriceBuffer().get(), TAG_VP);
+	pMainRenderGun->FillSlotAtTag(Graphics::Globals::g_pCamera->GetVPMatriceBuffer().get(), TAG_VP);
 	pMainRenderGun->FillSlotAtTag(Image::CreateFromFile("./Textures/test.png", oFileDesc), TAG_COLORMAP);
 	pMainRenderGun->CommitSlots(m_pPool);
 
@@ -350,12 +340,12 @@ void BasicWrapper::FillDescriptorsBuffer()
 
 	if (pMainRenderGunChild)
 	{
-		pMainRenderGunChild->FillSlotAtTag(m_pCamera->GetVPMatriceBuffer().get(), TAG_VP);
+		pMainRenderGunChild->FillSlotAtTag(Graphics::Globals::g_pCamera->GetVPMatriceBuffer().get(), TAG_VP);
 		pMainRenderGunChild->FillSlotAtTag(Image::CreateFromFile("./Textures/test.png", oFileDesc), TAG_COLORMAP);
 		pMainRenderGunChild->CommitSlots(m_pPool);
 	}
 
-	std::vector<glm::mat4> oMPMatrices = { glm::mat4(1.0f), m_pCamera->GetProjectionMatrix() };
+	std::vector<glm::mat4> oMPMatrices = { glm::mat4(1.0f), Graphics::Globals::g_pCamera->GetProjectionMatrix() };
 
 	Image::FromFileDesc oFileDescSky;
 	oFileDescSky.bEnableMip = false;
@@ -364,7 +354,6 @@ void BasicWrapper::FillDescriptorsBuffer()
 	oFileDescSky.eSampleFlag = VK_SAMPLE_COUNT_1_BIT;
 	oFileDescSky.eTiling = VK_IMAGE_TILING_OPTIMAL;
 	oFileDescSky.pFactory = m_pFactory;
-	oFileDescSky.pWrapper = this;
 	std::string sFilenames[6] = { "./Textures/bkg1_right.png", "./Textures/bkg1_left.png", "./Textures/bkg1_top.png", "./Textures/bkg1_bot.png", "./Textures/bkg1_front.png", "./Textures/bkg1_back.png" };
 	Image* pImage = Image::CreateCubeMap(sFilenames, oFileDescSky);
 
@@ -373,7 +362,6 @@ void BasicWrapper::FillDescriptorsBuffer()
 	BasicBuffer::Desc oBuffer;
 	oBuffer.iUnitSize = sizeof(glm::mat4);
 	oBuffer.iUnitCount = 2;
-	oBuffer.pWrapper = this;
 	oBuffer.eUsage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
 	oBuffer.oPropertyFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 
@@ -381,8 +369,8 @@ void BasicWrapper::FillDescriptorsBuffer()
 	pRenderSky->FillSlotAtTag(m_pSkyBuffer, TAG_MP);
 
 	m_mModel = glm::mat4(1.0f);
-	m_pSkyBuffer->CopyFromMemory(&m_mModel, m_pDevice, 0, sizeof(glm::mat4));
-	m_pSkyBuffer->CopyFromMemory(&m_pCamera->GetProjectionMatrix(),m_pDevice, sizeof(glm::mat4), sizeof(glm::mat4));
+	m_pSkyBuffer->CopyFromMemory(&m_mModel, Graphics::Globals::g_pDevice, 0, sizeof(glm::mat4));
+	m_pSkyBuffer->CopyFromMemory(&Graphics::Globals::g_pCamera->GetProjectionMatrix(), Graphics::Globals::g_pDevice, sizeof(glm::mat4), sizeof(glm::mat4));
 
 	pRenderSky->FillSlotAtTag(pImage, TAG_COLORMAP);
 	
@@ -422,12 +410,11 @@ void BasicWrapper::InitFramebuffer()
 		oImgDesc.eSampleFlag = VK_SAMPLE_COUNT_8_BIT;
 		oImgDesc.eTiling = VK_IMAGE_TILING_OPTIMAL;
 		oImgDesc.eUsage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-		oImgDesc.pWrapper = this;
 		oImgDesc.eAspect = VK_IMAGE_ASPECT_DEPTH_BIT;
 		oImgDesc.iLayerCount = 1;
 
 		int iWidth, iHeight;
-		GetModifiableDevice()->GetModifiableRenderSurface()->GetWindowSize(iWidth, iHeight);
+		Graphics::Globals::g_pDevice->GetModifiableRenderSurface()->GetWindowSize(iWidth, iHeight);
 		oImgDesc.iHeight = iHeight;
 		oImgDesc.iWidth = iWidth;
 		Image* pImg = new Image(oImgDesc);
@@ -439,7 +426,6 @@ void BasicWrapper::InitFramebuffer()
 		oMultisampleDesc.eSampleFlag = VK_SAMPLE_COUNT_8_BIT;
 		oMultisampleDesc.eTiling = VK_IMAGE_TILING_OPTIMAL;
 		oMultisampleDesc.eProperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-		oMultisampleDesc.pWrapper = this;
 		oMultisampleDesc.pFactory = m_pFactory;
 		oMultisampleDesc.iWidth = iWidth;
 		oMultisampleDesc.iHeight = iHeight;
@@ -450,7 +436,6 @@ void BasicWrapper::InitFramebuffer()
 		Image* pImgMultisample = new Image(oMultisampleDesc);
 
 		Framebuffer::Desc oDesc;
-		oDesc.pGraphicDevice = m_pDevice;
 
 		std::vector<VkImageView> oImages;
 		oImages.push_back(*pImgMultisample->GetImageView());
@@ -462,7 +447,6 @@ void BasicWrapper::InitFramebuffer()
 		m_oFramebuffers.push_back(new Framebuffer(oDesc));
 
 		Framebuffer::Desc oDebugDesc;
-		oDebugDesc.pGraphicDevice = m_pDevice;
 		oDebugDesc.pRenderPass = m_pDebugRenderpass;
 
 		std::vector<VkImageView> oImagesDebug = { m_pSwapchain->GetImageViews()[i] };
@@ -478,11 +462,11 @@ bool BasicWrapper::Render(SyncObjects* pSync)
 	m_oCommandsQueue.Update(Graphics::Globals::g_fElapsed);
 	m_xMesh->GetTransforms()[1]->Rotate(glm::vec3(0, 0, 1), 0.1f);
 
-	glm::mat4 mCam = m_pCamera->GetViewMatrix();
+	glm::mat4 mCam = Graphics::Globals::g_pCamera->GetViewMatrix();
 	mCam[3][0] = 0.0f;
 	mCam[3][1] = 0.0f;
 	mCam[3][2] = 0.0f;
-	m_pSkyBuffer->CopyFromMemory(&mCam, m_pDevice, 0, sizeof(glm::mat4));
+	m_pSkyBuffer->CopyFromMemory(&mCam, Graphics::Globals::g_pDevice, 0, sizeof(glm::mat4));
 
 
 	auto start = std::chrono::system_clock::now();
@@ -490,22 +474,21 @@ bool BasicWrapper::Render(SyncObjects* pSync)
 	if (!s_bFramebufferResized)
 	{
 		int iFrame = pSync->GetFrame();
-		vkWaitForFences(*GetDevice()->GetLogicalDevice(), 1, &pSync->GetInFlightFences()[iFrame], VK_TRUE, UINT64_MAX);
+		vkWaitForFences(*Graphics::Globals::g_pDevice->GetLogicalDevice(), 1, &pSync->GetInFlightFences()[iFrame], VK_TRUE, UINT64_MAX);
 
 		if (m_bAdd)
 		{
-			vkDeviceWaitIdle(*m_pDevice->GetLogicalDevice());
+			vkDeviceWaitIdle(*Graphics::Globals::g_pDevice->GetLogicalDevice());
 
 			BasicBuffer::Desc oDesc;
 			oDesc.eUsage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
 			oDesc.oPropertyFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
 			oDesc.iUnitSize = sizeof(glm::mat4);
 			oDesc.iUnitCount = 1;
-			oDesc.pWrapper = this;
 			std::shared_ptr<BasicBuffer> xBuffer = std::shared_ptr<BasicBuffer>(new BasicBuffer(oDesc));
 
 			glm::mat4 mInitial(1.0f);
-			BufferedTransform* pTrsf = new BufferedTransform(mInitial, 0, std::static_pointer_cast<Buffer>(xBuffer), m_pDevice);
+			BufferedTransform* pTrsf = new BufferedTransform(mInitial, 0, std::static_pointer_cast<Buffer>(xBuffer), Graphics::Globals::g_pDevice);
 			pTrsf->SetScale(glm::vec3(0.5f), true);
 			pTrsf->SetPosition(glm::vec3(std::rand() % 10, std::rand() % 10, std::rand() % 10));
 
@@ -521,7 +504,7 @@ bool BasicWrapper::Render(SyncObjects* pSync)
 		}
 
 		uint32_t iImageIndex;
-		eResult = vkAcquireNextImageKHR(*GetDevice()->GetLogicalDevice(), *GetSwapchain()->GetSwapchain(), UINT64_MAX, pSync->GetImageAcquiredSemaphore()[iFrame], VK_NULL_HANDLE, &iImageIndex);
+		eResult = vkAcquireNextImageKHR(*Graphics::Globals::g_pDevice->GetLogicalDevice(), *GetSwapchain()->GetSwapchain(), UINT64_MAX, pSync->GetImageAcquiredSemaphore()[iFrame], VK_NULL_HANDLE, &iImageIndex);
 
 		if (eResult == VK_ERROR_OUT_OF_DATE_KHR)
 		{
@@ -558,8 +541,8 @@ bool BasicWrapper::Render(SyncObjects* pSync)
 		oSubmit.signalSemaphoreCount = 1;
 		oSubmit.pSignalSemaphores = &pSync->GetRenderFinishedSemaphore()[pSync->GetFrame()];
 
-		vkResetFences(*GetDevice()->GetLogicalDevice(), 1, &pSync->GetInFlightFences()[pSync->GetFrame()]);
-		if (vkQueueSubmit(*GetDevice()->GetGraphicQueue(), 1, &oSubmit, pSync->GetInFlightFences()[pSync->GetFrame()]) != VK_SUCCESS)
+		vkResetFences(*Graphics::Globals::g_pDevice->GetLogicalDevice(), 1, &pSync->GetInFlightFences()[pSync->GetFrame()]);
+		if (vkQueueSubmit(*Graphics::Globals::g_pDevice->GetGraphicQueue(), 1, &oSubmit, pSync->GetInFlightFences()[pSync->GetFrame()]) != VK_SUCCESS)
 		{
 			return false;
 		}
@@ -573,7 +556,7 @@ bool BasicWrapper::Render(SyncObjects* pSync)
 		oPresentInfo.waitSemaphoreCount = 1;
 		oPresentInfo.pWaitSemaphores = &pSync->GetRenderFinishedSemaphore()[pSync->GetFrame()];
 
-		eResult = vkQueuePresentKHR(*GetDevice()->GetPresentQueue(), &oPresentInfo);
+		eResult = vkQueuePresentKHR(*Graphics::Globals::g_pDevice->GetPresentQueue(), &oPresentInfo);
 	}
 
 	if (eResult == VK_ERROR_OUT_OF_DATE_KHR || eResult == VK_SUBOPTIMAL_KHR || s_bFramebufferResized)
@@ -599,8 +582,8 @@ void BasicWrapper::ResizeWindow(GLFWwindow* pWindow, int iWidth , int iHeight)
 
 void BasicWrapper::RenderGui(BasicWrapper* pWrapper)
 {
-	glm::vec3 vPos = pWrapper->m_pCamera->GetTransform()->GetPosition();
-	glm::vec3 vForward = pWrapper->m_pCamera->GetTransform()->GetForward();
+	glm::vec3 vPos = Graphics::Globals::g_pCamera->GetTransform()->GetPosition();
+	glm::vec3 vForward = Graphics::Globals::g_pCamera->GetTransform()->GetForward();
 
 	ImGui::Begin("Bta Debug");
 	ImGui::Text("FPS : %i", (int)(1.0f / Graphics::Globals::g_fElapsed));
@@ -608,8 +591,8 @@ void BasicWrapper::RenderGui(BasicWrapper* pWrapper)
 	ImGui::Text("Vertices count : %i", pWrapper->m_pHandler->GetVerticesCount());
 	ImGui::Text("Camera position : %f / %f / %f", vPos.x, vPos.y, vPos.z);
 	ImGui::Text("Camera forward : %f / %f / %f", vForward.x, vForward.y, vForward.z);
-	ImGui::SliderFloat("Move speed camera", &pWrapper->m_pCamera->GetModifiableMoveSpeed(), 1.0f, 100.0f);
-	ImGui::SliderFloat("Rotate speed camera", &pWrapper->m_pCamera->GetModifiableRotateSpeed(), 50.0f, 5000.0f);
+	ImGui::SliderFloat("Move speed camera", &Graphics::Globals::g_pCamera->GetModifiableMoveSpeed(), 1.0f, 100.0f);
+	ImGui::SliderFloat("Rotate speed camera", &Graphics::Globals::g_pCamera->GetModifiableRotateSpeed(), 50.0f, 5000.0f);
 	if (ImGui::Button("Toggle skybox"))
 	{
 		pWrapper->m_pHandler->MarkAllAsDirty();
@@ -632,14 +615,14 @@ void BasicWrapper::RenderGui(BasicWrapper* pWrapper)
 void BasicWrapper::RecreateSwapChain()
 {
 	int iWidth, iHeight;
-	m_pDevice->GetModifiableRenderSurface()->GetWindowSize(iWidth, iHeight);
+	Graphics::Globals::g_pDevice->GetModifiableRenderSurface()->GetWindowSize(iWidth, iHeight);
 
 	if (iHeight == 0 || iWidth == 0)
 	{
 		glfwWaitEvents();
 	}
 
-	vkDeviceWaitIdle(*m_pDevice->GetLogicalDevice());
+	vkDeviceWaitIdle(*Graphics::Globals::g_pDevice->GetLogicalDevice());
 
 	int i = 0;
 	while (m_pHandler->GetRenderBatch(i) != nullptr)
@@ -665,7 +648,6 @@ void BasicWrapper::RecreateSwapChain()
 	oDesc.eColorspace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
 	oDesc.eImagesFormat = VK_FORMAT_B8G8R8A8_SRGB;
 	oDesc.ePresentMode = VkPresentModeKHR::VK_PRESENT_MODE_MAILBOX_KHR;
-	oDesc.pGraphicWrapper = this;
 	oDesc.iImageLayers = 1;
 
 	m_pSwapchain = new Swapchain(oDesc);
@@ -694,5 +676,5 @@ BasicWrapper::~BasicWrapper()
 	m_oFramebuffers.clear();
 
 	delete m_pImGui;
-	delete m_pDevice;
+	delete Graphics::Globals::g_pDevice;
 }

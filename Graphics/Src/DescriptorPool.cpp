@@ -3,6 +3,7 @@
 #include "Pipeline.h"
 #include "BasicWrapper.h"
 #include "DescriptorWrapper.h"
+#include "Globals.h"
 
 DescriptorPool::DescriptorPool(Desc& oDesc)
 {
@@ -35,7 +36,7 @@ void DescriptorPool::Create(Desc& oDesc)
 	oPoolInfo.maxSets = oDesc.iMaxSet * 10;
 	oPoolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
-	if (vkCreateDescriptorPool(*oDesc.pWrapper->GetDevice()->GetLogicalDevice(), &oPoolInfo, nullptr, &m_oPool) != VK_SUCCESS)
+	if (vkCreateDescriptorPool(*Graphics::Globals::g_pDevice->GetLogicalDevice(), &oPoolInfo, nullptr, &m_oPool) != VK_SUCCESS)
 	{
 		throw std::runtime_error("failed to create descriptor pool !");
 	}
@@ -63,7 +64,7 @@ VkDescriptorType DescriptorPool::GetDescriptorType(E_BINDING_TYPE eType)
 
 DescriptorPool::~DescriptorPool()
 {
-	vkDestroyDescriptorPool(*m_pRecreate->pWrapper->GetDevice()->GetLogicalDevice(), m_oPool, nullptr);
+	vkDestroyDescriptorPool(*Graphics::Globals::g_pDevice->GetLogicalDevice(), m_oPool, nullptr);
 }
 
 
@@ -125,7 +126,7 @@ void DescriptorPool::WriteDescriptor(DescriptorSetWrapper* pDescriptorSet)
 		i++;
 	}
 
-	vkUpdateDescriptorSets(*m_pRecreate->pWrapper->GetDevice()->GetLogicalDevice(), static_cast<uint32_t>(oWriteDescriptors.size()), oWriteDescriptors.data(), 0, nullptr);
+	vkUpdateDescriptorSets(*Graphics::Globals::g_pDevice->GetLogicalDevice(), static_cast<uint32_t>(oWriteDescriptors.size()), oWriteDescriptors.data(), 0, nullptr);
 }
 
 void DescriptorPool::CreateDescriptorSet(std::vector<VkDescriptorSet>& oOutput,int iSize, const VkDescriptorSetLayout& oLayout)
@@ -138,7 +139,7 @@ void DescriptorPool::CreateDescriptorSet(std::vector<VkDescriptorSet>& oOutput,i
 	oAllocInfo.pSetLayouts = oLayouts.data();
 
 	oOutput.resize(iSize);
-	if (vkAllocateDescriptorSets(*m_pRecreate->pWrapper->GetDevice()->GetLogicalDevice(), &oAllocInfo, oOutput.data()) != VK_SUCCESS)
+	if (vkAllocateDescriptorSets(*Graphics::Globals::g_pDevice->GetLogicalDevice(), &oAllocInfo, oOutput.data()) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to allocate descriptor sets");
 	}
@@ -153,7 +154,7 @@ void DescriptorPool::CreateDescriptorSet(VkDescriptorSet& oOutput, const VkDescr
 	oAllocInfo.descriptorSetCount = 1;
 	oAllocInfo.pSetLayouts = oLayouts.data();
 
-	if (vkAllocateDescriptorSets(*m_pRecreate->pWrapper->GetDevice()->GetLogicalDevice(), &oAllocInfo, &oOutput) != VK_SUCCESS)
+	if (vkAllocateDescriptorSets(*Graphics::Globals::g_pDevice->GetLogicalDevice(), &oAllocInfo, &oOutput) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to allocate descriptor sets");
 	}

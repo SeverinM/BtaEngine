@@ -50,7 +50,6 @@ public :
 	DelayedCommands* GetDelayedCommands() { return &m_oCommandsQueue; }
 	CommandFactory* GetFactory() { return m_pFactory; }
 	DescriptorPool* GetDescriptorPool() { return m_pPool; }
-	Camera* GetCamera() { return m_pCamera; }
 	RenderPass* GetRenderpass() { return m_pRenderpass; }
 
 	BasicWrapper(GraphicWrapper::Desc& oDesc)
@@ -62,16 +61,13 @@ public :
 		m_pPool = nullptr;
 		m_pImGui = nullptr;
 		m_pFactory = nullptr;
-		m_pCamera = nullptr;
 		m_pDesc = &oDesc;
-		m_pDevice = nullptr;
 	}
 	virtual ~BasicWrapper();
 
 	const Swapchain* const GetSwapchain() const { return m_pSwapchain; }
 
 protected:
-	Camera* m_pCamera;
 	Swapchain* m_pSwapchain;
 	RenderPass* m_pRenderpass;
 	CommandFactory* m_pFactory;
@@ -80,7 +76,6 @@ protected:
 	InputHandling* m_pHandling;
 
 	RenderPass* m_pDebugRenderpass;
-
 
 	BasicBuffer* m_pSkyBuffer;
 	glm::mat4 m_mModel;

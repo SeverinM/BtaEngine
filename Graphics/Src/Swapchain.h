@@ -8,7 +8,6 @@ class Swapchain
 public:
 	struct Desc
 	{
-		GraphicWrapper* pGraphicWrapper;
 		VkFormat eImagesFormat;
 		VkColorSpaceKHR eColorspace;
 		VkPresentModeKHR ePresentMode;

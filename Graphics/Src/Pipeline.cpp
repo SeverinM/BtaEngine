@@ -4,6 +4,7 @@
 #include "RenderPass.h"
 #include "StringUtils.h"
 #include <fstream>
+#include "Globals.h"
 
 VkShaderModule* Pipeline::CompileShader(std::string sFilename, GraphicDevice& oDevice)
 {
@@ -48,7 +49,7 @@ void Pipeline::Create(Desc& oDesc)
 	oVertexInfos.stage = VK_SHADER_STAGE_VERTEX_BIT;
 	oVertexInfos.pName = "main";
 
-	VkShaderModule* pModule = CompileShader(oDesc.oShaderFilenames[0], *oDesc.pWrapper->GetDevice());
+	VkShaderModule* pModule = CompileShader(oDesc.oShaderFilenames[0], *Graphics::Globals::g_pDevice);
 	if (pModule == nullptr)
 		throw std::runtime_error("Could not compile shader");
 
@@ -59,7 +60,7 @@ void Pipeline::Create(Desc& oDesc)
 	oFragmentInfos.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
 	oFragmentInfos.pName = "main";
 
-	VkShaderModule* pModuleFrag = CompileShader(oDesc.oShaderFilenames[1], *oDesc.pWrapper->GetDevice());
+	VkShaderModule* pModuleFrag = CompileShader(oDesc.oShaderFilenames[1], *Graphics::Globals::g_pDevice);
 	if (pModuleFrag == nullptr)
 		throw std::runtime_error("Could not compile shader");
 
@@ -81,7 +82,7 @@ void Pipeline::Create(Desc& oDesc)
 	oInputVertex.primitiveRestartEnable = VK_FALSE;
 
 	int iWidth, iHeight;
-	oDesc.pWrapper->GetModifiableDevice()->GetModifiableRenderSurface()->GetWindowSize(iWidth, iHeight);
+	Graphics::Globals::g_pDevice->GetModifiableRenderSurface()->GetWindowSize(iWidth, iHeight);
 	VkViewport oViewport{};
 	oViewport.x = 0.0f;
 	oViewport.y = 0.0f;
@@ -177,7 +178,7 @@ void Pipeline::Create(Desc& oDesc)
 	oPipelineInfo.renderPass = *oDesc.pRenderPass->GetRenderPass();
 	oPipelineInfo.subpass = oDesc.iSubPassIndex;
 
-	if (vkCreateGraphicsPipelines(*oDesc.pWrapper->GetDevice()->GetLogicalDevice(), VK_NULL_HANDLE, 1, &oPipelineInfo, nullptr, &m_oPipeline) != VK_SUCCESS)
+	if (vkCreateGraphicsPipelines(*Graphics::Globals::g_pDevice->GetLogicalDevice(), VK_NULL_HANDLE, 1, &oPipelineInfo, nullptr, &m_oPipeline) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to create graphic pipeline");
 	}
@@ -185,8 +186,8 @@ void Pipeline::Create(Desc& oDesc)
 
 Pipeline::~Pipeline()
 {
-	vkDestroyPipeline(*m_pRecreate->pWrapper->GetDevice()->GetLogicalDevice(), m_oPipeline, nullptr);
-	vkDestroyPipelineLayout(*m_pRecreate->pWrapper->GetDevice()->GetLogicalDevice(), m_oPipelineLayout, nullptr);
+	vkDestroyPipeline(*Graphics::Globals::g_pDevice->GetLogicalDevice(), m_oPipeline, nullptr);
+	vkDestroyPipelineLayout(*Graphics::Globals::g_pDevice->GetLogicalDevice(), m_oPipelineLayout, nullptr);
 }
 
 void Pipeline::CreatePipelineLayout(Desc& oDesc)
@@ -196,7 +197,7 @@ void Pipeline::CreatePipelineLayout(Desc& oDesc)
 	oPipelineLayoutInfo.setLayoutCount = 1;
 	oPipelineLayoutInfo.pSetLayouts = m_pDescriptorLayout->GetLayout();
 
-	if (vkCreatePipelineLayout(*oDesc.pWrapper->GetDevice()->GetLogicalDevice(), &oPipelineLayoutInfo, nullptr, &m_oPipelineLayout) != VK_SUCCESS)
+	if (vkCreatePipelineLayout(*Graphics::Globals::g_pDevice->GetLogicalDevice(), &oPipelineLayoutInfo, nullptr, &m_oPipelineLayout) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Cannot create layout");
 	}

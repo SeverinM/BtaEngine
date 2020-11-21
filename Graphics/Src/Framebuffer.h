@@ -19,7 +19,6 @@ public:
 	struct Desc
 	{
 		std::vector<VkImageView>* pImageView;
-		GraphicDevice* pGraphicDevice;
 		RenderPass* pRenderPass;
 	};
 	Framebuffer(Desc& oDesc);
@@ -31,7 +30,6 @@ public:
 protected:
 	int m_iAttachments;
 	VkFramebuffer m_oFramebuffer;
-	GraphicDevice* m_pGraphicDevice;
 };
 
 #endif

@@ -3,14 +3,16 @@
 #include <cmath>
 #include <algorithm>
 #include "CommandFactory.h"
+#include "Globals.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-uint32_t Buffer::FindMemoryType(GraphicWrapper* pWrapper, uint32_t iTypeFilter, VkMemoryPropertyFlags oProperties)
+uint32_t Buffer::FindMemoryType(uint32_t iTypeFilter, VkMemoryPropertyFlags oProperties)
 {
 	VkPhysicalDeviceMemoryProperties oMemProperties;
-	vkGetPhysicalDeviceMemoryProperties(*pWrapper->GetDevice()->GetPhysicalDevice(), &oMemProperties);
+
+	vkGetPhysicalDeviceMemoryProperties(*Graphics::Globals::g_pDevice->GetPhysicalDevice(), &oMemProperties);
 
 	for (uint32_t i = 0; i < oMemProperties.memoryTypeCount; i++)
 	{
@@ -25,15 +27,14 @@ uint32_t Buffer::FindMemoryType(GraphicWrapper* pWrapper, uint32_t iTypeFilter, 
 
 BasicBuffer::~BasicBuffer()
 {
-	vkFreeMemory(*m_pDevice->GetLogicalDevice(), *m_pMemory, nullptr);
-	vkDestroyBuffer(*m_pDevice->GetLogicalDevice(), *m_pBuffer, nullptr);
+	vkFreeMemory(*Graphics::Globals::g_pDevice->GetLogicalDevice(), *m_pMemory, nullptr);
+	vkDestroyBuffer(*Graphics::Globals::g_pDevice->GetLogicalDevice(), *m_pBuffer, nullptr);
 	m_pMemory = nullptr;
 	m_pBuffer = nullptr;
 }
 
 BasicBuffer::BasicBuffer(Desc& oDesc)
 {
-	m_pDevice = oDesc.pWrapper->GetModifiableDevice();
 	m_iUnitCount = oDesc.iUnitCount;
 	m_iSizeUnit = oDesc.iUnitSize;
 
@@ -44,7 +45,7 @@ BasicBuffer::BasicBuffer(Desc& oDesc)
 	oBufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
 	m_pBuffer = new VkBuffer();
-	if (vkCreateBuffer(*oDesc.pWrapper->GetDevice()->GetLogicalDevice(), &oBufferInfo, nullptr, m_pBuffer) != VK_SUCCESS)
+	if (vkCreateBuffer(*Graphics::Globals::g_pDevice->GetLogicalDevice(), &oBufferInfo, nullptr, m_pBuffer) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to create buffer");
 	}
@@ -53,18 +54,18 @@ BasicBuffer::BasicBuffer(Desc& oDesc)
 	oAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 
 	VkMemoryRequirements oMemoryRequirements;
-	vkGetBufferMemoryRequirements(*oDesc.pWrapper->GetDevice()->GetLogicalDevice(), *m_pBuffer, &oMemoryRequirements);
+	vkGetBufferMemoryRequirements(*Graphics::Globals::g_pDevice->GetLogicalDevice(), *m_pBuffer, &oMemoryRequirements);
 
 	oAllocInfo.allocationSize = oMemoryRequirements.size;
-	oAllocInfo.memoryTypeIndex = FindMemoryType(oDesc.pWrapper, oMemoryRequirements.memoryTypeBits, oDesc.oPropertyFlags);
+	oAllocInfo.memoryTypeIndex = FindMemoryType(oMemoryRequirements.memoryTypeBits, oDesc.oPropertyFlags);
 
 	m_pMemory = new VkDeviceMemory();
-	if (vkAllocateMemory(*oDesc.pWrapper->GetDevice()->GetLogicalDevice(), &oAllocInfo, nullptr, m_pMemory) != VK_SUCCESS)
+	if (vkAllocateMemory(*Graphics::Globals::g_pDevice->GetLogicalDevice(), &oAllocInfo, nullptr, m_pMemory) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to allocate buffer");
 	}
 
-	vkBindBufferMemory(*oDesc.pWrapper->GetDevice()->GetLogicalDevice(), *m_pBuffer, *m_pMemory, 0);
+	vkBindBufferMemory(*Graphics::Globals::g_pDevice->GetLogicalDevice(), *m_pBuffer, *m_pMemory, 0);
 }
 
 size_t Buffer::GetMemorySize(VkFormat eFormat)
@@ -143,7 +144,6 @@ void Image::GenerateMipsInterface(MipDesc& oDesc)
 		Image::MipDesc oMipDesc;
 		oMipDesc.eFormat = oDesc.eFormat;
 		oMipDesc.pFactory = oDesc.pFactory;
-		oMipDesc.pWrapper = oDesc.pWrapper;
 		GenerateMips(oMipDesc);
 	}
 }
@@ -181,7 +181,6 @@ Image* Image::CreateFromFile(std::string sFilename, FromFileDesc& oDesc)
 	oBufferDesc.iHeight = iHeight;
 	oBufferDesc.iWidth = iWidth;
 	oBufferDesc.pBuffer = pPixels;
-	oBufferDesc.pWrapper = oDesc.pWrapper;
 	oBufferDesc.pFactory = oDesc.pFactory;
 
 	pOutput = CreateFromBuffer(oBufferDesc);
@@ -222,7 +221,6 @@ Image* Image::CreateCubeMap(std::string sFilenames[6], FromFileDesc& oDesc)
 	oImgDesc.iLayerCount = 6;
 	oImgDesc.iHeight = iHeight;
 	oImgDesc.iWidth = iWidth;
-	oImgDesc.pWrapper = oDesc.pWrapper;
 	oImgDesc.pFactory = oDesc.pFactory;
 	oImgDesc.bIsCubemap = true;
 
@@ -347,11 +345,10 @@ Image* Image::CreateFromBuffer(FromBufferDesc& oDesc)
 	oBufferDesc.oPropertyFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 	oBufferDesc.iUnitCount = oDesc.iWidth * oDesc.iHeight;
 	oBufferDesc.iUnitSize = GetMemorySize(oDesc.eFormat);
-	oBufferDesc.pWrapper = oDesc.pWrapper;
 
 	BasicBuffer* pBasicBuffer = new BasicBuffer(oBufferDesc);
 
-	pBasicBuffer->CopyFromMemory(oDesc.pBuffer, oDesc.pWrapper->GetModifiableDevice());
+	pBasicBuffer->CopyFromMemory(oDesc.pBuffer, Graphics::Globals::g_pDevice);
 
 	Image::Desc oImgDesc;
 	oImgDesc.iHeight = oDesc.iHeight;
@@ -361,7 +358,6 @@ Image* Image::CreateFromBuffer(FromBufferDesc& oDesc)
 	oImgDesc.eProperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 	oImgDesc.eTiling = oDesc.eTiling;
 	oImgDesc.eUsage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-	oImgDesc.pWrapper = oDesc.pWrapper;
 	oImgDesc.bEnableMip = oDesc.bEnableMip;
 	oImgDesc.eSampleFlag = oDesc.eSampleFlag;
 	oImgDesc.pFactory = oDesc.pFactory;
@@ -381,7 +377,6 @@ Image* Image::CreateFromBuffer(FromBufferDesc& oDesc)
 		Image::MipDesc oMipDesc;
 		oMipDesc.eFormat = oDesc.eFormat;
 		oMipDesc.pFactory = oDesc.pFactory;
-		oMipDesc.pWrapper = oDesc.pWrapper;
 		pImage->GenerateMipsInterface(oMipDesc);
 	}
 	delete pBasicBuffer;
@@ -391,7 +386,7 @@ Image* Image::CreateFromBuffer(FromBufferDesc& oDesc)
 void Image::GenerateMips(MipDesc& oDesc)
 {
 	VkFormatProperties oFormatProperties;
-	vkGetPhysicalDeviceFormatProperties(*oDesc.pWrapper->GetDevice()->GetPhysicalDevice(), oDesc.eFormat, &oFormatProperties);
+	vkGetPhysicalDeviceFormatProperties(*Graphics::Globals::g_pDevice->GetPhysicalDevice(), oDesc.eFormat, &oFormatProperties);
 
 	if (!(oFormatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT))
 	{
@@ -464,7 +459,6 @@ void Image::GenerateMips(MipDesc& oDesc)
 Image::Image(Desc& oDesc)
 {
 	m_iSizeUnit = GetMemorySize(oDesc.eFormat);
-	m_pDevice = oDesc.pWrapper->GetModifiableDevice();
 	m_iRowPitch = m_iWidth = oDesc.iWidth;
 	m_iHeight = oDesc.iHeight;
 	m_bIsCubemap = oDesc.bIsCubemap;
@@ -494,7 +488,7 @@ Image::Image(Desc& oDesc)
 	oImageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 	oImageInfo.flags = oDesc.bIsCubemap ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0;
 
-	if (vkCreateImage(*oDesc.pWrapper->GetDevice()->GetLogicalDevice(), &oImageInfo, nullptr, &m_oImage) != VK_SUCCESS)
+	if (vkCreateImage(*Graphics::Globals::g_pDevice->GetLogicalDevice(), &oImageInfo, nullptr, &m_oImage) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Create image");
 	}
@@ -502,17 +496,17 @@ Image::Image(Desc& oDesc)
 	VkMemoryAllocateInfo oAllocInfo{};
 	oAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 	VkMemoryRequirements oMemRequirements;
-	vkGetImageMemoryRequirements(*oDesc.pWrapper->GetDevice()->GetLogicalDevice(), m_oImage, &oMemRequirements);
+	vkGetImageMemoryRequirements(*Graphics::Globals::g_pDevice->GetLogicalDevice(), m_oImage, &oMemRequirements);
 	oAllocInfo.allocationSize = oMemRequirements.size;
-	oAllocInfo.memoryTypeIndex = FindMemoryType(oDesc.pWrapper, oMemRequirements.memoryTypeBits, oDesc.eProperties);
+	oAllocInfo.memoryTypeIndex = FindMemoryType( oMemRequirements.memoryTypeBits, oDesc.eProperties);
 	
 	m_pMemory = new VkDeviceMemory();
-	if (vkAllocateMemory(*oDesc.pWrapper->GetDevice()->GetLogicalDevice(), &oAllocInfo, nullptr, m_pMemory) != VK_SUCCESS)
+	if (vkAllocateMemory(*Graphics::Globals::g_pDevice->GetLogicalDevice(), &oAllocInfo, nullptr, m_pMemory) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to allocate image memory");
 	}
 
-	vkBindImageMemory(*oDesc.pWrapper->GetDevice()->GetLogicalDevice(), m_oImage, *m_pMemory, 0);
+	vkBindImageMemory(*Graphics::Globals::g_pDevice->GetLogicalDevice(), m_oImage, *m_pMemory, 0);
 
 	CreateSampler(oDesc);
 	CreateView(oDesc, oDesc.eAspect);
@@ -525,7 +519,7 @@ Image::Image(Desc& oDesc)
 		subRes.arrayLayer = 0;
 
 		VkSubresourceLayout subResLayout;
-		vkGetImageSubresourceLayout(*m_pDevice->GetLogicalDevice(), m_oImage, &subRes, &subResLayout);
+		vkGetImageSubresourceLayout(*Graphics::Globals::g_pDevice->GetLogicalDevice(), m_oImage, &subRes, &subResLayout);
 
 		m_iRowPitch = subResLayout.rowPitch;
 	}
@@ -533,9 +527,9 @@ Image::Image(Desc& oDesc)
 
 Image::~Image()
 {
-	vkDestroyImageView(*m_pDevice->GetLogicalDevice(), m_oImageView, nullptr);
-	vkDestroyImage(*m_pDevice->GetLogicalDevice(), m_oImage, nullptr);
-	vkFreeMemory(*m_pDevice->GetLogicalDevice(), *m_pMemory, nullptr);
+	vkDestroyImageView(*Graphics::Globals::g_pDevice->GetLogicalDevice(), m_oImageView, nullptr);
+	vkDestroyImage(*Graphics::Globals::g_pDevice->GetLogicalDevice(), m_oImage, nullptr);
+	vkFreeMemory(*Graphics::Globals::g_pDevice->GetLogicalDevice(), *m_pMemory, nullptr);
 }
 
 void Image::CreateSampler(Desc& oDesc)
@@ -563,7 +557,7 @@ void Image::CreateSampler(Desc& oDesc)
 	oSamplerInfo.minLod = 0;
 	oSamplerInfo.maxLod = static_cast<float>(m_iMipLevel);
 
-	if (vkCreateSampler(*oDesc.pWrapper->GetDevice()->GetLogicalDevice(), &oSamplerInfo, nullptr, &m_eSampler) != VK_SUCCESS)
+	if (vkCreateSampler(*Graphics::Globals::g_pDevice->GetLogicalDevice(), &oSamplerInfo, nullptr, &m_eSampler) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to create texture sample");
 	}
@@ -582,7 +576,7 @@ void Image::CreateView(Desc& oDesc, VkImageAspectFlags oAspect)
 	oViewInfo.subresourceRange.baseArrayLayer = 0;
 	oViewInfo.subresourceRange.layerCount = oDesc.bIsCubemap ? 6 : 1;
 
-	if (vkCreateImageView(*oDesc.pWrapper->GetDevice()->GetLogicalDevice(), &oViewInfo, nullptr, &m_oImageView) != VK_SUCCESS)
+	if (vkCreateImageView(*Graphics::Globals::g_pDevice->GetLogicalDevice(), &oViewInfo, nullptr, &m_oImageView) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to create texture image view");
 	}

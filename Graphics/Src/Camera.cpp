@@ -2,6 +2,7 @@
 #include "GLM/ext/matrix_clip_space.hpp"
 #include <iostream>
 #include "GLM/gtx/string_cast.hpp"
+#include "Globals.h"
 
 Camera::Camera(Desc& oDesc)
 {
@@ -20,14 +21,13 @@ Camera::Camera(Desc& oDesc)
 	oBufferDesc.eUsage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
 	oBufferDesc.iUnitSize = sizeof(glm::mat4);
 	oBufferDesc.iUnitCount = 2;
-	oBufferDesc.pWrapper = oDesc.pWrapper;
 	oBufferDesc.oPropertyFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
 	m_xMatriceBuffer = std::shared_ptr<BasicBuffer>( new BasicBuffer(oBufferDesc) );
 
-	m_pTransform = new BufferedTransform(oDesc.mInitialMatrix, 0, m_xMatriceBuffer, oDesc.pWrapper->GetModifiableDevice());
+	m_pTransform = new BufferedTransform(oDesc.mInitialMatrix, 0, m_xMatriceBuffer, Graphics::Globals::g_pDevice);
 
 	std::vector<glm::mat4> oVP = { m_pTransform->GetModelMatrix(), m_mProjectionMatrix };
-	m_xMatriceBuffer->CopyFromMemory(oVP.data(), oDesc.pWrapper->GetModifiableDevice());
+	m_xMatriceBuffer->CopyFromMemory(oVP.data(), Graphics::Globals::g_pDevice);
 
 }
 

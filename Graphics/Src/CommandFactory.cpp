@@ -3,25 +3,24 @@
 #include "Buffer.h"
 #include <array>
 #include "RenderPass.h"
+#include "Globals.h"
 
-CommandFactory::CommandFactory(Desc& oDesc)
+CommandFactory::CommandFactory(Desc oDesc)
 {
 	VkCommandPoolCreateInfo oPoolInfo{};
 	oPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-	oPoolInfo.queueFamilyIndex = oDesc.pWrapper->GetDevice()->GetGraphicQueueIndex();
+	oPoolInfo.queueFamilyIndex = Graphics::Globals::g_pDevice->GetGraphicQueueIndex();
 	oPoolInfo.flags = oDesc.bResettable ? 0 : VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
-	if (vkCreateCommandPool(*oDesc.pWrapper->GetDevice()->GetLogicalDevice(), &oPoolInfo, nullptr, &m_oCommandPool) != VK_SUCCESS)
+	if (vkCreateCommandPool(*Graphics::Globals::g_pDevice->GetLogicalDevice(), &oPoolInfo, nullptr, &m_oCommandPool) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to create command pool");
 	}
-
-	m_pDevice = oDesc.pWrapper->GetModifiableDevice();
 }
 
 CommandFactory::~CommandFactory()
 {
-	vkDestroyCommandPool(*m_pDevice->GetLogicalDevice(), m_oCommandPool, nullptr);
+	vkDestroyCommandPool(*Graphics::Globals::g_pDevice->GetLogicalDevice(), m_oCommandPool, nullptr);
 }
 
 VkCommandBuffer CommandFactory::BeginSingleTimeCommands()
@@ -33,7 +32,7 @@ VkCommandBuffer CommandFactory::BeginSingleTimeCommands()
 	oAllocateInfo.commandBufferCount = 1;
 
 	VkCommandBuffer oCommandBuffer;
-	if (vkAllocateCommandBuffers(*m_pDevice->GetLogicalDevice(), &oAllocateInfo, &oCommandBuffer) != VK_SUCCESS)
+	if (vkAllocateCommandBuffers(*Graphics::Globals::g_pDevice->GetLogicalDevice(), &oAllocateInfo, &oCommandBuffer) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Error allocating command buffer");
 	}
@@ -56,10 +55,10 @@ void CommandFactory::EndSingleTimeCommands(VkCommandBuffer& oCommandBuffer)
 	oSubmit.commandBufferCount = 1;
 	oSubmit.pCommandBuffers = &oCommandBuffer;
 
-	vkQueueSubmit(*m_pDevice->GetGraphicQueue() , 1, &oSubmit, VK_NULL_HANDLE);
-	vkQueueWaitIdle(*m_pDevice->GetGraphicQueue());
+	vkQueueSubmit(*Graphics::Globals::g_pDevice->GetGraphicQueue() , 1, &oSubmit, VK_NULL_HANDLE);
+	vkQueueWaitIdle(*Graphics::Globals::g_pDevice->GetGraphicQueue());
 
-	vkFreeCommandBuffers(*m_pDevice->GetLogicalDevice(), m_oCommandPool, 1, &oCommandBuffer);
+	vkFreeCommandBuffers(*Graphics::Globals::g_pDevice->GetLogicalDevice(), m_oCommandPool, 1, &oCommandBuffer);
 }
 
 VkCommandBuffer* CommandFactory::CreateCommand()
@@ -72,7 +71,7 @@ VkCommandBuffer* CommandFactory::CreateCommand()
 	oAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 	oAllocateInfo.commandBufferCount = 1;
 
-	if (vkAllocateCommandBuffers(*m_pDevice->GetLogicalDevice(), &oAllocateInfo, pCmdBuffer) != VK_SUCCESS)
+	if (vkAllocateCommandBuffers(*Graphics::Globals::g_pDevice->GetLogicalDevice(), &oAllocateInfo, pCmdBuffer) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Error allocating command buffer");
 	}
@@ -90,7 +89,7 @@ VkCommandBuffer CommandFactory::CreateDrawCommand(DrawDesc& oDesc)
 	oAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 	oAllocateInfo.commandBufferCount = 1;
 
-	if (vkAllocateCommandBuffers(*m_pDevice->GetLogicalDevice(), &oAllocateInfo, &oCmdBuffer) != VK_SUCCESS)
+	if (vkAllocateCommandBuffers(*Graphics::Globals::g_pDevice->GetLogicalDevice(), &oAllocateInfo, &oCmdBuffer) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Error allocating command buffer");
 	}
@@ -109,7 +108,7 @@ VkCommandBuffer CommandFactory::CreateDrawCommand(DrawDesc& oDesc)
 	oBeginInfo.framebuffer = *oDesc.pFramebuffer->GetFramebuffer();
 
 	int iWidth, iHeight;
-	m_pDevice->GetModifiableRenderSurface()->GetWindowSize(iWidth, iHeight);
+	Graphics::Globals::g_pDevice->GetModifiableRenderSurface()->GetWindowSize(iWidth, iHeight);
 
 	VkExtent2D oExtent;
 	oExtent.height = iHeight;

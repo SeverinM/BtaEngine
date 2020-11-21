@@ -1,5 +1,6 @@
 #include "RenderPass.h"
 #include <iostream>
+#include "Globals.h"
 
 RenderPass::RenderPass(Desc& oDesc)
 {
@@ -9,10 +10,8 @@ RenderPass::RenderPass(Desc& oDesc)
 
 void RenderPass::Create(Desc& oDesc)
 {
-	m_pWrapper = (GraphicWrapper*)oDesc.pWrapper;
-
 	VkAttachmentDescription oColorAttachment{};
-	oColorAttachment.format = oDesc.pWrapper->GetSwapchain()->GetFormat();
+	oColorAttachment.format = oDesc.eFormatColor;
 	oColorAttachment.samples = oDesc.eSample;
 	oColorAttachment.loadOp = oDesc.bClearColorAttachmentAtBegin ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_LOAD;
 	oColorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -24,7 +23,7 @@ void RenderPass::Create(Desc& oDesc)
 	VkAttachmentDescription oColorAttachmentResolve{};
 	if (oDesc.eSample != VK_SAMPLE_COUNT_1_BIT)
 	{
-		oColorAttachmentResolve.format = oDesc.pWrapper->GetSwapchain()->GetFormat();
+		oColorAttachmentResolve.format = oDesc.eFormatColor;//oDesc.pWrapper->GetSwapchain()->GetFormat();
 		oColorAttachmentResolve.samples = VK_SAMPLE_COUNT_1_BIT;
 		oColorAttachmentResolve.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 		oColorAttachmentResolve.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -134,7 +133,7 @@ void RenderPass::Create(Desc& oDesc)
 	oRenderPassInfo.dependencyCount = (uint32_t)oDependencies.size();
 	oRenderPassInfo.pDependencies = oDependencies.data();
 
-	if (vkCreateRenderPass(*oDesc.pWrapper->GetDevice()->GetLogicalDevice(), &oRenderPassInfo, nullptr, &m_oRenderpass) != VK_SUCCESS)
+	if (vkCreateRenderPass(*Graphics::Globals::g_pDevice->GetLogicalDevice(), &oRenderPassInfo, nullptr, &m_oRenderpass) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Cannot create render pass");
 	}
@@ -142,5 +141,5 @@ void RenderPass::Create(Desc& oDesc)
 
 RenderPass::~RenderPass()
 {
-	vkDestroyRenderPass(*m_pWrapper->GetDevice()->GetLogicalDevice(), m_oRenderpass, nullptr);
+	vkDestroyRenderPass(*Graphics::Globals::g_pDevice->GetLogicalDevice(), m_oRenderpass, nullptr);
 }

@@ -2,13 +2,12 @@
 #include <iostream>
 #include "RenderPass.h"
 #include "BasicWrapper.h"
+#include "Globals.h"
 
 Framebuffer::Framebuffer(Desc& oDesc)
 {
-	m_pGraphicDevice = oDesc.pGraphicDevice;
-
 	int iWidth, iHeight;
-	oDesc.pGraphicDevice->GetModifiableRenderSurface()->GetWindowSize(iWidth, iHeight);
+	Graphics::Globals::g_pDevice->GetModifiableRenderSurface()->GetWindowSize(iWidth, iHeight);
 	VkFramebufferCreateInfo oFramebufferInfo{};
 	oFramebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
 
@@ -27,7 +26,7 @@ Framebuffer::Framebuffer(Desc& oDesc)
 		m_iAttachments |= (1 << i);
 	}
 
-	if (vkCreateFramebuffer(*oDesc.pGraphicDevice->GetLogicalDevice(), &oFramebufferInfo, nullptr, &m_oFramebuffer) != VK_SUCCESS)
+	if (vkCreateFramebuffer(*Graphics::Globals::g_pDevice->GetLogicalDevice(), &oFramebufferInfo, nullptr, &m_oFramebuffer) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to create framebuffer");
 	}
@@ -35,5 +34,5 @@ Framebuffer::Framebuffer(Desc& oDesc)
 
 Framebuffer::~Framebuffer()
 {
-	vkDestroyFramebuffer(*m_pGraphicDevice->GetLogicalDevice(), m_oFramebuffer, nullptr);
+	vkDestroyFramebuffer(*Graphics::Globals::g_pDevice->GetLogicalDevice(), m_oFramebuffer, nullptr);
 }
