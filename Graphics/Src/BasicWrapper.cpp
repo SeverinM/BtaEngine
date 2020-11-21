@@ -14,6 +14,7 @@
 #include "RenderBatch.h"
 #include "ShaderTags.h"
 #include "Font.h"
+#include "FontRenderBatch.h"
 
 bool BasicWrapper::s_bFramebufferResized(false);
 
@@ -164,7 +165,7 @@ void BasicWrapper::CreateRenderPass()
 	oDebugRenderPassDesc.pWrapper = this;
 	oDebugRenderPassDesc.bEnableColor = true;
 	oDebugRenderPassDesc.bEnableDepth = false;
-	oDebugRenderPassDesc.oSubpasses = { /*oDebugDesc,*/ oTextDesc };
+	oDebugRenderPassDesc.oSubpasses = { oDebugDesc, oTextDesc };
 	oDebugRenderPassDesc.eInitialLayoutColorAttachment = VK_IMAGE_LAYOUT_UNDEFINED;
 	oDebugRenderPassDesc.bClearColorAttachmentAtBegin = false;
 	oDebugRenderPassDesc.bPresentable = false;
@@ -196,13 +197,13 @@ void BasicWrapper::CreateGraphicPipeline()
 	oBatchesHandler.oBatches = { oCreationBatchSky, oCreationBatch };
 	m_pHandler = new RenderBatchesHandler(oBatchesHandler);
 
-	/*RenderBatchesHandler::CreationBatchDesc oCreationBatchDebug;
+	RenderBatchesHandler::CreationBatchDesc oCreationBatchDebug;
 	oCreationBatchDebug.bTestDepth = false;
 	oCreationBatchDebug.bWriteDepth = false;
 	oCreationBatchDebug.eTopology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
 	oCreationBatchDebug.oShaderCompiled = { "./Shader/Debug/vert.spv", "./Shader/Debug/frag.spv" };
 	oCreationBatchDebug.oShaderSources = { "./Shader/Debug/Src/vs.vert", "./Shader/Debug/Src/fs.frag" };
-	oCreationBatchDebug.sTag = DEBUG_TAG;*/
+	oCreationBatchDebug.sTag = DEBUG_TAG;
 
 	RenderBatchesHandler::CreationBatchDesc oCreationTextDebug;
 	oCreationTextDebug.bTestDepth = false;
@@ -210,14 +211,7 @@ void BasicWrapper::CreateGraphicPipeline()
 	oCreationTextDebug.oShaderCompiled = { "./Shader/Text/vert.spv", "./Shader/Text/frag.spv" };
 	oCreationTextDebug.oShaderSources = { "./Shader/Text/Src/vs.vert", "./Shader/Text/Src/fs.frag" };
 	oCreationTextDebug.sTag = TEXT_TAG;
-
-	RenderBatchesHandler::Desc oBatchesHandlerDebug;
-	oBatchesHandlerDebug.eSamples = VK_SAMPLE_COUNT_1_BIT;
-	oBatchesHandlerDebug.pPass = m_pDebugRenderpass;
-	oBatchesHandlerDebug.pWrapper = this;
-	oBatchesHandlerDebug.pFactory = m_pFactory;
-	oBatchesHandlerDebug.oBatches = { oCreationTextDebug };
-	m_pDebugHandler = new RenderBatchesHandler(oBatchesHandlerDebug);
+	oCreationTextDebug.eTypeBatch = RenderBatchesHandler::TEXT;
 
 	DescriptorPool::Desc oDescPool;
 	oDescPool.iImageCount = (int)m_pSwapchain->GetImageViews().size();
@@ -225,16 +219,20 @@ void BasicWrapper::CreateGraphicPipeline()
 	oDescPool.iMaxSet = 150;
 	oDescPool.pWrapper = this;
 	m_pPool = new DescriptorPool(oDescPool);
+	Graphics::Globals::g_pPool = m_pPool;
 
-	Font::Desc oFontDesc;
-	oFontDesc.pFactory = m_pFactory;
-	oFontDesc.pPipeline = m_pDebugHandler->GetRenderBatch(0)->GetPipeline();
-	oFontDesc.pPool = m_pPool;
-	oFontDesc.pRenderpass = m_pDebugRenderpass;
-	oFontDesc.pWrapper = this;
-	oFontDesc.sFontName = "Font/ElaineSans-Black.ttf";
+	RenderBatchesHandler::Desc oBatchesHandlerDebug;
+	oBatchesHandlerDebug.eSamples = VK_SAMPLE_COUNT_1_BIT;
+	oBatchesHandlerDebug.pPass = m_pDebugRenderpass;
+	oBatchesHandlerDebug.pWrapper = this;
+	oBatchesHandlerDebug.pFactory = m_pFactory;
+	oBatchesHandlerDebug.oBatches = { oCreationBatchDebug, oCreationTextDebug };
+	m_pDebugHandler = new RenderBatchesHandler(oBatchesHandlerDebug);
 
-	m_pFont = new Font(oFontDesc);
+	glm::mat4 vTrans = glm::mat4(1.0f);
+	vTrans[3][0] = 0;
+	vTrans[3][1] = 500.0f;
+	FontRenderBatch::TextInstance* pInstance = ((FontRenderBatch*)m_pDebugHandler->GetRenderBatch(1))->AddText(std::string("test"), glm::vec4(1, 1, 1, 1), vTrans);
 
 	Mesh::Desc oMeshDesc;
 	oMeshDesc.pFactory = m_pFactory;
@@ -246,7 +244,14 @@ void BasicWrapper::CreateGraphicPipeline()
 
 	m_xMesh = Mesh::StrongPtr( new Mesh(oMeshDesc) );
 	m_xMesh->ConvertToVerticesBuffer(m_xMesh->GetBufferFlags(), true, oMeshDesc.pWrapper);
-	m_pHandler->AddMesh( m_xMesh, 1,m_pPool);
+
+	RenderBatch* pMainHandler = (RenderBatch*)m_pHandler->GetRenderBatch(1);
+	Pipeline* pMainPipeline = m_pHandler->GetPipeline(1);
+
+	pMainHandler->AddMesh(m_xMesh, pMainPipeline->GetDescriptorSetLayout()->InstantiateDescriptorSet(*m_pPool, *m_pDevice));
+
+	RenderBatch* pSkyHandler = (RenderBatch*)m_pHandler->GetRenderBatch(0);
+	Pipeline* pSkyPipeline = m_pHandler->GetPipeline(0);
 
 	oMeshDesc.sFilenameModel = { "./Models/cube.obj" };
 	oMeshDesc.oModels = { std::shared_ptr<Transform>(new Transform()) };
@@ -254,7 +259,7 @@ void BasicWrapper::CreateGraphicPipeline()
 
 	m_xMeshSky = Mesh::StrongPtr( new Mesh(oMeshDesc) );
 	m_xMeshSky->ConvertToVerticesBuffer(m_xMeshSky->GetBufferFlags(), true, this);
-	m_pHandler->AddMesh( m_xMeshSky, 0, m_pPool);
+	pSkyHandler->AddMesh(m_xMeshSky, pSkyPipeline->GetDescriptorSetLayout()->InstantiateDescriptorSet(*m_pPool, *m_pDevice));
 
 	oMeshDesc.oPositions = { glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec3(0.0f, 0.5f, 0.0f), glm::vec3(0.5f, -0.5f, 0.0f), glm::vec3(0,0,1) };
 	oMeshDesc.oUVs = { glm::vec2(0,0) , glm::vec2(1,0) , glm::vec2(0,0) , glm::vec2(0,1) };
@@ -265,25 +270,50 @@ void BasicWrapper::CreateGraphicPipeline()
 	m_xCubeMesh = Mesh::StrongPtr(new Mesh(oMeshDesc));
 	m_xCubeMesh->ConvertToVerticesBuffer(m_xCubeMesh->GetBufferFlags(), true, this);
 	m_xCubeMesh->GetTransforms()[0]->SetPosition(glm::vec3(-1), true);
-	m_pHandler->AddMesh(m_xCubeMesh, 1, m_pPool);
+	pMainHandler->AddMesh(m_xCubeMesh, pMainPipeline->GetDescriptorSetLayout()->InstantiateDescriptorSet(*m_pPool, *m_pDevice));
 
 	oMeshDesc.oModels = { std::shared_ptr<Transform>(new Transform()) };
 	m_xCubeMeshChild = Mesh::StrongPtr(new Mesh(oMeshDesc));
 	m_xCubeMeshChild->ConvertToVerticesBuffer(m_xCubeMeshChild->GetBufferFlags(), true, this);
 	m_xCubeMeshChild->GetTransforms()[0]->SetPosition(glm::vec3(0), false);
 	m_xCubeMesh->GetTransforms()[0]->AddChild(m_xCubeMeshChild->GetTransforms()[0]);
+	pMainHandler->AddMesh(m_xCubeMeshChild, pMainPipeline->GetDescriptorSetLayout()->InstantiateDescriptorSet(*m_pPool, *m_pDevice));
 
 	DelayedCommands::QueueCommands oCmds;
 	oCmds.oOnStart = [this]()
 	{
-		 m_pHandler->AddMesh(m_xCubeMeshChild, 1, m_pPool);
+		RenderBatch* pMainHandler = (RenderBatch*)m_pHandler->GetRenderBatch(1);
+		Pipeline* pMainPipeline = m_pHandler->GetPipeline(1);
+		pMainHandler->AddMesh(m_xCubeMeshChild, pMainPipeline->GetDescriptorSetLayout()->InstantiateDescriptorSet(*m_pPool, *m_pDevice));
 	};
 
 	oCmds.oTimeOutFunction = [this]()
 	{
-		m_pHandler->RemoveMesh(m_xCubeMeshChild, 1);
+		RenderBatch* pBatch = (RenderBatch*)m_pHandler->GetRenderBatch(1);
+		Pipeline* pMainPipeline = m_pHandler->GetPipeline(1);
+		pBatch->RemoveMesh(m_xCubeMeshChild);
 	};
 	m_oCommandsQueue.PushCommand(oCmds, 5.0f);
+
+	oCmds.oOnStart = [this]()
+	{};
+
+	oCmds.oTimeOutFunction = [pInstance, this]()
+	{
+		pInstance->sText = std::string("Severin");
+		m_pDebugHandler->MarkAllAsDirty();
+	};
+	m_oCommandsQueue.PushCommand(oCmds, 2.0f);
+
+	oCmds.oOnStart = [this]()
+	{};
+
+	oCmds.oTimeOutFunction = [pInstance, this]()
+	{
+		pInstance->sText = std::string("Seve");
+		m_pDebugHandler->MarkAllAsDirty();
+	};
+	m_oCommandsQueue.PushCommand(oCmds, 4.0f);
 
 	InitFramebuffer();
 	FillDescriptorsBuffer();
@@ -295,7 +325,7 @@ void BasicWrapper::FillDescriptorsBuffer()
 	std::shared_ptr<BasicBuffer> xVPMatrice(m_pCamera->GetVPMatriceBuffer());
 	xVPMatrice->CopyFromMemory(oVP.data(), GetModifiableDevice());
 	
-	DescriptorSetWrapper* pMainRender = m_pHandler->GetRenderBatch(1)->GetDescriptor(m_xMesh);
+	DescriptorSetWrapper* pMainRender = ((RenderBatch*) m_pHandler->GetRenderBatch(1))->GetDescriptor(m_xMesh);
 
 	pMainRender->FillSlotAtTag(m_pCamera->GetVPMatriceBuffer().get(), TAG_VP);
 
@@ -312,12 +342,12 @@ void BasicWrapper::FillDescriptorsBuffer()
 
 	pMainRender->CommitSlots(m_pPool);
 
-	DescriptorSetWrapper* pMainRenderGun = m_pHandler->GetRenderBatch(1)->GetDescriptor(m_xCubeMesh);
+	DescriptorSetWrapper* pMainRenderGun = ((RenderBatch*) m_pHandler->GetRenderBatch(1))->GetDescriptor(m_xCubeMesh);
 	pMainRenderGun->FillSlotAtTag(m_pCamera->GetVPMatriceBuffer().get(), TAG_VP);
 	pMainRenderGun->FillSlotAtTag(Image::CreateFromFile("./Textures/test.png", oFileDesc), TAG_COLORMAP);
 	pMainRenderGun->CommitSlots(m_pPool);
 
-	DescriptorSetWrapper* pMainRenderGunChild = m_pHandler->GetRenderBatch(1)->GetDescriptor(m_xCubeMeshChild);
+	DescriptorSetWrapper* pMainRenderGunChild = ((RenderBatch*) m_pHandler->GetRenderBatch(1))->GetDescriptor(m_xCubeMeshChild);
 
 	if (pMainRenderGunChild)
 	{
@@ -339,7 +369,7 @@ void BasicWrapper::FillDescriptorsBuffer()
 	std::string sFilenames[6] = { "./Textures/bkg1_right.png", "./Textures/bkg1_left.png", "./Textures/bkg1_top.png", "./Textures/bkg1_bot.png", "./Textures/bkg1_front.png", "./Textures/bkg1_back.png" };
 	Image* pImage = Image::CreateCubeMap(sFilenames, oFileDescSky);
 
-	DescriptorSetWrapper* pRenderSky = m_pHandler->GetRenderBatch(0)->GetDescriptor(m_xMeshSky);
+	DescriptorSetWrapper* pRenderSky = ((RenderBatch*)m_pHandler->GetRenderBatch(0))->GetDescriptor(m_xMeshSky);
 
 	BasicBuffer::Desc oBuffer;
 	oBuffer.iUnitSize = sizeof(glm::mat4);
@@ -484,8 +514,9 @@ bool BasicWrapper::Render(SyncObjects* pSync)
 			oTransforms.push_back(std::shared_ptr<BufferedTransform>(pTrsf));
 			m_xMesh->SetTransforms(oTransforms, this);
 
-			m_pHandler->GetRenderBatch(1)->GetDescriptor(m_xMesh)->FillSlot(1,m_xMesh->GetModelMatrices().get());
-			m_pHandler->GetRenderBatch(1)->GetDescriptor(m_xMesh)->CommitSlots(m_pPool);
+			RenderBatch* pBatch = (RenderBatch*)m_pHandler->GetRenderBatch(1);
+			pBatch->GetDescriptor(m_xMesh)->FillSlot(1,m_xMesh->GetModelMatrices().get());
+			pBatch->GetDescriptor(m_xMesh)->CommitSlots(m_pPool);
 			m_pHandler->MarkAllAsDirty();
 			m_bAdd = false;
 		}
@@ -520,12 +551,7 @@ bool BasicWrapper::Render(SyncObjects* pSync)
 		VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 
 		VkCommandBuffer* pCmd = m_pDebugHandler->GetCommand(m_oFramebuffersDebug[iImageIndex]);
-		std::vector<VkCommandBuffer> oCmds = { *m_pHandler->GetCommand( m_oFramebuffers[iImageIndex] ), *m_pImGui->GetDrawCommand(oDesc) };
-		if (pCmd != nullptr)
-		{
-			//oCmds.insert(oCmds.begin() + 1, *pCmd);
-		}
-		oCmds.insert(oCmds.begin() + 1, m_pFont->GetDrawCommand("192.168.0.1",m_oFramebuffersDebug[iImageIndex],0, 500, 1.f));
+		std::vector<VkCommandBuffer> oCmds = { *m_pHandler->GetCommand( m_oFramebuffers[iImageIndex] ),*m_pDebugHandler->GetCommand(m_oFramebuffersDebug[iImageIndex]), *m_pImGui->GetDrawCommand(oDesc) };
 
 		oSubmit.pWaitDstStageMask = waitStages;
 		oSubmit.commandBufferCount = (uint32_t)oCmds.size();

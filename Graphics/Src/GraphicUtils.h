@@ -15,7 +15,7 @@ namespace Bta
 
 			static void DisplayDebugSphere(float fRadius, glm::vec4 vColor, float fDuration, BasicWrapper* pWrapper)
 			{
-				RenderBatch* pBatch = pWrapper->GetHandler()->FindRenderBatch(DEBUG_TAG);
+				AbstractRenderBatch* pBatch = pWrapper->GetHandler()->FindRenderBatch(DEBUG_TAG);
 
 				if (pBatch != nullptr)
 				{
@@ -24,7 +24,7 @@ namespace Bta
 
 			static void DisplayDebugLine(glm::vec3 vStart, glm::vec3 vEnd, glm::vec4 vColor, float fDuration, BasicWrapper* pWrapper)
 			{
-				RenderBatch* pBatch = pWrapper->GetDebugHandler()->FindRenderBatch(DEBUG_TAG);
+				RenderBatch* pBatch = (RenderBatch*)pWrapper->GetDebugHandler()->FindRenderBatch(DEBUG_TAG);
 
 				if (pBatch != nullptr)
 				{

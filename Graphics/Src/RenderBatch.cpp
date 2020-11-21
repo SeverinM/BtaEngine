@@ -2,6 +2,8 @@
 #include <iostream>
 #include "CommandFactory.h"
 #include "ShaderTags.h"
+#include "FontRenderBatch.h"
+#include "Globals.h"
 
 RenderBatch::RenderBatch(Desc& oDesc)
 {
@@ -31,11 +33,6 @@ RenderBatch::~RenderBatch()
 
 VkCommandBuffer* RenderBatch::GetDrawCommand(Framebuffer* pFramebuffer)
 {
-	if (m_oEntities.empty())
-	{
-		return nullptr;
-	}
-
 	if (m_oCachedCommandBuffer.count(pFramebuffer) == 0)
 	{
 		m_oCachedCommandBuffer[pFramebuffer] = nullptr;
@@ -99,6 +96,11 @@ void RenderBatch::ClearCache()
 		vkFreeCommandBuffers(*m_pWrapper->GetModifiableDevice()->GetLogicalDevice(), *m_pFactory->GetCommandPool(), 1, oCmd.second);
 	}
 	m_oCachedCommandBuffer.clear();
+}
+
+void RenderBatch::Destroy()
+{
+	ClearCache();
 }
 
 void RenderBatch::TryFillModelsBuffer(Mesh::StrongPtr xMesh)
@@ -231,7 +233,21 @@ RenderBatchesHandler::RenderBatchesHandler(Desc& oDesc)
 		oBatchDesc.pNext = nullptr;
 		oBatchDesc.sTag = oBatchCreateDesc.sTag;
 
-		m_oBatches.push_back(new RenderBatch(oBatchDesc));
+		if ( oBatchCreateDesc.eTypeBatch == NORMAL)
+			m_oBatches.push_back(new RenderBatch(oBatchDesc));
+		else if (oBatchCreateDesc.eTypeBatch == TEXT)
+		{
+			FontRenderBatch::Desc oTextDesc;
+			oTextDesc.pFactory = oDesc.pFactory;
+			oTextDesc.pPipeline = pPipeline;
+			oTextDesc.pPool = Graphics::Globals::g_pPool;
+			oTextDesc.pRenderpass = m_pRenderpass;
+			oTextDesc.pWrapper = oDesc.pWrapper;
+			oTextDesc.sFontName = "Font/ElaineSans-Black.ttf";
+			oTextDesc.iFilterMVP = AbstractRenderBatch::E_PROJECTION;
+
+			m_oBatches.push_back(new FontRenderBatch(oTextDesc));
+		}
 
 		m_oPipelineDesc.push_back(oBatchCreateDesc);
 
@@ -244,29 +260,6 @@ RenderBatchesHandler::RenderBatchesHandler(Desc& oDesc)
 	}
 }
 
-void RenderBatchesHandler::AddMesh(Mesh::StrongPtr xMesh, int iIndex, DescriptorPool* pPool)
-{
-	Pipeline* pPipeline = GetPipeline(iIndex);
-	RenderBatch* pBatch = GetRenderBatch(iIndex);
-
-	if (pPipeline != nullptr && pBatch != nullptr)
-	{
-		pBatch->AddMesh(xMesh, pPipeline->GetDescriptorSetLayout()->InstantiateDescriptorSet(*pPool, *m_pDevice));
-	}
-}
-
-void RenderBatchesHandler::RemoveMesh(Mesh::StrongPtr xMesh, int iIndex)
-{
-	RenderBatch* pBatch = GetRenderBatch(iIndex);
-
-	if (pBatch != nullptr)
-	{
-		pBatch->RemoveMesh(xMesh);
-	}
-
-	MarkAllAsDirty();
-}
-
 VkCommandBuffer* RenderBatchesHandler::GetCommand(Framebuffer* pFramebuffer)
 {
 	return m_oBatches[0]->GetDrawCommand(pFramebuffer);
@@ -274,9 +267,9 @@ VkCommandBuffer* RenderBatchesHandler::GetCommand(Framebuffer* pFramebuffer)
 
 void RenderBatchesHandler::ReconstructPipelines(GraphicWrapper* pWrapper)
 {
-	for (RenderBatch* pBatch : m_oBatches)
+	for (AbstractRenderBatch* pBatch : m_oBatches)
 	{
-		pBatch->ClearCache();
+		pBatch->Destroy();
 		delete pBatch->GetPipeline();
 	}
 

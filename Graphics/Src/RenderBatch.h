@@ -1,12 +1,12 @@
 #ifndef H_RENDER_BATCH
 #define H_RENDER_BATCH
 #include "Mesh.h"
-#include "Pipeline.h"
 #include "RenderPass.h"
 #include <unordered_map>
 #include "DescriptorWrapper.h"
+#include "AbstractRenderBatch.h"
 
-class RenderBatch
+class RenderBatch : public AbstractRenderBatch
 {
 public:
 	struct Desc
@@ -21,35 +21,24 @@ public:
 	RenderBatch(Desc& oDesc);
 	~RenderBatch();
 
-	VkCommandBuffer* GetDrawCommand(Framebuffer* pFramebuffer);
-	inline void MarkAsDirty() { m_bDirty = true; m_oCachedCommandBuffer.clear(); }
+	VkCommandBuffer* GetDrawCommand(Framebuffer* pFramebuffer) override;
+	inline void MarkAsDirty() override { m_bDirty = true; m_oCachedCommandBuffer.clear(); }
 	void AddMesh(Mesh::StrongPtr xMesh, DescriptorSetWrapper* pWrapper);
 	void RemoveMesh(Mesh::StrongPtr xMesh);
 	inline DescriptorSetWrapper* GetDescriptor(Mesh::StrongPtr xMesh) { if (m_oEntities.count(xMesh) == 0) return nullptr; return m_oEntities[xMesh]; }
-	inline bool IsEnabled() { return m_bEnabled; }
-	inline void SetEnabled(bool bValue) { m_bEnabled = bValue; MarkAsDirty(); }
-	size_t GetVerticesCount();
-	size_t GetInstancesCount();
-	Pipeline* GetPipeline() { return m_pPipeline; }
-	void SetPipeline(Pipeline* pNew) { m_pPipeline = pNew; }
-	void SetNext(RenderBatch* pBatch) { m_pNext = pBatch; }
+	void ChainSubpass(VkCommandBuffer* pBuffer) override;
+	size_t GetVerticesCount() override;
+	size_t GetInstancesCount() override;
 	void ClearCache();
-	std::string GetTag() { return m_sTag; }
+	void Destroy() override;
 
 protected :
-	bool m_bEnabled;
 	bool m_bDirty;
 	std::unordered_map<Framebuffer*, VkCommandBuffer*> m_oCachedCommandBuffer;
 
 	void TryFillModelsBuffer(Mesh::StrongPtr xMesh);
 	void ReconstructCommand(Framebuffer* pFramebuffer);
-	void ChainSubpass(VkCommandBuffer* pBuffer);
 	GraphicWrapper* m_pWrapper;
-	CommandFactory* m_pFactory;
-	RenderPass* m_pRenderpass;
-	Pipeline* m_pPipeline;
-	RenderBatch* m_pNext;
-	std::string m_sTag;
 
 	std::unordered_map<Mesh::StrongPtr, DescriptorSetWrapper*> m_oEntities;
 };
@@ -57,15 +46,23 @@ protected :
 class RenderBatchesHandler
 {
 public:
+
+	enum BatchType
+	{
+		TEXT,
+		NORMAL
+	};
+
 	struct CreationBatchDesc
 	{
-		CreationBatchDesc() : bWriteDepth(false), bTestDepth(false), eTopology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST){};
+		CreationBatchDesc() : bWriteDepth(false), bTestDepth(false), eTopology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST), eTypeBatch(NORMAL) {};
 		std::vector<std::string> oShaderCompiled;
 		bool bWriteDepth;
 		bool bTestDepth;
 		std::vector<std::string> oShaderSources;
 		std::string sTag;
 		VkPrimitiveTopology eTopology;
+		BatchType eTypeBatch;
 	};
 
 	struct Desc
@@ -78,10 +75,10 @@ public:
 		CommandFactory* pFactory{};
 	};
 	RenderBatchesHandler(Desc& oDesc);
-	RenderBatch* GetRenderBatch(int iIndex) { if (iIndex < 0 || iIndex >= m_oBatches.size()) return nullptr; return m_oBatches[iIndex]; }
-	RenderBatch* FindRenderBatch(std::string sTag)
+	AbstractRenderBatch* GetRenderBatch(int iIndex) { if (iIndex < 0 || iIndex >= m_oBatches.size()) return nullptr; return m_oBatches[iIndex]; }
+	AbstractRenderBatch* FindRenderBatch(std::string sTag)
 	{
-		for (RenderBatch* pBatch : m_oBatches)
+		for (AbstractRenderBatch* pBatch : m_oBatches)
 		{
 			if (pBatch->GetTag() == sTag)
 			{
@@ -92,16 +89,14 @@ public:
 	}
 
 	Pipeline* GetPipeline(int iIndex) { if (iIndex < 0 || iIndex >= m_oBatches.size()) return nullptr; return m_oBatches[iIndex]->GetPipeline(); }
-	void AddMesh(Mesh::StrongPtr xMesh, int iIndex, DescriptorPool* pPool);
-	void RemoveMesh(Mesh::StrongPtr xMesh, int iIndex);
 	VkCommandBuffer* GetCommand(Framebuffer* pFramebuffer);
 	void ReconstructPipelines(GraphicWrapper* pWrapper);
-	void MarkAllAsDirty() { for (RenderBatch* pBatch : m_oBatches) { pBatch->MarkAsDirty(); } }
+	void MarkAllAsDirty() { for (AbstractRenderBatch* pBatch : m_oBatches) { pBatch->MarkAsDirty(); } }
 
 	size_t GetVerticesCount()
 	{
 		size_t iVertices = 0;
-		for (RenderBatch* pBatch : m_oBatches)
+		for (AbstractRenderBatch* pBatch : m_oBatches)
 		{
 			iVertices += pBatch->GetVerticesCount();
 		}
@@ -111,7 +106,7 @@ public:
 	size_t GetInstancesCount()
 	{
 		uint64_t iInstanceCount = 0;
-		for (RenderBatch* pBatch : m_oBatches)
+		for (AbstractRenderBatch* pBatch : m_oBatches)
 		{
 			iInstanceCount += pBatch->GetInstancesCount();
 		}
@@ -122,7 +117,7 @@ protected:
 	VkSampleCountFlagBits m_eSamples;
 	RenderPass* m_pRenderpass;
 	std::vector<CreationBatchDesc> m_oPipelineDesc;
-	std::vector<RenderBatch*> m_oBatches;
+	std::vector<AbstractRenderBatch*> m_oBatches;
 	GraphicDevice* m_pDevice;
 };
 

@@ -4,6 +4,7 @@
 #include <iostream>
 
 class GraphicDevice;
+class DescriptorPool;
 
 namespace Graphics
 {
@@ -12,6 +13,7 @@ namespace Graphics
 		static VkInstance g_oInstance;
 		static float g_fElapsed;
 		static GraphicDevice* g_pDevice;
+		static DescriptorPool* g_pPool;
 	};
 
 	static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback

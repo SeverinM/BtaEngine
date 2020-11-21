@@ -528,7 +528,6 @@ Image::Image(Desc& oDesc)
 		vkGetImageSubresourceLayout(*m_pDevice->GetLogicalDevice(), m_oImage, &subRes, &subResLayout);
 
 		m_iRowPitch = subResLayout.rowPitch;
-		std::cout << "Pitch : " << m_iRowPitch << std::endl;
 	}
 }
 

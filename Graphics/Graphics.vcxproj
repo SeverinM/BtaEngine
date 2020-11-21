@@ -143,7 +143,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="AbstractRenderBatch.cpp" />
     <ClCompile Include="Include\imgui.cpp" />
     <ClCompile Include="Include\imgui_demo.cpp" />
     <ClCompile Include="Include\imgui_draw.cpp" />
@@ -157,6 +156,7 @@
     <ClCompile Include="Src\DescriptorPool.cpp" />
     <ClCompile Include="Src\DescriptorWrapper.cpp" />
     <ClCompile Include="Src\Font.cpp" />
+    <ClCompile Include="Src\FontRenderBatch.cpp" />
     <ClCompile Include="Src\Framebuffer.cpp" />
     <ClCompile Include="Src\Globals.cpp" />
     <ClCompile Include="Src\GraphicDevice.cpp" />
@@ -173,7 +173,6 @@
     <ClCompile Include="Src\Transform.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="AbstractRenderBatch.h" />
     <ClInclude Include="Include\imconfig.h" />
     <ClInclude Include="Include\imgui.h" />
     <ClInclude Include="Include\imgui_impl_glfw.h" />
@@ -182,6 +181,7 @@
     <ClInclude Include="Include\imstb_rectpack.h" />
     <ClInclude Include="Include\imstb_textedit.h" />
     <ClInclude Include="Include\imstb_truetype.h" />
+    <ClInclude Include="Src\AbstractRenderBatch.h" />
     <ClInclude Include="Src\BasicWrapper.h" />
     <ClInclude Include="Src\Buffer.h" />
     <ClInclude Include="Src\Camera.h" />
@@ -190,6 +190,7 @@
     <ClInclude Include="Src\DescriptorPool.h" />
     <ClInclude Include="Src\DescriptorWrapper.h" />
     <ClInclude Include="Src\Font.h" />
+    <ClInclude Include="Src\FontRenderBatch.h" />
     <ClInclude Include="Src\Framebuffer.h" />
     <ClInclude Include="Src\Globals.h" />
     <ClInclude Include="Src\GraphicDevice.h" />
