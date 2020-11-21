@@ -4,7 +4,6 @@
 #include <bitset>
 #include <cstdlib>
 #include "StringUtils.h"
-#include "Font.h"
 
 int main()
 {

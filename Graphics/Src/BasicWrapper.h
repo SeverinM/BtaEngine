@@ -21,7 +21,6 @@ class RenderPass;
 class InputHandling;
 class RenderBatch;
 class RenderBatchesHandler;
-class Font;
 
 class BasicWrapper : public GraphicWrapper
 {
@@ -99,8 +98,6 @@ protected:
 
 	RenderBatchesHandler* m_pHandler;
 	RenderBatchesHandler* m_pDebugHandler;
-
-	Font* m_pFont;
 
 	std::vector< std::shared_ptr<Image> > m_oAllDepths;
 	std::vector< std::shared_ptr<Image> > m_oAllMultisample;

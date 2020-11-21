@@ -13,7 +13,6 @@
 #include "Globals.h"
 #include "RenderBatch.h"
 #include "ShaderTags.h"
-#include "Font.h"
 #include "FontRenderBatch.h"
 
 bool BasicWrapper::s_bFramebufferResized(false);
