@@ -14,6 +14,7 @@
 #include "RenderBatch.h"
 #include "ShaderTags.h"
 #include "FontRenderBatch.h"
+#include "GraphicUtils.h"
 
 bool BasicWrapper::s_bFramebufferResized(false);
 
@@ -214,26 +215,29 @@ void BasicWrapper::CreateGraphicPipeline()
 	RenderBatchesHandler::Desc oBatchesHandlerDebug;
 	oBatchesHandlerDebug.eSamples = VK_SAMPLE_COUNT_1_BIT;
 	oBatchesHandlerDebug.pPass = m_pDebugRenderpass;
-	oBatchesHandlerDebug.pWrapper = this;
 	oBatchesHandlerDebug.pFactory = m_pFactory;
 	oBatchesHandlerDebug.oBatches = { oCreationBatchDebug, oCreationTextDebug };
 	m_pDebugHandler = new RenderBatchesHandler(oBatchesHandlerDebug);
 
-	glm::mat4 vTrans = glm::mat4(1.0f);
-	vTrans[3][0] = 0;
-	vTrans[3][1] = 500.0f;
-	FontRenderBatch::TextInstance* pInstance = ((FontRenderBatch*)m_pDebugHandler->GetRenderBatch(1))->AddText(std::string("test"), glm::vec4(1, 1, 1, 1), vTrans);
+	glm::mat4 mTrans = glm::mat4(1.0f);
+	mTrans = glm::scale(mTrans, glm::vec3(0.01f, 0.01f, 0.01f));
+	FontRenderBatch::TextInstance* pInstance = ((FontRenderBatch*)m_pDebugHandler->GetRenderBatch(1))->AddText(std::string("Severin"), glm::vec4(1, 1, 1, 1), mTrans);
+	pInstance->pBufferedTransform->Rotate(glm::vec3(1, 0, 0), 180);
+	pInstance->pBufferedTransform->SetPosition(glm::vec3(0.5f));
+
+	Bta::Utils::GraphicUtils::s_pBatch = (RenderBatch*)m_pDebugHandler->FindRenderBatch(DEBUG_TAG);
+	Bta::Utils::GraphicUtils::s_pDelay = &m_oCommandsQueue;
+	Bta::Utils::GraphicUtils::s_pFactory = m_pFactory;
 
 	Mesh::Desc oMeshDesc;
 	oMeshDesc.pFactory = m_pFactory;
-	oMeshDesc.pWrapper = this;
 	oMeshDesc.sFilenameModel = "./Models/viking_room.obj";
 	oMeshDesc.oModels = { std::shared_ptr<Transform>(new Transform()), std::shared_ptr<Transform>(new Transform()) };
 	oMeshDesc.oModels[1]->SetPosition(glm::vec3(2.5f, 0, 0), true);
 	oMeshDesc.eFlag = Mesh::eVerticesAttributes::E_UV | Mesh::eVerticesAttributes::E_POSITIONS;
 
 	m_xMesh = Mesh::StrongPtr( new Mesh(oMeshDesc) );
-	m_xMesh->ConvertToVerticesBuffer(m_xMesh->GetBufferFlags(), true, oMeshDesc.pWrapper);
+	m_xMesh->ConvertToVerticesBuffer(m_xMesh->GetBufferFlags(), true);
 
 	RenderBatch* pMainHandler = (RenderBatch*)m_pHandler->GetRenderBatch(1);
 	Pipeline* pMainPipeline = m_pHandler->GetPipeline(1);
@@ -248,7 +252,7 @@ void BasicWrapper::CreateGraphicPipeline()
 	oMeshDesc.eFlag = Mesh::eVerticesAttributes::E_POSITIONS;
 
 	m_xMeshSky = Mesh::StrongPtr( new Mesh(oMeshDesc) );
-	m_xMeshSky->ConvertToVerticesBuffer(m_xMeshSky->GetBufferFlags(), true, this);
+	m_xMeshSky->ConvertToVerticesBuffer(m_xMeshSky->GetBufferFlags(), true);
 	pSkyHandler->AddMesh(m_xMeshSky, pSkyPipeline->GetDescriptorSetLayout()->InstantiateDescriptorSet(*m_pPool, *Graphics::Globals::g_pDevice));
 
 	oMeshDesc.oPositions = { glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec3(0.0f, 0.5f, 0.0f), glm::vec3(0.5f, -0.5f, 0.0f), glm::vec3(0,0,1) };
@@ -258,18 +262,18 @@ void BasicWrapper::CreateGraphicPipeline()
 	oMeshDesc.oModels = { std::shared_ptr<Transform>(new Transform()) };
 	oMeshDesc.eFlag = Mesh::eVerticesAttributes::E_UV | Mesh::eVerticesAttributes::E_POSITIONS;
 	m_xCubeMesh = Mesh::StrongPtr(new Mesh(oMeshDesc));
-	m_xCubeMesh->ConvertToVerticesBuffer(m_xCubeMesh->GetBufferFlags(), true, this);
+	m_xCubeMesh->ConvertToVerticesBuffer(m_xCubeMesh->GetBufferFlags(), true);
 	m_xCubeMesh->GetTransforms()[0]->SetPosition(glm::vec3(-1), true);
 	pMainHandler->AddMesh(m_xCubeMesh, pMainPipeline->GetDescriptorSetLayout()->InstantiateDescriptorSet(*m_pPool, *Graphics::Globals::g_pDevice));
 
 	oMeshDesc.oModels = { std::shared_ptr<Transform>(new Transform()) };
 	m_xCubeMeshChild = Mesh::StrongPtr(new Mesh(oMeshDesc));
-	m_xCubeMeshChild->ConvertToVerticesBuffer(m_xCubeMeshChild->GetBufferFlags(), true, this);
+	m_xCubeMeshChild->ConvertToVerticesBuffer(m_xCubeMeshChild->GetBufferFlags(), true);
 	m_xCubeMeshChild->GetTransforms()[0]->SetPosition(glm::vec3(0), false);
 	m_xCubeMesh->GetTransforms()[0]->AddChild(m_xCubeMeshChild->GetTransforms()[0]);
 	pMainHandler->AddMesh(m_xCubeMeshChild, pMainPipeline->GetDescriptorSetLayout()->InstantiateDescriptorSet(*m_pPool, *Graphics::Globals::g_pDevice));
 
-	DelayedCommands::QueueCommands oCmds;
+	/*DelayedCommands::QueueCommands oCmds;
 	oCmds.oOnStart = [this]()
 	{
 		RenderBatch* pMainHandler = (RenderBatch*)m_pHandler->GetRenderBatch(1);
@@ -282,28 +286,23 @@ void BasicWrapper::CreateGraphicPipeline()
 		RenderBatch* pBatch = (RenderBatch*)m_pHandler->GetRenderBatch(1);
 		Pipeline* pMainPipeline = m_pHandler->GetPipeline(1);
 		pBatch->RemoveMesh(m_xCubeMeshChild);
+		m_pHandler->GetRenderBatch(0)->MarkAsDirty();
 	};
 	m_oCommandsQueue.PushCommand(oCmds, 5.0f);
 
-	oCmds.oOnStart = [this]()
-	{};
+	oCmds.oOnStart = [pInstance,this]()
+	{
+		glm::mat4 vTrans = glm::mat4(1.0f);
+		vTrans[3][0] = 0;
+		vTrans[3][1] = 100;
+		pInstance->SetTransform(vTrans);
+	};
 
 	oCmds.oTimeOutFunction = [pInstance, this]()
 	{
-		pInstance->sText = std::string("Severin");
-		m_pDebugHandler->MarkAllAsDirty();
+		pInstance->SetText("Severin");
 	};
-	m_oCommandsQueue.PushCommand(oCmds, 2.0f);
-
-	oCmds.oOnStart = [this]()
-	{};
-
-	oCmds.oTimeOutFunction = [pInstance, this]()
-	{
-		pInstance->sText = std::string("Seve");
-		m_pDebugHandler->MarkAllAsDirty();
-	};
-	m_oCommandsQueue.PushCommand(oCmds, 4.0f);
+	m_oCommandsQueue.PushCommand(oCmds, 2.0f);*/
 
 	InitFramebuffer();
 	FillDescriptorsBuffer();

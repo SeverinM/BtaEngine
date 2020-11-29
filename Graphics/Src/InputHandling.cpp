@@ -45,7 +45,7 @@ void InputHandling::ProcessKeyboard(GLFWwindow* pwindow, int iKey, int iScancode
 
 	if (glfwGetKey(pwindow, GLFW_KEY_U) == GLFW_PRESS)
 	{
-		//Bta::Utils::GraphicUtils::DisplayDebugLine(glm::vec3(0), glm::vec3(0, 0, 10), glm::vec4(1, 1, 1, 1), 10.0f, pHandling->m_pWrapper);
+		Bta::Utils::GraphicUtils::DisplayDebugLine(glm::vec3(0), glm::vec3(0, 0, 10), glm::vec4(1, 1, 1, 1), 10.0f);
 	}
 
 	if (vTranslate.length() != 0)

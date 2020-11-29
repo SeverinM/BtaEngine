@@ -239,11 +239,12 @@ RenderBatchesHandler::RenderBatchesHandler(Desc& oDesc)
 			oTextDesc.pPool = Graphics::Globals::g_pPool;
 			oTextDesc.pRenderpass = m_pRenderpass;
 			oTextDesc.sFontName = "Font/ElaineSans-Black.ttf";
-			oTextDesc.iFilterMVP = AbstractRenderBatch::E_PROJECTION;
+			oTextDesc.xVPBuffer = Graphics::Globals::g_pCamera->GetVPMatriceBuffer();
 
 			m_oBatches.push_back(new FontRenderBatch(oTextDesc));
 		}
 
+		m_oBatches[m_oBatches.size() - 1]->m_pParent = this;
 		m_oPipelineDesc.push_back(oBatchCreateDesc);
 
 		if (i > 0)

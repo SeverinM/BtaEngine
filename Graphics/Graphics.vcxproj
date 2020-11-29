@@ -159,6 +159,7 @@
     <ClCompile Include="Src\Framebuffer.cpp" />
     <ClCompile Include="Src\Globals.cpp" />
     <ClCompile Include="Src\GraphicDevice.cpp" />
+    <ClCompile Include="Src\GraphicUtils.cpp" />
     <ClCompile Include="Src\ImGuiWrapper.cpp" />
     <ClCompile Include="Src\InputHandling.cpp" />
     <ClCompile Include="Src\Main.cpp" />

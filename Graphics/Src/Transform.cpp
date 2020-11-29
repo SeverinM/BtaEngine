@@ -128,7 +128,7 @@ void BufferedTransform::ForceMatrix(glm::mat4 mMatrix)
 	UpdateBuffer();
 }
 
-std::shared_ptr<BasicBuffer> BufferedTransform::MergeTransform(std::vector<std::shared_ptr<Transform>> oTrsf, VkBufferUsageFlags eUsage, GraphicWrapper* pWrapper, std::vector<std::shared_ptr<BufferedTransform>>& oBufferedTransform)
+std::shared_ptr<BasicBuffer> BufferedTransform::MergeTransform(std::vector<std::shared_ptr<Transform>> oTrsf, VkBufferUsageFlags eUsage, std::vector<std::shared_ptr<BufferedTransform>>& oBufferedTransform)
 {
 	oBufferedTransform.clear();
 	BasicBuffer::Desc oDesc;

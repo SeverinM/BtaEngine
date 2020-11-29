@@ -44,7 +44,7 @@ Mesh::Mesh(Desc& oDesc)
 		LoadModel(oDesc);
 	}
 
-	m_xAllModelMatrices = BufferedTransform::MergeTransform(oDesc.oModels, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, oDesc.pWrapper, m_oModels);
+	m_xAllModelMatrices = BufferedTransform::MergeTransform(oDesc.oModels, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, m_oModels);
 	for (int i = 0; i < m_oModels.size(); i++)
 	{
 		m_oModels[i]->ForceMatrix(oDesc.oModels[i]->GetModelMatrix());
@@ -61,7 +61,7 @@ Mesh::~Mesh()
 	m_oModels.clear();
 }
 
-void Mesh::ConvertToVerticesBuffer(BufferElementsFlag eFlags, bool bIncludeIndexes, GraphicWrapper* pWrapper)
+void Mesh::ConvertToVerticesBuffer(BufferElementsFlag eFlags, bool bIncludeIndexes)
 {
 	std::vector<uint8_t> oBytes;
 	int iUnitSize = 0;

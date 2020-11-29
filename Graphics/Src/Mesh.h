@@ -34,7 +34,6 @@ public:
 		std::vector< uint32_t > oIndexes;
 		std::string sFilenameModel;
 		std::vector< std::shared_ptr< Transform >> oModels;
-		GraphicWrapper* pWrapper;
 		CommandFactory* pFactory;
 		BufferElementsFlag eFlag;
 	};
@@ -42,7 +41,7 @@ public:
 	Mesh(Desc& oDesc);
 	~Mesh();
 
-	void ConvertToVerticesBuffer(BufferElementsFlag eFlags, bool bIncludeIndexes, GraphicWrapper* pWrapper);
+	void ConvertToVerticesBuffer(BufferElementsFlag eFlags, bool bIncludeIndexes);
 	inline std::shared_ptr<Buffer> GetVerticesBuffer() { return m_xCachedVerticesBuffer; }
 	inline std::shared_ptr<Buffer> GetIndexesBuffer() { return m_xCachedIndexesBuffer; }
 	inline std::shared_ptr<BasicBuffer> GetModelMatrices() { return m_xAllModelMatrices; }
@@ -56,7 +55,7 @@ public:
 			oTrsfs.push_back(std::static_pointer_cast<Transform>(xTrsf));
 		}
 
-		m_xAllModelMatrices = BufferedTransform::MergeTransform(oTrsfs, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, pWrapper, m_oModels);
+		m_xAllModelMatrices = BufferedTransform::MergeTransform(oTrsfs, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, m_oModels);
 	}
 	inline std::vector< std::shared_ptr<BufferedTransform>> GetTransforms() { return m_oModels; }
 

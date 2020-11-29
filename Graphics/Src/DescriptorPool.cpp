@@ -107,7 +107,7 @@ void DescriptorPool::WriteDescriptor(DescriptorSetWrapper* pDescriptorSet)
 			oBufferInfo.offset = 0;
 
 			oWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-			oWrite.pBufferInfo = &oBufferInfo;
+			oWrite.pBufferInfo = new VkDescriptorBufferInfo( oBufferInfo );
 		}
 		else
 		{

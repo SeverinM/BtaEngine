@@ -99,6 +99,9 @@
     <ClCompile Include="Src\FontRenderBatch.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
+    <ClCompile Include="Src\GraphicUtils.cpp">
+      <Filter>Fichiers sources</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Src\BasicWrapper.h">

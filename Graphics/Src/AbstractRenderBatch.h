@@ -7,6 +7,8 @@ class Framebuffer;
 
 class AbstractRenderBatch
 {
+	friend class RenderBatchesHandler;
+
 public:
 
 	enum TransformFilter
@@ -29,8 +31,10 @@ public:
 	void SetNext(AbstractRenderBatch* pBatch) { m_pNext = pBatch; }
 	virtual void ChainSubpass(VkCommandBuffer* pCommand) = 0;
 	virtual void Destroy() = 0;
+	RenderBatchesHandler* GetParent() { return m_pParent; }
 
 protected:
+	RenderBatchesHandler* m_pParent;
 	AbstractRenderBatch* m_pNext;
 	std::string m_sTag;
 	bool m_bEnabled;

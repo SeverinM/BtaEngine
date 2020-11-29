@@ -12,11 +12,13 @@ FT_Library FontRenderBatch::s_oFt;
 
 FontRenderBatch::FontRenderBatch(Desc& oDesc)
 {
+	m_xCam = nullptr;
 	m_pRenderpass = oDesc.pRenderpass;
 	m_pPipeline = oDesc.pPipeline;
 	m_pFactory = oDesc.pFactory;
 	m_pPool = oDesc.pPool;
 	m_bEnabled = true;
+	m_xVP = oDesc.xVPBuffer;
 
 	if (!s_bIsInitialized)
 	{
@@ -55,24 +57,6 @@ FontRenderBatch::FontRenderBatch(Desc& oDesc)
 		CharacterUnit oChar;
 		oChar.pImage = Image::CreateFromBuffer(oBufferCreateDesc);
 		oChar.pImage->TransitionLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, m_pFactory, 1);
-		oChar.pDescriptorSet = m_pPipeline->GetDescriptorSetLayout()->InstantiateDescriptorSet(*m_pPool, *Graphics::Globals::g_pDevice);
-		oChar.pDescriptorSet->FillSlotAtTag(oChar.pImage, TAG_COLORMAP);
-		
-		BasicBuffer::Desc oBufferDesc;
-		oBufferDesc.eUsage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-		oBufferDesc.iUnitCount = 3;
-		oBufferDesc.iUnitSize = sizeof(glm::mat4);
-		oBufferDesc.oPropertyFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
-		BasicBuffer* pProjectionBuffer = new BasicBuffer(oBufferDesc);
-
-		int iWidth, iHeight;
-		Graphics::Globals::g_pDevice->GetModifiableRenderSurface()->GetWindowSize(iWidth, iHeight);
-		std::vector<glm::mat4> oMats = { glm::mat4(1.0f) , glm::mat4(1.0f), glm::ortho(0.0f, (float)iWidth, 0.0f, (float)iHeight) };
-		pProjectionBuffer->CopyFromMemory(oMats.data(), Graphics::Globals::g_pDevice);
-		oChar.pDescriptorSet->FillSlot(1, pProjectionBuffer);
-
-		oChar.pDescriptorSet->CommitSlots(m_pPool);
-
 		oChar.vSize = glm::ivec2(m_oFace->glyph->bitmap.width, m_oFace->glyph->bitmap.rows);
 		oChar.vBearing = glm::ivec2(m_oFace->glyph->bitmap_left, m_oFace->glyph->bitmap_top);
 		oChar.iAdvance = m_oFace->glyph->advance.x;
@@ -93,18 +77,46 @@ FontRenderBatch::FontRenderBatch(Desc& oDesc)
 	FT_Done_Face(m_oFace);
 }
 
-FontRenderBatch::TextInstance* FontRenderBatch::AddText(std::string sText, glm::vec4 vColor, glm::mat4 vTransform)
+FontRenderBatch::TextInstance* FontRenderBatch::AddText(std::string sText, glm::vec4 vColor, glm::mat4 mTransform)
 {
 	TextInstance oInstance;
-	oInstance.bDirty = false;
 	oInstance.vColor = vColor;
 	oInstance.sText = sText;
-	oInstance.vTransform = vTransform;
-	
-	TextInstance* pInstance = new TextInstance(oInstance);
-	m_oAllInstances.push_back(pInstance);
+	oInstance.pHandler = m_pParent;
 
-	return pInstance;
+	BasicBuffer::Desc oBufferDesc;
+	oBufferDesc.eUsage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+	oBufferDesc.iUnitCount = 1;
+	oBufferDesc.iUnitSize = sizeof(glm::mat4);
+	oBufferDesc.oPropertyFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
+	BasicBuffer* pModelBuffer = new BasicBuffer(oBufferDesc);
+
+	for (int i = 0; i < sText.size(); i++)
+	{
+		DescriptorSetWrapper* pDescriptor = m_pPipeline->GetDescriptorSetLayout()->InstantiateDescriptorSet(*m_pPool, *Graphics::Globals::g_pDevice);
+		if (!(pDescriptor->FillSlot(0, m_oCacheTextures[sText[i]].pImage) && pDescriptor->FillSlot(1, m_xVP.get())))
+		{
+			throw std::runtime_error("Error");
+		}
+
+		if (i == 0)
+		{
+			glm::mat4 mInitial = glm::mat4(1.0f);
+			oInstance.pBufferedTransform = new BufferedTransform(mInitial, 0, std::shared_ptr<Buffer>(pModelBuffer), Graphics::Globals::g_pDevice);
+			oInstance.pBufferedTransform->ForceMatrix(mTransform);
+		}
+
+		if (!pDescriptor->FillSlot(2, pModelBuffer ))
+		{
+			throw std::runtime_error("Error");
+		}
+		pDescriptor->CommitSlots(m_pPool);
+
+		oInstance.oDescriptorSet.push_back(pDescriptor);
+	}
+	m_oAllInstances.push_back(new TextInstance(oInstance));
+
+	return m_oAllInstances[m_oAllInstances.size() - 1];
 }
 
 VkCommandBuffer* FontRenderBatch::GetDrawCommand(Framebuffer* pFramebuffer)
@@ -167,8 +179,8 @@ void FontRenderBatch::ChainSubpass(VkCommandBuffer* pCommand)
 
 		for (TextInstance* pInstance : m_oAllInstances)
 		{
-			int x = pInstance->vTransform[3][0];
-			int y = pInstance->vTransform[3][1];
+			int x = 0;
+			int y = 0;
 			int i = 0;
 			for (char sCharacter : pInstance->sText)
 			{
@@ -180,12 +192,12 @@ void FontRenderBatch::ChainSubpass(VkCommandBuffer* pCommand)
 
 				CharacterUnit oCh = m_oCacheTextures[sCharacter];
 
-				float xPos = x + (oCh.vBearing.x * pInstance->vTransform[0][0]);
-				float yPos = y - (oCh.vSize.y * pInstance->vTransform[1][1]);
-				yPos -= (oCh.vBearing.y - oCh.vSize.y) * pInstance->vTransform[1][1];
+				float xPos = x + (oCh.vBearing.x);
+				float yPos = y - (oCh.vSize.y);
+				yPos -= (oCh.vBearing.y - oCh.vSize.y);
 
-				float w = oCh.vSize.x * pInstance->vTransform[0][0];
-				float h = oCh.vSize.y * pInstance->vTransform[1][1];
+				float w = oCh.vSize.x;
+				float h = oCh.vSize.y;
 
 				float vPositions[] =
 				{
@@ -200,7 +212,7 @@ void FontRenderBatch::ChainSubpass(VkCommandBuffer* pCommand)
 
 				VkDeviceSize oOffsets[] = { 0 };
 				vkCmdBindVertexBuffers(*pCommand, 0, 1,m_oBuffers[i]->GetBuffer(), oOffsets);
-				vkCmdBindDescriptorSets(*pCommand, VK_PIPELINE_BIND_POINT_GRAPHICS, *m_pPipeline->GetPipelineLayout(), 0, 1, m_oCacheTextures[sCharacter].pDescriptorSet->GetDescriptorSet(), 0, nullptr);
+				vkCmdBindDescriptorSets(*pCommand, VK_PIPELINE_BIND_POINT_GRAPHICS, *m_pPipeline->GetPipelineLayout(), 0, 1, pInstance->oDescriptorSet[i]->GetDescriptorSet(), 0, nullptr);
 				vkCmdDraw(*pCommand, 6, 1, 0, 0);
 
 				x += (oCh.iAdvance >> 6);
@@ -225,5 +237,9 @@ size_t FontRenderBatch::GetInstancesCount()
 		iSum += pInstance->sText.size();
 	}
 	return iSum;
+}
+
+void FontRenderBatch::SetCamera(std::shared_ptr<Camera> xCam)
+{
 }
 

@@ -212,6 +212,7 @@ bool DescriptorSetWrapper::FillSlot(int iIndex, Buffer* pBuffer)
 
 	//TODO , better control
 	m_oSlots[iIndex].pData = pBuffer;
+	return true;
 }
 
 bool DescriptorSetWrapper::FillSlotAtTag(Buffer* pBuffer, std::string sTag)

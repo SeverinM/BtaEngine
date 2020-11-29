@@ -17,6 +17,10 @@ public:
 		glm::mat4 mInitialMatrix;
 	};
 	Camera(Desc& oDesc);
+	~Camera()
+	{
+		m_fMoveSpeed = 0;
+	}
 
 	inline glm::mat4 GetProjectionMatrix() { return m_mProjectionMatrix; }
 	inline glm::mat4 GetViewMatrix() { return m_pTransform->GetModelMatrix(); }

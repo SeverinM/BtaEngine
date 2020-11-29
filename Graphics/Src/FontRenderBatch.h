@@ -1,6 +1,6 @@
 #ifndef H_FONT_RENDER_BATCH
 #define H_FONT_RENDER_BATCH
-#include "AbstractRenderBatch.h"
+#include "RenderBatch.h"
 #include "GLM/glm.hpp"
 
 #include <ft2build.h>
@@ -16,16 +16,35 @@ public:
 		std::string sFontName;
 		CommandFactory* pFactory;
 		DescriptorPool* pPool;
-		uint16_t iFilterMVP;
+		std::shared_ptr<BasicBuffer> xVPBuffer;
 	};
 	FontRenderBatch(Desc& oDesc);
 
 	struct TextInstance
 	{
 		std::string sText;
-		bool bDirty;
-		glm::mat4 vTransform;
 		glm::vec4 vColor;
+		RenderBatchesHandler* pHandler;
+		BufferedTransform* pBufferedTransform;
+		std::vector<DescriptorSetWrapper*> oDescriptorSet;
+
+		void SetText(std::string sNewText)
+		{
+			sText = sNewText;
+			pHandler->MarkAllAsDirty();
+		}
+
+		void SetTransform(glm::mat4 mNewTransform)
+		{
+			pBufferedTransform->ForceMatrix(mNewTransform);
+			pHandler->MarkAllAsDirty();
+		}
+
+		void SetColor(glm::vec4 vNewColor)
+		{
+			vColor = vNewColor;
+			pHandler->MarkAllAsDirty();
+		}
 
 	};
 
@@ -38,6 +57,9 @@ public:
 	{
 		return GetInstancesCount() * 6;
 	}
+	std::shared_ptr<BasicBuffer> m_xVP;
+
+	void SetCamera(std::shared_ptr<Camera> xCam);
 
 	protected:
 		struct CharacterUnit
@@ -46,11 +68,10 @@ public:
 			glm::ivec2 vSize;
 			glm::ivec2 vBearing;
 			unsigned int iAdvance;
-			DescriptorSetWrapper* pDescriptorSet;
-			BasicBuffer* oMVPfilter;
 		};
 		std::unordered_map<char, CharacterUnit> m_oCacheTextures;
 
+		std::shared_ptr<Camera> m_xCam;
 		std::vector<TextInstance*> m_oAllInstances;
 		std::vector<BasicBuffer*> m_oBuffers;
 
