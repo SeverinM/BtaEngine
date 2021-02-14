@@ -1,0 +1,125 @@
+{
+	"Application": {
+		"Name": "BtaEngine",
+		"EngineName": "Bta",
+		"VulkanVersion": "1.0.0",
+		"GraphicDevice": {
+			"Extensions": ["VK_KHR_swapchain"],
+			"Features": {
+				"Anisotropy": true,
+				"SampleRateShading": true,
+				"LogicOp": true
+			}
+		},
+		"TextureTemplate": {
+			"Layers": 1,
+			"Id": 0,
+			"Format": "D32_FLOAT",
+			"MipEnable": true
+		},
+		"Instance": {
+			"Layers": [],
+			"EnableDebug": true
+		},
+		"CommandFactory": {
+			"Resettable": false
+		},
+		"DescriptorPool": {
+			"Size": 1000,
+			"MaxSet": 150
+		},
+		"Outputs": [{
+			"EnableImGui": true,
+			"Window": {
+				"InitialHeight": 1000,
+				"InitialWidth": 1000,
+				"WindowName": "Bta",
+				"Resizable": true
+			},
+			"Swapchain": {
+				"Id": 0,
+				"Layers": 1,
+				"PresentMode": "Mailbox",
+				"ImageFormat": "B8G8R8A8_SRGB",
+				"ColorSpace": "SRGB_NONLINEAR_KHR"
+			},
+			"Framebuffer": {
+				"Id": 0,
+				"Attachments": ["Swapchain:0", "TextureTemplate:0", "TextureTemplate:0:MultiSample"]
+			},
+			"Camera": {
+				"Type": "Perspective",
+				"InitialFOVAngleDegree": 45,
+				"Ratio": 1.0,
+				"NearPlane": 0.1,
+				"FarPlane": 10.0,
+				"InitialPosition": [2, 2, 2],
+				"InitialLookAt": [0, 0, 0],
+				"UpCamera": [0, 0, 1]
+			},
+			"RenderPass":
+			[
+				{
+					"Priority": 0,
+					"AttachmentMask": 7,
+					"Presentable": false,
+					"ClearAttachmentMask": 7,
+					"Id": 0,
+					"SampleCount": 8,
+					"Subpasses": [{
+							"AttachmentMask": 7,
+							"ShaderFolder": "./Shader",
+							"TestDepth": true,
+							"WriteDepth": true,
+							"EnableTransparent": false,
+							"Tag": "",
+							"DepthCompare": "LESS",
+							"VerticesAssembly": "TRIANGLE_LIST",
+							"FillPolygon": true
+						},
+						{
+							"AttachmentMask": 7,
+							"ShaderFolder": "./Shader/Skybox",
+							"TestDepth": false,
+							"WriteDepth": false,
+							"EnableTransparent": false,
+							"Tag": "",
+							"DepthCompare": "LESS",
+							"VerticesAssembly": "TRIANGLE_LIST",
+							"FillPolygon": true
+						}
+					]
+				},
+				{
+					"Priority": 1,
+					"AttachmentMask": 1,
+					"Presentable": false,
+					"ClearAttachmentMask": 1,
+					"Id": 1,
+					"SampleCount": 1,
+					"Subpasses": [{
+							"AttachmentMask": 1,
+							"ShaderFolder": "./Shader/Debug",
+							"TestDepth": false,
+							"WriteDepth": false,
+							"EnableTransparent": false,
+							"Tag": "DEBUG",
+							"DepthCompare": "LESS",
+							"VerticesAssembly": "LINE_LIST"
+						},
+						{
+							"AttachmentMask": 1,
+							"ShaderFolder": "./Shader/Text",
+							"TestDepth": false,
+							"WriteDepth": false,
+							"EnableTransparent": false,
+							"Tag": "TEXT",
+							"DepthCompare": "LESS",
+							"VerticesAssembly": "LINE_LIST"
+						}
+					]
+				}
+			]
+		}]
+	}
+}

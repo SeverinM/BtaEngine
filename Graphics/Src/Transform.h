@@ -2,47 +2,53 @@
 #define H_TRANSFORM
 #include "GLM/glm.hpp"
 #include "GLM/ext/matrix_transform.hpp"
-#include "Buffer.h"
+#include "GPUMemoryInterface.h"
 
-class Transform
+namespace Bta
 {
-protected:
-	glm::mat4 m_mModel;
-	std::shared_ptr<Transform> m_xParent;
-	std::vector<std::shared_ptr<Transform>> m_oChilds;
+	namespace Graphic
+	{
+		class Transform
+		{
+			protected:
+				glm::mat4 m_mModel;
+				std::shared_ptr<Transform> m_xParent;
+				std::vector<std::shared_ptr<Transform>> m_oChilds;
 
-public:
-	Transform(glm::mat4& mInitialModel);
-	Transform();
-	virtual void SetPosition(glm::vec3 vNewPosition, bool bRelative = false);
-	virtual void SetScale(glm::vec3 vNewScale, bool bRelative = false);
-	virtual void Rotate(glm::vec3 vAxis, float fDegrees);
-	virtual void ForceMatrix(glm::mat4 mMatrix);
-	glm::vec3 GetForward() const;
-	glm::vec3 GetUp() const;
-	glm::vec3 GetRight() const;
-	glm::vec3 GetPosition() const;
-	inline glm::mat4 GetModelMatrix() const{ return m_mModel;}
-	void SetParent(std::shared_ptr<Transform> xParent);
-	void AddChild(std::shared_ptr<Transform> xChild);
-};
+			public:
+				Transform(glm::mat4& mInitialModel);
+				Transform();
+				virtual void SetPosition(glm::vec3 vNewPosition, bool bRelative = false);
+				virtual void SetScale(glm::vec3 vNewScale, bool bRelative = false);
+				virtual void Rotate(glm::vec3 vAxis, float fDegrees);
+				virtual void ForceMatrix(glm::mat4 mMatrix);
+				glm::vec3 GetForward() const;
+				glm::vec3 GetUp() const;
+				glm::vec3 GetRight() const;
+				glm::vec3 GetPosition() const;
+				inline glm::mat4 GetModelMatrix() const { return m_mModel; }
+				void SetParent(std::shared_ptr<Transform> xParent);
+				void AddChild(std::shared_ptr<Transform> xChild);
+		};
 
-class BufferedTransform : public Transform
-{
-public:
-	BufferedTransform(glm::mat4& mInitialMode, uint64_t iOffset, std::shared_ptr<Buffer> xBuffer, GraphicDevice* pDevice);
+		class BufferedTransform : public Transform
+		{
+			public:
+				BufferedTransform(glm::mat4& mInitialMode, uint64_t iOffset, std::shared_ptr<Buffer> xBuffer, GraphicDevice* pDevice);
 
-	void SetPosition(glm::vec3 vNewPosition, bool bRelative = false) override;
-	void SetScale(glm::vec3 vNewScale, bool bRelative = false) override;
-	void Rotate(glm::vec3 vAxis, float fDegrees) override;
-	void ForceMatrix(glm::mat4 mMatrix) override;
-	static std::shared_ptr<BasicBuffer> MergeTransform(std::vector<std::shared_ptr<Transform>> oTrsf, VkBufferUsageFlags eUsage, std::vector<std::shared_ptr<BufferedTransform>>& oBufferedTransform);
+				Buffer* GetBuffer() { return m_xBuffer.get(); }
+				void SetPosition(glm::vec3 vNewPosition, bool bRelative = false) override;
+				void SetScale(glm::vec3 vNewScale, bool bRelative = false) override;
+				void Rotate(glm::vec3 vAxis, float fDegrees) override;
+				void ForceMatrix(glm::mat4 mMatrix) override;
+				static std::shared_ptr<BasicBuffer> MergeTransform(std::vector<std::shared_ptr<Transform>> oTrsf, VkBufferUsageFlags eUsage, std::vector<std::shared_ptr<BufferedTransform>>& oBufferedTransform);
 
-	protected:
-		uint64_t m_iOffset;
-	 	std::shared_ptr<Buffer> m_xBuffer;
-		void UpdateBuffer();
-};
-
+			protected:
+				uint64_t m_iOffset;
+				std::shared_ptr<Buffer> m_xBuffer;
+				void UpdateBuffer();
+		};
+	}
+}
 
 #endif

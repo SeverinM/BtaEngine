@@ -4,44 +4,50 @@
 #include "Framebuffer.h"
 #include "Pipeline.h"
 
-class Buffer;
-
-class CommandFactory
+namespace Bta
 {
-public:
-	struct Desc
+	namespace Graphic
 	{
-		Desc() : bResettable(false) {};
-		bool bResettable;
-	};
-	CommandFactory(Desc oDesc);
-	~CommandFactory();
+		class Buffer;
 
-	VkCommandBuffer BeginSingleTimeCommands();
-	void EndSingleTimeCommands(VkCommandBuffer& oCommandBuffer);
-	VkCommandBuffer* CreateCommand();
+		class CommandFactory
+		{
+		public:
+			struct Desc
+			{
+				Desc() : bResettable(false) {};
+				bool bResettable;
+			};
+			CommandFactory(Desc oDesc);
+			~CommandFactory();
 
-	struct SubDrawDesc
-	{
-		std::shared_ptr< Buffer> xVertexData;
-		std::shared_ptr< Buffer > xIndexData;
-		Pipeline* pPipeline;
-		VkDescriptorSet oDescriptorSet;
-		int iInstanceCount;
-	};
+			VkCommandBuffer BeginSingleTimeCommands();
+			void EndSingleTimeCommands(VkCommandBuffer& oCommandBuffer);
+			VkCommandBuffer* CreateCommand();
 
-	struct DrawDesc
-	{
-		RenderPass* pRenderpass;
-		Framebuffer* pFramebuffer;
-		std::vector<SubDrawDesc> oMultipleDraw;
-	};
+			struct SubDrawDesc
+			{
+				std::shared_ptr< Buffer> xVertexData;
+				std::shared_ptr< Buffer > xIndexData;
+				Pipeline* pPipeline;
+				VkDescriptorSet oDescriptorSet;
+				int iInstanceCount;
+			};
 
-	VkCommandBuffer CreateDrawCommand(DrawDesc& oDesc);
-	const VkCommandPool* GetCommandPool() { return &m_oCommandPool; }
+			struct DrawDesc
+			{
+				RenderPass* pRenderpass;
+				Framebuffer* pFramebuffer;
+				std::vector<SubDrawDesc> oMultipleDraw;
+			};
 
-protected:
-	VkCommandPool m_oCommandPool;
-};
+			VkCommandBuffer CreateDrawCommand(DrawDesc& oDesc);
+			const VkCommandPool* GetCommandPool() { return &m_oCommandPool; }
+
+		protected:
+			VkCommandPool m_oCommandPool;
+		};
+	}
+}
 
 #endif // !H_COMMAND_FACTORY

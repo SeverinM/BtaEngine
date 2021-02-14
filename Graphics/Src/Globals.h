@@ -3,32 +3,37 @@
 #include "vulkan/vulkan_core.h"
 #include <iostream>
 
-class GraphicDevice;
-class DescriptorPool;
-class Camera;
-
-namespace Graphics
+namespace Bta
 {
-	struct Globals
+	namespace Graphic
 	{
-		static VkInstance g_oInstance;
-		static float g_fElapsed;
-		static GraphicDevice* g_pDevice;
-		static DescriptorPool* g_pPool;
-		static Camera* g_pCamera;
-	};
+		class GraphicDevice;
+		class DescriptorPool;
+		class Camera;
+		class CommandFactory;
 
-	static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback
-	(
-		VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-		VkDebugUtilsMessageTypeFlagsEXT messageType,
-		const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-		void* pUserData) {
+		struct Globals
+		{
+			static VkInstance g_oInstance;
+			static float g_fElapsed;
+			static GraphicDevice* g_pDevice;
+			static DescriptorPool* g_pPool;
+			static Camera* g_pCamera;
+			static CommandFactory* g_pFactory;
+		};
 
-		std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
+		static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback
+		(
+			VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+			VkDebugUtilsMessageTypeFlagsEXT messageType,
+			const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+			void* pUserData) {
 
-		return VK_FALSE;
+			std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
+
+			return VK_FALSE;
+		}
+
 	}
-
 }
 #endif

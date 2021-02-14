@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Src\FileUtils.h" />
     <ClInclude Include="Src\StringUtils.h" />
     <ClInclude Include="Src\VectorUtils.h" />
   </ItemGroup>

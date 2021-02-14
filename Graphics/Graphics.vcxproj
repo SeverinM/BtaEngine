@@ -158,12 +158,14 @@
     <ClCompile Include="Src\FontRenderBatch.cpp" />
     <ClCompile Include="Src\Framebuffer.cpp" />
     <ClCompile Include="Src\Globals.cpp" />
+    <ClCompile Include="Src\GPUMemoryInterface.cpp" />
     <ClCompile Include="Src\GraphicDevice.cpp" />
     <ClCompile Include="Src\GraphicUtils.cpp" />
     <ClCompile Include="Src\ImGuiWrapper.cpp" />
     <ClCompile Include="Src\InputHandling.cpp" />
     <ClCompile Include="Src\Main.cpp" />
     <ClCompile Include="Src\Mesh.cpp" />
+    <ClCompile Include="Src\Parser.cpp" />
     <ClCompile Include="Src\Pipeline.cpp" />
     <ClCompile Include="Src\RenderBatch.cpp" />
     <ClCompile Include="Src\RenderPass.cpp" />
@@ -192,12 +194,15 @@
     <ClInclude Include="Src\FontRenderBatch.h" />
     <ClInclude Include="Src\Framebuffer.h" />
     <ClInclude Include="Src\Globals.h" />
+    <ClInclude Include="Src\GPUDataBinding.h" />
+    <ClInclude Include="Src\GPUMemoryInterface.h" />
     <ClInclude Include="Src\GraphicDevice.h" />
     <ClInclude Include="Src\GraphicUtils.h" />
     <ClInclude Include="Src\GraphicWrapper.h" />
     <ClInclude Include="Src\ImGuiWrapper.h" />
     <ClInclude Include="Src\InputHandling.h" />
     <ClInclude Include="Src\Mesh.h" />
+    <ClInclude Include="Src\Parser.h" />
     <ClInclude Include="Src\Pipeline.h" />
     <ClInclude Include="Src\RenderBatch.h" />
     <ClInclude Include="Src\RenderPass.h" />
@@ -208,6 +213,9 @@
     <ClInclude Include="Src\Transform.h" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Core\Core.vcxproj">
+      <Project>{dde7db6a-5f18-49bc-9bc5-569858f83607}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\Utils\Utils.vcxproj">
       <Project>{62100961-676e-4e2d-bc15-5214f89795fe}</Project>
     </ProjectReference>

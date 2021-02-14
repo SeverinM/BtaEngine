@@ -2,43 +2,48 @@
 #define H_DESCRIPTOR
 #include "Buffer.h"
 
-class BasicWrapper;
-class DescriptorSetWrapper;
-
-class DescriptorPool
+namespace Bta
 {
-public:
-
-	enum E_BINDING_TYPE
+	namespace Graphic
 	{
-		E_NONE = 0,
-		E_TEXTURE = 1,
-		E_UNIFORM_BUFFER = 2,
-		E_STORAGE_BUFFER = 3
-	};
+		class BasicWrapper;
+		class DescriptorSetWrapper;
 
-	struct Desc
-	{
-		int iSize;
-		int iImageCount;
-		int iMaxSet;
-	};
+		class DescriptorPool
+		{
+			public:
 
-	DescriptorPool(Desc& oDesc);
-	void Create(Desc& oDesc);
+				enum E_BINDING_TYPE
+				{
+					E_NONE = 0,
+					E_TEXTURE = 1,
+					E_UNIFORM_BUFFER = 2,
+					E_STORAGE_BUFFER = 3
+				};
 
-	VkDescriptorPool& GetPool() { return m_oPool; }
+				struct Desc
+				{
+					int iSize;
+					int iMaxSet;
+				};
 
-	static VkDescriptorType GetDescriptorType(E_BINDING_TYPE eType);
-	~DescriptorPool();
+				DescriptorPool(Desc& oDesc);
+				void Create(Desc& oDesc);
 
-	void WriteDescriptor(DescriptorSetWrapper* pDescriptorSet);
-	void CreateDescriptorSet(std::vector<VkDescriptorSet>& oOutput, int iSize, const VkDescriptorSetLayout& oLayout);
-	void CreateDescriptorSet(VkDescriptorSet& oOutput,const VkDescriptorSetLayout& oLayout);
+				VkDescriptorPool& GetPool() { return m_oPool; }
 
-private:
-	VkDescriptorPool m_oPool;
-	Desc* m_pRecreate;
-};
+				static VkDescriptorType GetDescriptorType(E_BINDING_TYPE eType);
+				~DescriptorPool();
+
+				void WriteDescriptor(DescriptorSetWrapper* pDescriptorSet);
+				void CreateDescriptorSet(std::vector<VkDescriptorSet>& oOutput, int iSize, const VkDescriptorSetLayout& oLayout);
+				void CreateDescriptorSet(VkDescriptorSet& oOutput, const VkDescriptorSetLayout& oLayout);
+
+			private:
+				VkDescriptorPool m_oPool;
+				Desc* m_pRecreate;
+		};
+	}
+}
 
 #endif // !H_DESCRIPTOR

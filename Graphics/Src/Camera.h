@@ -4,39 +4,45 @@
 #include "Buffer.h"
 #include "GraphicWrapper.h"
 
-class Camera
+namespace Bta
 {
-	friend class BasicWrapper;
-public:
-	struct Desc
+	namespace Graphic
 	{
-		float fNearPlane;
-		float fFarPlane;
-		float fAngleDegree;
-		float fRatio;
-		glm::mat4 mInitialMatrix;
-	};
-	Camera(Desc& oDesc);
-	~Camera()
-	{
-		m_fMoveSpeed = 0;
+		class Camera
+		{
+			friend class BasicWrapper;
+			public:
+				struct Desc
+				{
+					float fNearPlane;
+					float fFarPlane;
+					float fAngleDegree;
+					float fRatio;
+					glm::mat4 mInitialMatrix;
+				};
+				Camera(Desc& oDesc);
+				~Camera()
+				{
+					m_fMoveSpeed = 0;
+				}
+
+				inline glm::mat4 GetProjectionMatrix() { return m_mProjectionMatrix; }
+				inline glm::mat4 GetViewMatrix() { return m_pTransform->GetModelMatrix(); }
+				inline std::shared_ptr<BasicBuffer> GetVPMatriceBuffer() { return m_xMatriceBuffer; }
+				BufferedTransform* GetTransform() { return m_pTransform; }
+				inline float GetMoveSpeed() { return m_fMoveSpeed; }
+				inline float GetRotateSpeed() { return m_fAngularSpeed; }
+
+			private:
+				inline float& GetModifiableMoveSpeed() { return m_fMoveSpeed; }
+				inline float& GetModifiableRotateSpeed() { return m_fAngularSpeed; }
+				float m_fMoveSpeed;
+				float m_fAngularSpeed;
+				BufferedTransform* m_pTransform;
+				glm::mat4 m_mProjectionMatrix;
+				std::shared_ptr<BasicBuffer> m_xMatriceBuffer;
+		};
 	}
-
-	inline glm::mat4 GetProjectionMatrix() { return m_mProjectionMatrix; }
-	inline glm::mat4 GetViewMatrix() { return m_pTransform->GetModelMatrix(); }
-	inline std::shared_ptr<BasicBuffer> GetVPMatriceBuffer() { return m_xMatriceBuffer; }
-	BufferedTransform* GetTransform() { return m_pTransform; }
-	inline float GetMoveSpeed() { return m_fMoveSpeed; }
-	inline float GetRotateSpeed() { return m_fAngularSpeed; }
-
-private:
-	inline float& GetModifiableMoveSpeed() { return m_fMoveSpeed; }
-	inline float& GetModifiableRotateSpeed() { return m_fAngularSpeed; }
-	float m_fMoveSpeed;
-	float m_fAngularSpeed;
-	BufferedTransform* m_pTransform;
-	glm::mat4 m_mProjectionMatrix;
-	std::shared_ptr<BasicBuffer> m_xMatriceBuffer;
-};
+}
 
 #endif

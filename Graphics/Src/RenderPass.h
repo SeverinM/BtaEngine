@@ -4,40 +4,46 @@
 #include <vector>
 #include "BasicWrapper.h"
 
-class RenderPass
+namespace Bta
 {
-public :
-
-	struct SubDesc
+	namespace Graphic
 	{
-		SubDesc() : pDependency(nullptr), iDepthStencilAttachmentIndex(-1), iColorResolveAttachmentIndex(-1), iColorAttachmentIndex(-1) {}
-		int iColorAttachmentIndex{};
-		int iDepthStencilAttachmentIndex{};
-		int iColorResolveAttachmentIndex{};
-		VkSubpassDependency* pDependency;
-	};
+		class RenderPass
+		{
+		public:
 
-	struct Desc
-	{
-		bool bEnableColor;
-		bool bEnableDepth;
-		std::vector<SubDesc> oSubpasses;
-		VkSampleCountFlagBits eSample;
-		VkImageLayout eInitialLayoutColorAttachment;
-		bool bClearColorAttachmentAtBegin;
-		bool bPresentable;
-		VkFormat eFormatColor;
-	};
+			struct SubDesc
+			{
+				SubDesc() : pDependency(nullptr), iDepthStencilAttachmentIndex(-1), iColorResolveAttachmentIndex(-1), iColorAttachmentIndex(-1) {}
+				int iColorAttachmentIndex{};
+				int iDepthStencilAttachmentIndex{};
+				int iColorResolveAttachmentIndex{};
+				VkSubpassDependency* pDependency;
+			};
 
-	const VkRenderPass* const GetRenderPass() { return &m_oRenderpass; }
-	RenderPass(Desc& oDesc);
-	void Create(Desc& oDesc);
-	~RenderPass();
+			struct Desc
+			{
+				bool bEnableColor;
+				bool bEnableDepth;
+				std::vector<SubDesc> oSubpasses;
+				VkSampleCountFlagBits eSample;
+				VkImageLayout eInitialLayoutColorAttachment;
+				bool bClearColorAttachmentAtBegin;
+				bool bPresentable;
+				VkFormat eFormatColor;
+			};
 
-protected:
-	Desc* m_pRecreate;
-	VkRenderPass m_oRenderpass;
-};
+			const VkRenderPass* const GetRenderPass() { return &m_oRenderpass; }
+			RenderPass(Desc& oDesc);
+			void Create(Desc& oDesc);
+			~RenderPass();
+
+		protected:
+			Desc* m_pRecreate;
+			VkRenderPass m_oRenderpass;
+		};
+	}
+}
 
 #endif
 
