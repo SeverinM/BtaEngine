@@ -14,18 +14,26 @@ namespace Bta
 			return s_pGpu;
 		}
 
-		BasicBuffer* GPUMemory::AllocateMemory(BasicBuffer::Desc oDesc)
+		BasicBuffer* GPUMemory::AllocateMemory(BasicBuffer::Desc oDesc, void* pSubject)
 		{
 			BasicBuffer* pBuffer = new BasicBuffer(oDesc);
-			m_oAllBuffers.push_back(pBuffer);
+			m_oGPUDataBinding[pSubject] = pBuffer;
 			return pBuffer;
 		}
 
-		Image* GPUMemory::AllocateMemory(Image::Desc oDesc)
+		Image* GPUMemory::AllocateMemory(Image::Desc oDesc, void* pSubject)
 		{
 			Image* pImage = new Image(oDesc);
-			m_oAllBuffers.push_back(pImage);
+			m_oGPUDataBinding[pSubject] = pImage;
 			return pImage;
+		}
+
+		Buffer* GPUMemory::FetchBuffer(void* pSubject)
+		{
+			if (m_oGPUDataBinding.count(pSubject) == 0)
+				return nullptr;
+
+			return m_oGPUDataBinding[pSubject];
 		}
 
 	}

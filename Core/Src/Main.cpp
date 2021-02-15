@@ -4,7 +4,7 @@ int main()
 {
 	Bta::Core::Entity oEntity(nullptr);
 
-	uint8_t iSizes[] = { 3,3,2,4 };
+	uint8_t iSizes[] = { sizeof(glm::vec3),sizeof(glm::vec3),sizeof(glm::vec2),sizeof(glm::vec4) };
 	Bta::Core::MeshComponent* pMeshComponent = new Bta::Core::MeshComponent(iSizes);
 	oEntity.AddExistingComponent(pMeshComponent);
 	

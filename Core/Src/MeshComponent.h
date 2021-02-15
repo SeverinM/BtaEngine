@@ -25,7 +25,7 @@ namespace Bta
 			glm::vec4 vColor;
 		};
 
-		struct MeshUpdateEvent : BaseEvent
+		struct MeshUpdateEvent : public BaseEvent
 		{
 			EMeshElements eChannel;
 			int iIndex;
@@ -54,6 +54,7 @@ namespace Bta
 				void SetUV(glm::vec2 vUV, int iIndex = -1);
 				void SetColor(glm::vec4 vColor, int iIndex = -1);
 				void SendChangeEvent(EMeshElements eChannel, int iIndex, void* pData);
+				uint8_t GetVerticeCount() { return m_oPositions.size(); }
 
 				uint64_t GetOffsetRawData(EMeshElements eChannel, int iIndex);
 

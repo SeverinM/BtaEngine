@@ -61,7 +61,7 @@ namespace Bta
 			VkMemoryRequirements oMemoryRequirements;
 			vkGetBufferMemoryRequirements(*Bta::Graphic::Globals::g_pDevice->GetLogicalDevice(), *m_pBuffer, &oMemoryRequirements);
 
-			oAllocInfo.allocationSize = oMemoryRequirements.size;
+			m_iMemorySize = oAllocInfo.allocationSize = oMemoryRequirements.size;
 			oAllocInfo.memoryTypeIndex = FindMemoryType(oMemoryRequirements.memoryTypeBits, oDesc.oPropertyFlags);
 
 			m_pMemory = new VkDeviceMemory();
@@ -167,20 +167,14 @@ namespace Bta
 
 		void BasicBuffer::Reallocate(uint32_t iUnitCount, VkDeviceSize iUnitSize)
 		{
-			vkFreeMemory(*Bta::Graphic::Globals::g_pDevice->GetLogicalDevice(), *m_pMemory, nullptr);
-			vkDestroyBuffer(*Bta::Graphic::Globals::g_pDevice->GetLogicalDevice(), *m_pBuffer, nullptr);
-
-			m_iUnitCount = iUnitCount;
-			m_iSizeUnit = iUnitSize;
-
 			VkBufferCreateInfo oBufferInfo{};
 			oBufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
 			oBufferInfo.size = iUnitSize * iUnitCount;
 			oBufferInfo.usage = m_oUsageFlag;
 			oBufferInfo.sharingMode = m_oSharingMode;
 
-			m_pBuffer = new VkBuffer();
-			if (vkCreateBuffer(*Bta::Graphic::Globals::g_pDevice->GetLogicalDevice(), &oBufferInfo, nullptr, m_pBuffer) != VK_SUCCESS)
+			VkBuffer* pBuffer = new VkBuffer();
+			if (vkCreateBuffer(*Bta::Graphic::Globals::g_pDevice->GetLogicalDevice(), &oBufferInfo, nullptr, pBuffer) != VK_SUCCESS)
 			{
 				throw std::runtime_error("Failed to create buffer");
 			}
@@ -189,18 +183,38 @@ namespace Bta
 			oAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 
 			VkMemoryRequirements oMemoryRequirements;
-			vkGetBufferMemoryRequirements(*Bta::Graphic::Globals::g_pDevice->GetLogicalDevice(), *m_pBuffer, &oMemoryRequirements);
+			vkGetBufferMemoryRequirements(*Bta::Graphic::Globals::g_pDevice->GetLogicalDevice(), *pBuffer, &oMemoryRequirements);
 
 			oAllocInfo.allocationSize = oMemoryRequirements.size;
 			oAllocInfo.memoryTypeIndex = FindMemoryType(oMemoryRequirements.memoryTypeBits, m_oProperty);
 
-			m_pMemory = new VkDeviceMemory();
-			if (vkAllocateMemory(*Bta::Graphic::Globals::g_pDevice->GetLogicalDevice(), &oAllocInfo, nullptr, m_pMemory) != VK_SUCCESS)
+			VkDeviceMemory* pMemory = new VkDeviceMemory();
+			if (vkAllocateMemory(*Bta::Graphic::Globals::g_pDevice->GetLogicalDevice(), &oAllocInfo, nullptr, pMemory) != VK_SUCCESS)
 			{
 				throw std::runtime_error("Failed to allocate buffer");
 			}
 
-			vkBindBufferMemory(*Bta::Graphic::Globals::g_pDevice->GetLogicalDevice(), *m_pBuffer, *m_pMemory, 0);
+			vkBindBufferMemory(*Globals::g_pDevice->GetLogicalDevice(), *pBuffer, *pMemory, 0);
+
+			VkCommandBuffer oCommandBuffer = Globals::g_pFactory->BeginSingleTimeCommands();
+			VkBufferCopy oCopyRegion{};
+			oCopyRegion.srcOffset = 0;
+			oCopyRegion.dstOffset = 0;
+			oCopyRegion.size = std::min(iUnitCount * iUnitSize, m_iUnitCount * m_iSizeUnit);
+
+			m_iUnitCount = iUnitCount;
+			m_iSizeUnit = iUnitSize;
+
+			vkCmdCopyBuffer(oCommandBuffer, *m_pBuffer, *pBuffer, 1, &oCopyRegion);
+			Globals::g_pFactory->EndSingleTimeCommands(oCommandBuffer);
+
+			vkFreeMemory(*Bta::Graphic::Globals::g_pDevice->GetLogicalDevice(), *m_pMemory, nullptr);
+			vkDestroyBuffer(*Bta::Graphic::Globals::g_pDevice->GetLogicalDevice(), *m_pBuffer, nullptr);
+
+			m_pMemory = pMemory;
+			m_pBuffer = pBuffer;
+			m_iMemorySize = oMemoryRequirements.size;
+
 		}
 
 		Image* Image::CreateFromFile(std::string sFilename, FromFileDesc& oDesc)
@@ -535,7 +549,7 @@ namespace Bta
 			oAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 			VkMemoryRequirements oMemRequirements;
 			vkGetImageMemoryRequirements(*Bta::Graphic::Globals::g_pDevice->GetLogicalDevice(), m_oImage, &oMemRequirements);
-			oAllocInfo.allocationSize = oMemRequirements.size;
+			m_iMemorySize = oAllocInfo.allocationSize = oMemRequirements.size;
 			oAllocInfo.memoryTypeIndex = FindMemoryType(oMemRequirements.memoryTypeBits, oDesc.eProperties);
 
 			m_pMemory = new VkDeviceMemory();

@@ -30,6 +30,15 @@ namespace Bta
 		void BasicWrapper::CreateGraphicDevice()
 		{
 			m_pHandling = new InputHandling();
+
+			BasicBuffer::Desc oDesc;
+			oDesc.iUnitCount = 20;
+			oDesc.iUnitSize = 4;
+			oDesc.eUsage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+			oDesc.oPropertyFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+			BasicBuffer* pBuffer = GPUMemory::GetInstance()->AllocateMemory(oDesc);
+			pBuffer->Reallocate(21, 4);
+			printf("Success");
 		}
 
 		void BasicWrapper::CreateSwapChain()
