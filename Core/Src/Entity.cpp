@@ -26,12 +26,8 @@ namespace Bta
 		void Entity::AddExistingComponent(AbstractComponent* pComponent)
 		{
 			m_oComponents.push_back(pComponent);
+			pComponent->Init();
 			pComponent->m_pOwner = this;
-
-			EventHolder* pHolder = EventHolder::GetInstance();
-			BaseEvent oEvent;
-			oEvent.pSubject = pComponent;
-			pHolder->PushEvent(E_NEW_COMPONENT, oEvent);
 		}
 
 		template<typename Type>

@@ -111,10 +111,11 @@ namespace Bta
 			oBeginInfo.renderPass = *oDesc.pRenderpass->GetRenderPass();
 			oBeginInfo.framebuffer = *oDesc.pFramebuffer->GetFramebuffer();
 
-			int iWidth, iHeight;
-			Bta::Graphic::Globals::g_pDevice->GetModifiableRenderSurface()->GetWindowSize(iWidth, iHeight);
+			int iWidth = 0;
+			int iHeight = 0;
+			//Bta::Graphic::Globals::g_pDevice->GetModifiableRenderSurface()->GetWindowSize(iWidth, iHeight);
 
-			VkExtent2D oExtent;
+			VkExtent2D oExtent{};
 			oExtent.height = iHeight;
 			oExtent.width = iWidth;
 

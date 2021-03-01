@@ -31,8 +31,8 @@
 		"Outputs": [{
 			"EnableImGui": true,
 			"Window": {
-				"InitialHeight": 1000,
-				"InitialWidth": 1000,
+				"InitialHeight": 500,
+				"InitialWidth": 500,
 				"WindowName": "Bta",
 				"Resizable": true
 			},

@@ -2,7 +2,8 @@
 #define H_GPU_MEMORY
 
 #include "Buffer.h"
-#include <unordered_map>
+#include <list>
+#include <utility>
 
 namespace Bta
 {
@@ -13,13 +14,13 @@ namespace Bta
 			private:
 				static GPUMemory* s_pGpu;
 				GPUMemory() {};
-				std::unordered_map<void*, Buffer*> m_oGPUDataBinding;
+				std::list<Buffer*> m_oGPUDatas;
 
 			public:
 				static GPUMemory* GetInstance();
-				BasicBuffer* AllocateMemory(BasicBuffer::Desc oDesc, void* pSubject = nullptr);
-				Image* AllocateMemory(Image::Desc oDesc, void* pSubject = nullptr);
-				Buffer* FetchBuffer(void* pSubject);
+				BasicBuffer* AllocateMemory(BasicBuffer::Desc oDesc);
+				Image* AllocateMemory(Image::Desc oDesc);
+				void FreeMemory(Buffer* pBuffer);
 		};
 	}
 }

@@ -1,11 +1,13 @@
-#include "BasicWrapper.h"
-#include "Globals.h"
-#include "SyncObjects.h"
-#include <bitset>
-#include <cstdlib>
-#include "StringUtils.h"
 #include "Parser.h"
-#include "FileUtils.h"
+#include "../../Core/Src/TransformComponent.h"
+#include "Buffer.h"
+#include "Globals.h"
+#include "RenderBatch.h"
+#include "MeshComponent.h"
+#include "Output.h"
+#include <vector>
+#include "CameraComponent.h"
+#include "Texture.h"
 
 int main()
 {
@@ -13,26 +15,58 @@ int main()
 	oParserDesc.sFileName = "./GraphicContext.json";
 	Bta::Graphic::Parser* pParser = new Bta::Graphic::Parser(oParserDesc);
 	pParser->InitGlobals();
-	pParser->RecordTemplates();
 
-	GraphicWrapper::Desc oDesc;
-	oDesc.bEnableDebug = true;
-	oDesc.oRequiredExtensionsDevice = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
-	Bta::Graphic::BasicWrapper oWrapper(oDesc);
-	oWrapper.Init();
+	Bta::Core::Entity* pEntity = new Bta::Core::Entity(nullptr);
+	Bta::Graphic::MeshComponent oComponent(pEntity);
+	pEntity->FindFirstComponent<Bta::Core::TransformComponent>()->SetPosition(glm::vec3(0, 1, 0), false);
 
-	SyncObjects::Desc oSyncDesc;
-	oSyncDesc.iFrameOnFlight = 2;
-	oSyncDesc.iNumberImages = (int)oWrapper.GetSwapchain()->GetImageViews().size();
-	SyncObjects* pSyncObj = new SyncObjects(oSyncDesc);
+	Bta::Graphic::Vertice oVert;
+	oVert.vColor = glm::vec4(0, 0, 0, 1);
+	oVert.vNormal = glm::vec3(0, 1, 0);
+	oVert.vUV = glm::vec2(0, 0);
+	oVert.vPosition = glm::vec3(0.2f, 0, -1);
+	oComponent.AddVertice(oVert, -1);
+	oVert.vPosition = glm::vec3(-1, -1, 2);
+	oComponent.AddVertice(oVert, -1);
+	oVert.vPosition = glm::vec3(-1, 1, -2);
+	oComponent.AddVertice(oVert, -1);
 
-	bool bExit = true;
-	while (bExit && !glfwWindowShouldClose(Bta::Graphic::Globals::g_pDevice->GetModifiableRenderSurface()->GetModifiableWindow()))
-	{
-		glfwPollEvents();
-		bExit = oWrapper.Render(pSyncObj);
-	}
-	vkDeviceWaitIdle(*Bta::Graphic::Globals::g_pDevice->GetLogicalDevice());
+	Bta::Graphic::CameraComponent::Desc oCamDesc;
+	oCamDesc.bEnablePerspective = true;
+	oCamDesc.fFarPlane = 10;
+	oCamDesc.fNearPlane = 0.001f;
+	oCamDesc.fFOVDegrees = 25;
+	oCamDesc.fRatio = 1;
 
+	Bta::Core::Entity* pEntityCam = new Bta::Core::Entity(nullptr);
+	Bta::Graphic::CameraComponent oCamComponent(oCamDesc, pEntityCam);
+
+	Bta::Graphic::RenderBatch::Desc oDesc;
+	oDesc.iSampleCount = VK_SAMPLE_COUNT_1_BIT;
+	oDesc.bPresentable = true;
+	oDesc.oFramebufferLayout = { Bta::Graphic::Globals::g_pOutput->GetSwapchain()->GetFormat(), VK_FORMAT_D32_SFLOAT };
+	
+	Bta::Graphic::SubRenderBatch::Desc oSubDesc;
+	oSubDesc.bTestDepth = true;
+	oSubDesc.bWriteDepth = true;
+	oSubDesc.eCulling = VK_CULL_MODE_NONE;
+	oSubDesc.eDepthTestMethod = VK_COMPARE_OP_LESS_OR_EQUAL;
+	oSubDesc.eFillMode = VK_POLYGON_MODE_FILL;
+	oSubDesc.eVerticesAssemblyMode = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+	oSubDesc.oCompiledShaderFiles = { "./Shader/vert.spv", "./Shader/frag.spv" };
+	oSubDesc.oShaderFiles = { "./Shader/Src/vs.vert", "./Shader/Src/fs.frag" };
+	oSubDesc.pCamera = &oCamComponent;
+	
+	oDesc.oSubBatches.push_back(oSubDesc);
+
+	Bta::Graphic::RenderBatch oRenderBatch(oDesc);
+	oRenderBatch.GetSubBatches()[0]->AddMesh(&oComponent);
+
+	Bta::Graphic::Globals::g_pOutput->GenerateFramebuffers({ Bta::Graphic::Globals::g_pOutput->GetSwapchain()->GetFormat(),VK_FORMAT_D32_SFLOAT }, &oRenderBatch);
+	Bta::Graphic::Globals::g_pOutput->RenderOneFrame( { &oRenderBatch });
+
+	int a;
+
+	std::cin >> a;
 	return 0;
 }

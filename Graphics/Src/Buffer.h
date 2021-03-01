@@ -1,6 +1,7 @@
 #ifndef H_BUFFER
 #define H_BUFFER
-#include "GraphicWrapper.h"
+#include "Globals.h"
+#include "GraphicDevice.h"
 
 namespace Bta
 {
@@ -20,16 +21,17 @@ namespace Bta
 
 			static size_t GetMemorySize(VkFormat eFormat);
 			const VkDeviceMemory* GetMemory() { return m_pMemory; }
-			VkDeviceSize GetMemorySize() { return m_iMemorySize; }
+			VkDeviceSize GetAllocatedMemorySize() { return m_iMemorySize; }
+			VkDeviceSize GetTrueMemorySize() { return m_iSizeUnit * m_iUnitCount; }
 			VkDeviceSize GetSizeUnit() { return m_iSizeUnit; }
 			int GetUnitCount() { return m_iUnitCount; }
-			void CopyFromMemory(void* pData, GraphicDevice* pDevice);
-			void CopyFromMemory(void* pData, GraphicDevice* pDevice, uint64_t iOffset, uint64_t iSize);
-			void CopyFromMemory(void* pSrc, GraphicDevice* pDevice, int iWidth, int iPitch, int iHeight)
+			void CopyFromMemory(void* pData);
+			void CopyFromMemory(void* pData, uint64_t iOffset, uint64_t iSize);
+			void CopyFromMemory(void* pSrc, int iWidth, int iPitch, int iHeight)
 			{
 				char* pSrcChar = (char*)pSrc;
 				void* pDst;
-				vkMapMemory(*pDevice->GetLogicalDevice(), *m_pMemory, 0, GetMemorySize(), 0, &pDst);
+				vkMapMemory(*Globals::g_pDevice->GetLogicalDevice(), *m_pMemory, 0, GetTrueMemorySize(), 0, &pDst);
 				char* pDstChar = (char*)pDst;
 
 				for (int i = 0; i < iHeight; i++)
@@ -39,7 +41,7 @@ namespace Bta
 					pSrcChar += iWidth;
 				}
 
-				vkUnmapMemory(*pDevice->GetLogicalDevice(), *m_pMemory);
+				vkUnmapMemory(*Globals::g_pDevice->GetLogicalDevice(), *m_pMemory);
 			}
 
 		protected:
@@ -82,12 +84,11 @@ namespace Bta
 				struct Desc
 				{
 					Desc() : eSampleFlag(VK_SAMPLE_COUNT_1_BIT), eFormat(VK_FORMAT_R8G8B8A8_SRGB), eTiling(VK_IMAGE_TILING_OPTIMAL), iLayerCount(1), bEnableMip(false), bIsCubemap(false),
-						iWidth(0), iHeight(0), pFactory(nullptr), eUsage(VK_BUFFER_USAGE_TRANSFER_SRC_BIT), eProperties(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT), eAspect(VK_IMAGE_ASPECT_COLOR_BIT) {}
+						iWidth(0), iHeight(0), eUsage(VK_BUFFER_USAGE_TRANSFER_SRC_BIT), eProperties(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT), eAspect(VK_IMAGE_ASPECT_COLOR_BIT) {}
 
 					VkSampleCountFlagBits eSampleFlag;
-					CommandFactory* pFactory = nullptr;
-					uint32_t iWidth;
-					uint32_t iHeight;
+					int iWidth;
+					int iHeight;
 					VkFormat eFormat;
 					VkImageTiling eTiling;
 					VkImageUsageFlags eUsage;

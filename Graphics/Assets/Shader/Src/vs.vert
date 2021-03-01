@@ -6,9 +6,8 @@ layout ( binding = 0 ) uniform ViewProjection {
     mat4 proj;
 } ubo;
 
-layout ( binding = 1 ) buffer Models
-{
-	mat4[] mModel;
+layout ( binding = 1 ) uniform Model {
+mat4 mModel;
 } data;
 
 layout ( location = 0 ) in vec3 inPosition;
@@ -19,7 +18,7 @@ layout(location = 1) out vec2 fragColor;
 
 void main() 
 {
-    gl_Position = ubo.proj * ubo.view * data.mModel[gl_InstanceIndex] * vec4(inPosition, 1.0);
+    gl_Position = ubo.proj * ubo.view * data.mModel * vec4(inPosition, 1.0);
 	fragPosition = inPosition;
     fragColor = inColor;
 }

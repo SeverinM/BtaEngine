@@ -2,7 +2,6 @@
 #define H_ENTITY
 
 #include <vector>
-#include "EventHolder.h"
 
 namespace Bta
 {
@@ -21,6 +20,11 @@ namespace Bta
 				AbstractComponent(Entity* pOwner)
 				{
 					m_pOwner = pOwner;
+				}
+
+				Entity* GetOwner()
+				{
+					return m_pOwner;
 				}
 		};
 

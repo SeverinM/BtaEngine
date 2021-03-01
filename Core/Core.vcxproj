@@ -39,7 +39,7 @@
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
@@ -151,16 +151,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="Src\EventHolder.h" />
     <ClInclude Include="Src\Entity.h" />
-    <ClInclude Include="Src\MeshComponent.h" />
     <ClInclude Include="Src\TransformComponent.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Src\EventHolder.cpp" />
     <ClCompile Include="Src\Entity.cpp" />
-    <ClCompile Include="Src\Main.cpp" />
-    <ClCompile Include="Src\MeshComponent.cpp" />
     <ClCompile Include="Src\TransformComponent.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

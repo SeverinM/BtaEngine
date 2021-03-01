@@ -4,6 +4,7 @@
 #include <algorithm>
 #include "CommandFactory.h"
 #include "Globals.h"
+#include "GPUMemoryInterface.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -103,20 +104,20 @@ namespace Bta
 			throw std::runtime_error("Could not find a size for the specified format");
 		}
 
-		void Buffer::CopyFromMemory(void* pData, GraphicDevice* pDevice)
+		void Buffer::CopyFromMemory(void* pData)
 		{
 			void* pGpuData;
-			vkMapMemory(*pDevice->GetLogicalDevice(), *m_pMemory, 0, GetMemorySize(), 0, &pGpuData);
-			memcpy(pGpuData, pData, (size_t)GetMemorySize());
-			vkUnmapMemory(*pDevice->GetLogicalDevice(), *m_pMemory);
+			vkMapMemory(*Globals::g_pDevice->GetLogicalDevice(), *m_pMemory, 0, GetTrueMemorySize(), 0, &pGpuData);
+			memcpy(pGpuData, pData, (size_t)GetTrueMemorySize());
+			vkUnmapMemory(*Globals::g_pDevice->GetLogicalDevice(), *m_pMemory);
 		}
 
-		void Buffer::CopyFromMemory(void* pData, GraphicDevice* pDevice, uint64_t iOffset, uint64_t iSize)
+		void Buffer::CopyFromMemory(void* pData, uint64_t iOffset, uint64_t iSize)
 		{
 			void* pGpuData;
-			vkMapMemory(*pDevice->GetLogicalDevice(), *m_pMemory, iOffset, iSize, 0, &pGpuData);
+			vkMapMemory(*Globals::g_pDevice->GetLogicalDevice(), *m_pMemory, iOffset, iSize, 0, &pGpuData);
 			memcpy(pGpuData, pData, iSize);
-			vkUnmapMemory(*pDevice->GetLogicalDevice(), *m_pMemory);
+			vkUnmapMemory(*Globals::g_pDevice->GetLogicalDevice(), *m_pMemory);
 		}
 
 		void Image::SendCopyCommand(BasicBuffer* pBuffer)
@@ -158,7 +159,7 @@ namespace Bta
 			VkBufferCopy oCopyRegion{};
 			oCopyRegion.srcOffset = 0;
 			oCopyRegion.dstOffset = 0;
-			oCopyRegion.size = GetMemorySize();
+			oCopyRegion.size = GetTrueMemorySize();
 
 			vkCmdCopyBuffer(oCommandBuffer, *m_pBuffer, *pDst->GetBuffer(), 1, &oCopyRegion);
 
@@ -402,7 +403,7 @@ namespace Bta
 
 			BasicBuffer* pBasicBuffer = GPUMemory::GetInstance()->AllocateMemory(oBufferDesc);
 
-			pBasicBuffer->CopyFromMemory(oDesc.pBuffer, Bta::Graphic::Globals::g_pDevice);
+			pBasicBuffer->CopyFromMemory(oDesc.pBuffer);
 
 			Image::Desc oImgDesc;
 			oImgDesc.iHeight = oDesc.iHeight;
@@ -551,7 +552,6 @@ namespace Bta
 			vkGetImageMemoryRequirements(*Bta::Graphic::Globals::g_pDevice->GetLogicalDevice(), m_oImage, &oMemRequirements);
 			m_iMemorySize = oAllocInfo.allocationSize = oMemRequirements.size;
 			oAllocInfo.memoryTypeIndex = FindMemoryType(oMemRequirements.memoryTypeBits, oDesc.eProperties);
-
 			m_pMemory = new VkDeviceMemory();
 			if (vkAllocateMemory(*Bta::Graphic::Globals::g_pDevice->GetLogicalDevice(), &oAllocInfo, nullptr, m_pMemory) != VK_SUCCESS)
 			{

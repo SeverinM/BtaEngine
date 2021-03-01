@@ -1,146 +1,92 @@
 #include "RenderBatch.h"
-#include <iostream>
-#include "CommandFactory.h"
-#include "ShaderTags.h"
-#include "FontRenderBatch.h"
+#include "../../Core/Include/GLM/glm.hpp"
 #include "Globals.h"
+#include "Output.h"
+#include "CommandFactory.h"
+#include "GraphicDevice.h"
 
 namespace Bta
 {
 	namespace Graphic
 	{
-		RenderBatch::RenderBatch(Desc& oDesc)
+		RenderBatch::RenderBatch(RenderBatch::Desc oDesc)
 		{
-			m_bEnabled = true;
-			m_bDirty = false;
-			m_pRenderpass = oDesc.pRenderpass;
-			m_pPipeline = oDesc.pPipeline;
-			m_pNext = oDesc.pNext;
-			m_sTag = oDesc.sTag;
-		}
+			RenderPass::Desc oRenderPassDesc;
+			std::vector<VkAttachmentDescription> oDescriptions;
 
-		RenderBatch::~RenderBatch()
-		{
-			for (std::pair<Framebuffer*, VkCommandBuffer*> oCmds : m_oCachedCommandBuffer)
+			std::vector<VkImageLayout> oLayouts = { VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL , VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL };
+			for (int i = 0; i < oDesc.oFramebufferLayout.size(); i++)
 			{
-				if (oCmds.second != nullptr)
-					vkFreeCommandBuffers(*Bta::Graphic::Globals::g_pDevice->GetLogicalDevice(), *Bta::Graphic::Globals::g_pFactory->GetCommandPool(), 1, oCmds.second);
+				VkAttachmentDescription oDescription{};
+				oDescription.format = oDesc.oFramebufferLayout[i];
+				oDescription.samples = oDesc.iSampleCount;
+				oDescription.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+				oDescription.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+				oDescription.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+				oDescription.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+				oDescription.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED; //oLayouts[i % oLayouts.size()];
+				oDescription.finalLayout = oLayouts[i % oLayouts.size()];
+				oDescriptions.push_back(oDescription);
 			}
 
-			for (std::pair<Mesh::StrongPtr, DescriptorSetWrapper*> oEntity : m_oEntities)
+			if (oDescriptions.size() >= 3)
 			{
-				delete oEntity.second;
+				oDescriptions[2].samples = VK_SAMPLE_COUNT_1_BIT;
+				
+				if (oDesc.bPresentable)
+					oDescriptions[2].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 			}
-		}
-
-		VkCommandBuffer* RenderBatch::GetDrawCommand(Framebuffer* pFramebuffer)
-		{
-			if (m_oCachedCommandBuffer.count(pFramebuffer) == 0)
+			else
 			{
-				m_oCachedCommandBuffer[pFramebuffer] = nullptr;
-				m_bDirty = true;
+				if ( oDesc.bPresentable )
+					oDescriptions[0].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 			}
 
-			if (m_bDirty)
+			std::vector<RenderPass::SubDesc> oSubs;
+			for (int i = 0; i < oDesc.oSubBatches.size(); i++)
 			{
-				if (m_oCachedCommandBuffer[pFramebuffer] != nullptr)
-				{
-					vkFreeCommandBuffers(*Bta::Graphic::Globals::g_pDevice->GetLogicalDevice(), *Bta::Graphic::Globals::g_pFactory->GetCommandPool(), 1, m_oCachedCommandBuffer[pFramebuffer]);
-					delete m_oCachedCommandBuffer[pFramebuffer];
-				}
-				m_oCachedCommandBuffer[pFramebuffer] = Bta::Graphic::Globals::g_pFactory->CreateCommand();
-
-				ReconstructCommand(pFramebuffer);
-				m_bDirty = false;
+				RenderPass::SubDesc oSub;
+				oSub.iColorAttachmentIndex = 0;
+				oSub.iDepthStencilAttachmentIndex = oDescriptions.size() >= 2 ? 1 : -1;
+				oSub.iColorResolveAttachmentIndex = oDescriptions.size() >= 3 ? 2 : -1;
+				oSub.pDependency = nullptr;
+				oSubs.push_back(oSub);
 			}
-			return m_oCachedCommandBuffer[pFramebuffer];
-		}
+			oRenderPassDesc.oSubpasses = oSubs;
+			oRenderPassDesc.oDescriptions = oDescriptions;
 
-		void RenderBatch::AddMesh(Mesh::StrongPtr xMesh, DescriptorSetWrapper* pWrapper)
-		{
-			if (m_oEntities.find(xMesh) == m_oEntities.end())
+			m_pRenderpass = new RenderPass(oRenderPassDesc);
+
+			for (int i = 0; i < oDesc.oSubBatches.size(); i++)
 			{
-				m_oEntities[xMesh] = pWrapper;
-				TryFillModelsBuffer(xMesh);
-				MarkAsDirty();
-			}
-		}
-
-		void RenderBatch::RemoveMesh(Mesh::StrongPtr xMesh)
-		{
-			m_oEntities.erase(xMesh);
-		}
-
-		size_t RenderBatch::GetVerticesCount()
-		{
-			size_t iOutput = 0;
-			for (std::pair<Mesh::StrongPtr, DescriptorSetWrapper*> oPair : m_oEntities)
-			{
-				iOutput += oPair.first->GetVerticeCount();
-			}
-			return iOutput;
-		}
-
-		uint64_t RenderBatch::GetInstancesCount()
-		{
-			uint64_t iOutput = 0;
-			for (std::pair<Mesh::StrongPtr, DescriptorSetWrapper*> oPair : m_oEntities)
-			{
-				iOutput += oPair.first->GetInstanceCount();
-			}
-			return iOutput;
-		}
-
-		void RenderBatch::ClearCache()
-		{
-			for (std::pair<Framebuffer*, VkCommandBuffer*> oCmd : m_oCachedCommandBuffer)
-			{
-				vkFreeCommandBuffers(*Bta::Graphic::Globals::g_pDevice->GetLogicalDevice(), *Bta::Graphic::Globals::g_pFactory->GetCommandPool(), 1, oCmd.second);
-			}
-			m_oCachedCommandBuffer.clear();
-		}
-
-		void RenderBatch::Destroy()
-		{
-			ClearCache();
-		}
-
-		void RenderBatch::TryFillModelsBuffer(Mesh::StrongPtr xMesh)
-		{
-			if (!(m_oEntities.count(xMesh) != 0 && m_oEntities[xMesh]->FillSlotAtTag(xMesh->GetModelMatrices().get(), TAG_MODELS)))
-			{
-				std::cout << "Error ,could not find the tag or the mesh does not exist in the batch" << std::endl;
+				SubRenderBatch* pSubBatch = new SubRenderBatch(oDesc.oSubBatches[i]);
+				m_oSubBatches.push_back(pSubBatch);
+				pSubBatch->CreatePipeline(this, i);
 			}
 		}
 
-		void RenderBatch::ReconstructCommand(Framebuffer* pFramebuffer)
+		VkCommandBuffer RenderBatch::GetCommandBuffer(Framebuffer* pFramebuffer)
 		{
-			VkCommandBufferBeginInfo oCommandBeginInfo{};
-			oCommandBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+			VkCommandBuffer oCommandBuffer = Globals::g_pFactory->BeginSingleTimeCommands();
+			
+			VkRenderPassBeginInfo oRenderPassInfo{};
+			oRenderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+			oRenderPassInfo.renderPass = *m_pRenderpass->GetRenderPass();
+			oRenderPassInfo.framebuffer = *pFramebuffer->GetFramebuffer();
 
-			VkCommandBuffer* pBuffer = m_oCachedCommandBuffer[pFramebuffer];
-			if (vkBeginCommandBuffer(*m_oCachedCommandBuffer[pFramebuffer], &oCommandBeginInfo) != VK_SUCCESS)
-			{
-				throw std::runtime_error("failed to begin recording command buffer!");
-			}
-
-			VkRenderPassBeginInfo oBeginInfo{};
-			oBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-			oBeginInfo.renderPass = *m_pRenderpass->GetRenderPass();
-			oBeginInfo.framebuffer = *pFramebuffer->GetFramebuffer();
-
-			int iWidth, iHeight;
-			Bta::Graphic::Globals::g_pDevice->GetModifiableRenderSurface()->GetWindowSize(iWidth, iHeight);
+			int iWidth = 0;
+			int iHeight = 0;
+			Bta::Graphic::Globals::g_pOutput->GetRenderSurface()->GetWindowSize(iWidth, iHeight);
 
 			VkExtent2D oExtent;
 			oExtent.height = iHeight;
 			oExtent.width = iWidth;
 
-			oBeginInfo.renderArea.offset = { 0, 0 };
-			oBeginInfo.renderArea.extent = oExtent;
+			oRenderPassInfo.renderArea.offset = { 0, 0 };
+			oRenderPassInfo.renderArea.extent = oExtent;
 
 			std::vector<VkClearValue> oClear(1);
-			oClear[0].color = { 0.1f, 0.3f,0.8f, 1.0f };
+			oClear[0] = { 0.1f, 0.3f, 0.8f, 1.0f };
 
 			if ((Framebuffer::E_DEPTH & pFramebuffer->GetAttachmentFlags()) != 0)
 			{
@@ -149,151 +95,25 @@ namespace Bta
 				oClear.push_back(oClearDepth);
 			}
 
-			oBeginInfo.clearValueCount = static_cast<uint32_t>(oClear.size());
-			oBeginInfo.pClearValues = oClear.data();
+			oRenderPassInfo.clearValueCount = oClear.size();
+			oRenderPassInfo.pClearValues = oClear.data();
 
-			vkCmdBeginRenderPass(*m_oCachedCommandBuffer[pFramebuffer], &oBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+			vkCmdBeginRenderPass(oCommandBuffer, &oRenderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-			ChainSubpass(m_oCachedCommandBuffer[pFramebuffer]);
+			for (SubRenderBatch* pSubBatch : m_oSubBatches)
+			{
+				pSubBatch->FillCommandBuffer(oCommandBuffer);
 
-			vkCmdEndRenderPass(*m_oCachedCommandBuffer[pFramebuffer]);
-			if (vkEndCommandBuffer(*m_oCachedCommandBuffer[pFramebuffer]) != VK_SUCCESS)
+				if  (pSubBatch != m_oSubBatches[m_oSubBatches.size() - 1])
+					vkCmdNextSubpass(oCommandBuffer,VK_SUBPASS_CONTENTS_INLINE);
+			}
+
+			vkCmdEndRenderPass(oCommandBuffer);
+			if (vkEndCommandBuffer(oCommandBuffer) != VK_SUCCESS)
 			{
 				throw std::runtime_error("Failed to record command");
 			}
-
-		}
-
-		void RenderBatch::ChainSubpass(VkCommandBuffer* pBuffer)
-		{
-			if (m_bEnabled)
-			{
-				vkCmdBindPipeline(*pBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, *m_pPipeline->GetPipeline());
-
-				for (std::pair<Mesh::StrongPtr, DescriptorSetWrapper*> pEntity : m_oEntities)
-				{
-					vkCmdBindDescriptorSets(*pBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, *m_pPipeline->GetPipelineLayout(), 0, 1, pEntity.second->GetDescriptorSet(), 0, nullptr);
-
-					VkDeviceSize oOffsets[] = { 0 };
-					std::shared_ptr<BasicBuffer> xBasicBuffer = std::static_pointer_cast<BasicBuffer>(pEntity.first->GetVerticesBuffer());
-					vkCmdBindVertexBuffers(*pBuffer, 0, 1, xBasicBuffer->GetBuffer(), oOffsets);
-
-					if (pEntity.first->GetIndexesBuffer() != nullptr)
-					{
-						std::shared_ptr<BasicBuffer> xBasicBufferIndex = std::static_pointer_cast<BasicBuffer>(pEntity.first->GetIndexesBuffer());
-						vkCmdBindIndexBuffer(*pBuffer, *xBasicBufferIndex->GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
-
-						size_t iInstanceCount = pEntity.first->GetInstanceCount();
-						vkCmdDrawIndexed(*pBuffer, (uint32_t)pEntity.first->GetIndexesBuffer()->GetUnitCount(), iInstanceCount, 0, 0, 0);
-					}
-					else
-					{
-						vkCmdDraw(*pBuffer, (uint32_t)pEntity.first->GetVerticesBuffer()->GetUnitCount(), (uint32_t)pEntity.first->GetInstanceCount(), 0, 0);
-					}
-				}
-			}
-
-			if (m_pNext != nullptr)
-			{
-				vkCmdNextSubpass(*pBuffer, VK_SUBPASS_CONTENTS_INLINE);
-				m_pNext->ChainSubpass(pBuffer);
-			}
-		}
-
-		RenderBatchesHandler::RenderBatchesHandler(Desc& oDesc)
-		{
-			int i = 0;
-			m_eSamples = oDesc.eSamples;
-			m_pRenderpass = oDesc.pPass;
-			for (CreationBatchDesc& oBatchCreateDesc : oDesc.oBatches)
-			{
-				Pipeline::Desc oPipelineDesc;
-				oPipelineDesc.oShaderFilenames = oBatchCreateDesc.oShaderCompiled;
-				Pipeline::FillVerticesDescription(oPipelineDesc.oBindingDescription, oPipelineDesc.oAttributeDescriptions, oBatchCreateDesc.oShaderSources[0]);
-				oPipelineDesc.bTestDepth = oBatchCreateDesc.bTestDepth;
-				oPipelineDesc.bWriteDepth = oBatchCreateDesc.bWriteDepth;
-				oPipelineDesc.bEnableTransparent = true;
-				oPipelineDesc.eSample = oDesc.eSamples;
-				oPipelineDesc.iSubPassIndex = i;
-				oPipelineDesc.eVerticesAssemblyMode = oBatchCreateDesc.eTopology;
-
-				DescriptorLayoutWrapper::ShaderMap oMap;
-				oMap[VK_SHADER_STAGE_VERTEX_BIT] = oBatchCreateDesc.oShaderSources[0];
-				oMap[VK_SHADER_STAGE_FRAGMENT_BIT] = oBatchCreateDesc.oShaderSources[1];
-				oPipelineDesc.pInputDatas = DescriptorLayoutWrapper::ParseShaderFiles(oMap, Bta::Graphic::Globals::g_pDevice);
-				oPipelineDesc.pRenderPass = oDesc.pPass;
-
-				Pipeline* pPipeline = new Pipeline(oPipelineDesc);
-
-				RenderBatch::Desc oBatchDesc;
-				oBatchDesc.pRenderpass = oDesc.pPass;
-				oBatchDesc.pPipeline = pPipeline;
-				oBatchDesc.pNext = nullptr;
-				oBatchDesc.sTag = oBatchCreateDesc.sTag;
-
-				if (oBatchCreateDesc.eTypeBatch == NORMAL)
-					m_oBatches.push_back(new RenderBatch(oBatchDesc));
-				else if (oBatchCreateDesc.eTypeBatch == TEXT)
-				{
-					FontRenderBatch::Desc oTextDesc;
-					oTextDesc.pPipeline = pPipeline;
-					oTextDesc.pPool = Bta::Graphic::Globals::g_pPool;
-					oTextDesc.pRenderpass = m_pRenderpass;
-					oTextDesc.sFontName = "Font/ElaineSans-Black.ttf";
-					oTextDesc.xVPBuffer = Bta::Graphic::Globals::g_pCamera->GetVPMatriceBuffer();
-
-					m_oBatches.push_back(new FontRenderBatch(oTextDesc));
-				}
-
-				m_oBatches[m_oBatches.size() - 1]->m_pParent = this;
-				m_oPipelineDesc.push_back(oBatchCreateDesc);
-
-				if (i > 0)
-				{
-					m_oBatches[i - 1]->SetNext(m_oBatches[i]);
-				}
-
-				i++;
-			}
-		}
-
-		VkCommandBuffer* RenderBatchesHandler::GetCommand(Framebuffer* pFramebuffer)
-		{
-			return m_oBatches[0]->GetDrawCommand(pFramebuffer);
-		}
-
-		void RenderBatchesHandler::ReconstructPipelines(GraphicWrapper* pWrapper)
-		{
-			for (AbstractRenderBatch* pBatch : m_oBatches)
-			{
-				pBatch->Destroy();
-				delete pBatch->GetPipeline();
-			}
-
-			for (int i = 0; i < m_oBatches.size(); i++)
-			{
-				CreationBatchDesc oBatchCreateDesc = m_oPipelineDesc[i];
-
-				Pipeline::Desc oPipelineDesc;
-				oPipelineDesc.oShaderFilenames = oBatchCreateDesc.oShaderCompiled;
-				Pipeline::FillVerticesDescription(oPipelineDesc.oBindingDescription, oPipelineDesc.oAttributeDescriptions, oBatchCreateDesc.oShaderSources[0]);
-				oPipelineDesc.bTestDepth = oBatchCreateDesc.bTestDepth;
-				oPipelineDesc.bWriteDepth = oBatchCreateDesc.bWriteDepth;
-				oPipelineDesc.bEnableTransparent = false;
-				oPipelineDesc.eSample = m_eSamples;
-				oPipelineDesc.iSubPassIndex = i;
-
-				DescriptorLayoutWrapper::ShaderMap oMap;
-				oMap[VK_SHADER_STAGE_VERTEX_BIT] = oBatchCreateDesc.oShaderSources[0];
-				oMap[VK_SHADER_STAGE_FRAGMENT_BIT] = oBatchCreateDesc.oShaderSources[1];
-				oPipelineDesc.pInputDatas = DescriptorLayoutWrapper::ParseShaderFiles(oMap, Bta::Graphic::Globals::g_pDevice);
-				oPipelineDesc.pRenderPass = m_pRenderpass;
-
-				Pipeline* pPipeline = new Pipeline(oPipelineDesc);
-				m_oBatches[i]->SetPipeline(pPipeline);
-			}
+			return oCommandBuffer;
 		}
 	}
 }
-
-

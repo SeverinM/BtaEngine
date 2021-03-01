@@ -1,8 +1,8 @@
 #include "Framebuffer.h"
 #include <iostream>
 #include "RenderPass.h"
-#include "BasicWrapper.h"
 #include "Globals.h"
+#include "Output.h"
 
 namespace Bta
 {
@@ -11,7 +11,7 @@ namespace Bta
 		Framebuffer::Framebuffer(Desc& oDesc)
 		{
 			int iWidth, iHeight;
-			Globals::g_pDevice->GetModifiableRenderSurface()->GetWindowSize(iWidth, iHeight);
+			Globals::g_pOutput->GetRenderSurface()->GetWindowSize(iWidth, iHeight);
 			VkFramebufferCreateInfo oFramebufferInfo{};
 			oFramebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
 

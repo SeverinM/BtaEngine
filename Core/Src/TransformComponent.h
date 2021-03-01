@@ -3,6 +3,7 @@
 
 #include "Entity.h"
 #include "../Include/GLM/glm.hpp"
+#include "../Include/GLM/gtc/quaternion.hpp"
 
 namespace Bta
 {
@@ -12,6 +13,8 @@ namespace Bta
 		{
 		protected:
 			glm::vec3 m_vLocalPosition;
+			glm::quat m_vLocalRotation;
+			glm::vec3 m_vLocalScale;
 
 		public:
 			void Init() override {};
@@ -20,7 +23,11 @@ namespace Bta
 				m_vLocalPosition = glm::vec3();
 			};
 
+			glm::vec3 GetWorldScale() const;
 			glm::vec3 GetWorldPosition() const;
+			glm::quat GetWorldRotation() const;
+			glm::mat4x4 GetModelMatrix() const;
+			void SetPosition(glm::vec3 vNewPosition, bool bRelative);
 		};
 	}
 }

@@ -1,6 +1,7 @@
 #include "SyncObjects.h"
 #include <iostream>
 #include "Globals.h"
+#include "GraphicDevice.h"
 
 SyncObjects::SyncObjects(Desc& oDesc)
 {
@@ -20,6 +21,10 @@ SyncObjects::SyncObjects(Desc& oDesc)
 	VkFenceCreateInfo oFenceInfo{};
 	oFenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 	oFenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+	m_oImageAcquiredSemaphores.resize(oDesc.iFrameOnFlight);
+	m_oRenderFinishedSemaphores.resize(oDesc.iFrameOnFlight);
+	m_oInFlightFences.resize(oDesc.iFrameOnFlight);
 
 	for (int i = 0; i < oDesc.iFrameOnFlight; i++)
 	{

@@ -1,34 +1,34 @@
 #include "Swapchain.h"
 #include <iostream>
 #include "Globals.h"
+#include "Output.h"
 
 namespace Bta
 {
 	namespace Graphic
 	{
-		void FetchSwapChainCapabilities(const GraphicDevice& oDevice, VkSurfaceCapabilitiesKHR& oCapabilities, std::vector<VkSurfaceFormatKHR>& oFormats, std::vector<VkPresentModeKHR>& oPresentModes)
+		void FetchSwapChainCapabilities(VkSurfaceCapabilitiesKHR& oCapabilities, Window::RenderSurface* pSurface, std::vector<VkSurfaceFormatKHR>& oFormats, std::vector<VkPresentModeKHR>& oPresentModes)
 		{
-			const VkPhysicalDevice* const pPhysical = oDevice.GetPhysicalDevice();
-			const VkSurfaceKHR* const pSurface = oDevice.GetRenderSurface()->GetSurface();
+			const VkPhysicalDevice* const pPhysical = Globals::g_pDevice->GetPhysicalDevice();
 
-			vkGetPhysicalDeviceSurfaceCapabilitiesKHR(*pPhysical, *pSurface, &oCapabilities);
+			vkGetPhysicalDeviceSurfaceCapabilitiesKHR(*pPhysical, *pSurface->GetSurface(), &oCapabilities);
 
 			uint32_t iFormatCount;
-			vkGetPhysicalDeviceSurfaceFormatsKHR(*pPhysical, *pSurface, &iFormatCount, nullptr);
+			vkGetPhysicalDeviceSurfaceFormatsKHR(*pPhysical, *pSurface->GetSurface(), &iFormatCount, nullptr);
 
 			if (iFormatCount != 0)
 			{
 				oFormats.resize(iFormatCount);
-				vkGetPhysicalDeviceSurfaceFormatsKHR(*oDevice.GetPhysicalDevice(), *(oDevice.GetRenderSurface()->GetSurface()), &iFormatCount, oFormats.data());
+				vkGetPhysicalDeviceSurfaceFormatsKHR(*Globals::g_pDevice->GetPhysicalDevice(), *(pSurface->GetSurface()), &iFormatCount, oFormats.data());
 			}
 
 			uint32_t iPresentModeCount;
-			vkGetPhysicalDeviceSurfacePresentModesKHR(*oDevice.GetPhysicalDevice(), *(oDevice.GetRenderSurface()->GetSurface()), &iPresentModeCount, nullptr);
+			vkGetPhysicalDeviceSurfacePresentModesKHR(*Globals::g_pDevice->GetPhysicalDevice(), *(pSurface->GetSurface()), &iPresentModeCount, nullptr);
 
 			if (iPresentModeCount != 0)
 			{
 				oPresentModes.resize(iPresentModeCount);
-				vkGetPhysicalDeviceSurfacePresentModesKHR(*oDevice.GetPhysicalDevice(), *(oDevice.GetRenderSurface()->GetSurface()), &iPresentModeCount, oPresentModes.data());
+				vkGetPhysicalDeviceSurfacePresentModesKHR(*Globals::g_pDevice->GetPhysicalDevice(), *(pSurface->GetSurface()), &iPresentModeCount, oPresentModes.data());
 			}
 		}
 
@@ -44,7 +44,7 @@ namespace Bta
 			std::vector<VkSurfaceFormatKHR> oFormats;
 			std::vector<VkPresentModeKHR> oPresentModes;
 
-			FetchSwapChainCapabilities(*Bta::Graphic::Globals::g_pDevice, oCapabilities, oFormats, oPresentModes);
+			FetchSwapChainCapabilities(oCapabilities,oDesc.pRenderSurface, oFormats, oPresentModes);
 
 			VkSurfaceFormatKHR oFormat;
 			for (VkSurfaceFormatKHR& oItFormat : oFormats)
@@ -78,8 +78,7 @@ namespace Bta
 			oCreateInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
 
 			//Where to present
-			oCreateInfo.surface = *Bta::Graphic::Globals::g_pDevice->GetRenderSurface()->GetSurface();
-
+			oCreateInfo.surface = *oDesc.pRenderSurface->GetSurface();
 			oCreateInfo.minImageCount = iImageCount;
 
 			//Format of each image
@@ -88,7 +87,7 @@ namespace Bta
 
 			VkExtent2D oExtent;
 			int iHeight, iWidth;
-			Bta::Graphic::Globals::g_pDevice->GetModifiableRenderSurface()->GetWindowSize(iWidth, iHeight);
+			oDesc.pRenderSurface->GetWindowSize(iWidth, iHeight);
 			oExtent.height = iHeight;
 			oExtent.width = iWidth;
 			oCreateInfo.imageExtent = oExtent;

@@ -18,7 +18,6 @@ namespace Bta
 			VkDevice m_oDevice;
 			VkSampleCountFlagBits m_iMaxMsaa;
 			VkSampleCountFlagBits GetMaxSampleCount();
-			Window::RenderSurface* m_pRenderSurface;
 			int m_iGraphicQueueIndex;
 			int m_iPresentQueueIndex;
 
@@ -30,8 +29,7 @@ namespace Bta
 				std::vector<const char*> oExtensions;
 				Window::RenderSurface* pSurface;
 			};
-			const Window::RenderSurface* const GetRenderSurface() const { return m_pRenderSurface; }
-			Window::RenderSurface* GetModifiableRenderSurface() { return m_pRenderSurface; }
+
 			const VkDevice* const GetLogicalDevice() const { return &m_oDevice; }
 			const VkPhysicalDevice* const GetPhysicalDevice() const { return m_pPhysicalDevice; }
 			int GetGraphicQueueIndex() const { return m_iGraphicQueueIndex; }

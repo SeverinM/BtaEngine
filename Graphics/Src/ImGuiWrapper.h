@@ -11,15 +11,14 @@ namespace Bta
 	{
 		class RenderPass;
 		class CommandFactory;
-		class BasicWrapper;
+		class Output;
 
 		class ImGuiWrapper
 		{
-			typedef void(*ImGuiRenderCallBack)(BasicWrapper* pWrapper);
+			typedef void(*ImGuiRenderCallBack)(void* pData);
 			public:
 				struct Desc
 				{
-					BasicWrapper* pWrapper;
 					int iImageIndex;
 					ImGuiRenderCallBack pCallback;
 				};

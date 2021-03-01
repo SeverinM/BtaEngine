@@ -5,6 +5,7 @@
 #include "StringUtils.h"
 #include <fstream>
 #include "Globals.h"
+#include "Output.h"
 
 namespace Bta
 {
@@ -86,7 +87,7 @@ namespace Bta
 			oInputVertex.primitiveRestartEnable = VK_FALSE;
 
 			int iWidth, iHeight;
-			Bta::Graphic::Globals::g_pDevice->GetModifiableRenderSurface()->GetWindowSize(iWidth, iHeight);
+			Bta::Graphic::Globals::g_pOutput->GetRenderSurface()->GetWindowSize(iWidth, iHeight);
 			VkViewport oViewport{};
 			oViewport.x = 0.0f;
 			oViewport.y = 0.0f;
@@ -243,15 +244,15 @@ namespace Bta
 
 					size_t iSize = Bta::Utils::StringUtils::ParseMemorySize(Bta::Utils::StringUtils::Split(sLine, ' ')[7]);
 
-					if (iSize == sizeof(glm::vec3))
+					if (iSize == sizeof(float) * 3)
 					{
 						oAttribute.format = VK_FORMAT_R32G32B32_SFLOAT;
 					}
-					else if (iSize == sizeof(glm::vec2))
+					else if (iSize == sizeof(float) * 2)
 					{
 						oAttribute.format = VK_FORMAT_R32G32_SFLOAT;
 					}
-					else if (iSize == sizeof(glm::vec4))
+					else if (iSize == sizeof(float) * 4)
 					{
 						oAttribute.format = VK_FORMAT_R32G32B32A32_SFLOAT;
 					}

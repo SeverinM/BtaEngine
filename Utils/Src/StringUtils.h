@@ -2,7 +2,6 @@
 #define H_STRING_UTILS
 #include <string>
 #include <iostream>
-#include "GLM/glm.hpp"
 
 namespace Bta
 {
@@ -118,19 +117,19 @@ namespace Bta
 			{
 				if (Bta::Utils::StringUtils::StartWith(sText, "mat4"))
 				{
-					return sizeof(glm::mat4);
+					return sizeof(float) * 16;
 				}
 				else if (Bta::Utils::StringUtils::StartWith(sText, "vec4"))
 				{
-					return sizeof(glm::vec4);
+					return sizeof(float) * 4;
 				}
 				else if (Bta::Utils::StringUtils::StartWith(sText, "vec3"))
 				{
-					return sizeof(glm::vec3);
+					return sizeof(float) * 3;
 				}
 				else if (Bta::Utils::StringUtils::StartWith(sText, "vec2"))
 				{
-					return sizeof(glm::vec2);
+					return sizeof(float) * 2;
 				}
 				else
 				{

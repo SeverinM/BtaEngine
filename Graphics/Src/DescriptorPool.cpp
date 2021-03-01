@@ -1,7 +1,6 @@
 #include "DescriptorPool.h"
 #include <iostream>
 #include "Pipeline.h"
-#include "BasicWrapper.h"
 #include "DescriptorWrapper.h"
 #include "Globals.h"
 
@@ -107,8 +106,8 @@ namespace Bta
 
 					VkDescriptorBufferInfo oBufferInfo{};
 					oBufferInfo.buffer = *xBasicBuffer->GetBuffer();
-					oBufferInfo.range = xBasicBuffer->GetMemorySize();
-					oBufferInfo.offset = 0;
+					oBufferInfo.range = xBasicBuffer->GetTrueMemorySize() - oSlot.iOffset;
+					oBufferInfo.offset = oSlot.iOffset;
 
 					oWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 					oWrite.pBufferInfo = new VkDescriptorBufferInfo(oBufferInfo);
@@ -119,8 +118,8 @@ namespace Bta
 
 					VkDescriptorBufferInfo oBufferInfo{};
 					oBufferInfo.buffer = *pBasicBuffer->GetBuffer();
-					oBufferInfo.range = pBasicBuffer->GetMemorySize();
-					oBufferInfo.offset = 0;
+					oBufferInfo.range = pBasicBuffer->GetTrueMemorySize() - oSlot.iOffset;
+					oBufferInfo.offset = oSlot.iOffset;
 
 					oWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 					oWrite.pBufferInfo = &oBufferInfo;

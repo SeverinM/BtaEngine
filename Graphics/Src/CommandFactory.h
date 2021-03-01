@@ -1,6 +1,5 @@
 #ifndef H_COMMAND_FACTORY
 #define H_COMMAND_FACTORY
-#include "GraphicWrapper.h"
 #include "Framebuffer.h"
 #include "Pipeline.h"
 

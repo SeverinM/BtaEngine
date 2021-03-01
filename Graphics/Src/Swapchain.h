@@ -1,7 +1,6 @@
 #ifndef H_SWAP_CHAIN
 #define H_SWAP_CHAIN
 #include "GraphicDevice.h"
-#include "GraphicWrapper.h"
 
 namespace Bta
 {
@@ -16,6 +15,7 @@ namespace Bta
 					VkColorSpaceKHR eColorspace;
 					VkPresentModeKHR ePresentMode;
 					int iImageLayers;
+					Window::RenderSurface* pRenderSurface;
 				};
 
 				Swapchain(Desc& oDesc);

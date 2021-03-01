@@ -1,4 +1,5 @@
 #include "GPUMemoryInterface.h"
+#include "Globals.h"
 
 namespace Bta
 {
@@ -14,28 +15,31 @@ namespace Bta
 			return s_pGpu;
 		}
 
-		BasicBuffer* GPUMemory::AllocateMemory(BasicBuffer::Desc oDesc, void* pSubject)
+		BasicBuffer* GPUMemory::AllocateMemory(BasicBuffer::Desc oDesc)
 		{
 			BasicBuffer* pBuffer = new BasicBuffer(oDesc);
-			m_oGPUDataBinding[pSubject] = pBuffer;
+			m_oGPUDatas.push_back(pBuffer);
 			return pBuffer;
 		}
 
-		Image* GPUMemory::AllocateMemory(Image::Desc oDesc, void* pSubject)
+		Image* GPUMemory::AllocateMemory(Image::Desc oDesc)
 		{
 			Image* pImage = new Image(oDesc);
-			m_oGPUDataBinding[pSubject] = pImage;
+			m_oGPUDatas.push_back(pImage);
 			return pImage;
 		}
 
-		Buffer* GPUMemory::FetchBuffer(void* pSubject)
+		void GPUMemory::FreeMemory(Buffer* pBuffer)
 		{
-			if (m_oGPUDataBinding.count(pSubject) == 0)
-				return nullptr;
+			std::list<Buffer*>::iterator it = std::find(m_oGPUDatas.begin(), m_oGPUDatas.end(),pBuffer);
 
-			return m_oGPUDataBinding[pSubject];
+			if (it != m_oGPUDatas.end())
+			{
+				Buffer* pBuffer = (*it);
+				m_oGPUDatas.erase(it);
+				delete pBuffer;
+			}		
 		}
-
 	}
 }
 

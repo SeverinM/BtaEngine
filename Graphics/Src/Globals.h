@@ -11,6 +11,7 @@ namespace Bta
 		class DescriptorPool;
 		class Camera;
 		class CommandFactory;
+		class Output;
 
 		struct Globals
 		{
@@ -18,7 +19,7 @@ namespace Bta
 			static float g_fElapsed;
 			static GraphicDevice* g_pDevice;
 			static DescriptorPool* g_pPool;
-			static Camera* g_pCamera;
+			static Output* g_pOutput;
 			static CommandFactory* g_pFactory;
 		};
 

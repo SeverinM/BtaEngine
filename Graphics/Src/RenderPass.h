@@ -2,7 +2,6 @@
 #define H_RENDER_PASS
 #include "vulkan/vulkan_core.h"
 #include <vector>
-#include "BasicWrapper.h"
 
 namespace Bta
 {
@@ -23,14 +22,8 @@ namespace Bta
 
 			struct Desc
 			{
-				bool bEnableColor;
-				bool bEnableDepth;
 				std::vector<SubDesc> oSubpasses;
-				VkSampleCountFlagBits eSample;
-				VkImageLayout eInitialLayoutColorAttachment;
-				bool bClearColorAttachmentAtBegin;
-				bool bPresentable;
-				VkFormat eFormatColor;
+				std::vector<VkAttachmentDescription> oDescriptions;
 			};
 
 			const VkRenderPass* const GetRenderPass() { return &m_oRenderpass; }

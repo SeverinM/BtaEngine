@@ -3,7 +3,8 @@
 #include "vulkan/vulkan_core.h"
 #include <vector>
 #include <string>
-#include "BasicWrapper.h"
+#include "DescriptorWrapper.h"
+#include "RenderPass.h"
 
 namespace Bta
 {

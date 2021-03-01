@@ -1,6 +1,7 @@
 #include "RenderPass.h"
 #include <iostream>
 #include "Globals.h"
+#include "GraphicDevice.h"
 
 namespace Bta
 {
@@ -14,39 +15,6 @@ namespace Bta
 
 		void RenderPass::Create(Desc& oDesc)
 		{
-			VkAttachmentDescription oColorAttachment{};
-			oColorAttachment.format = oDesc.eFormatColor;
-			oColorAttachment.samples = oDesc.eSample;
-			oColorAttachment.loadOp = oDesc.bClearColorAttachmentAtBegin ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_LOAD;
-			oColorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-			oColorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-			oColorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-			oColorAttachment.initialLayout = oDesc.eInitialLayoutColorAttachment;
-			oColorAttachment.finalLayout = (oDesc.eSample != VK_SAMPLE_COUNT_1_BIT || !oDesc.bPresentable ? VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
-
-			VkAttachmentDescription oColorAttachmentResolve{};
-			if (oDesc.eSample != VK_SAMPLE_COUNT_1_BIT)
-			{
-				oColorAttachmentResolve.format = oDesc.eFormatColor;//oDesc.pWrapper->GetSwapchain()->GetFormat();
-				oColorAttachmentResolve.samples = VK_SAMPLE_COUNT_1_BIT;
-				oColorAttachmentResolve.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-				oColorAttachmentResolve.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-				oColorAttachmentResolve.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-				oColorAttachmentResolve.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-				oColorAttachmentResolve.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-				oColorAttachmentResolve.finalLayout = (oDesc.bPresentable ? VK_IMAGE_LAYOUT_PRESENT_SRC_KHR : VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-			}
-
-			VkAttachmentDescription oDepthAttachment{};
-			oDepthAttachment.format = VK_FORMAT_D32_SFLOAT;
-			oDepthAttachment.samples = oDesc.eSample;
-			oDepthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-			oDepthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-			oDepthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-			oDepthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-			oDepthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-			oDepthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
 			std::vector<VkSubpassDescription> oSubpasses;
 			std::vector<VkSubpassDependency> oDependencies;
 			for (int i = 0; i < oDesc.oSubpasses.size(); i++)
@@ -54,42 +22,21 @@ namespace Bta
 				VkSubpassDescription oSubpassInfo{};
 				oSubpassInfo.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 
-				std::vector<VkAttachmentReference> oAttachmentRefs;
+				VkAttachmentReference oAttachmentRef{};
+				oAttachmentRef.attachment = oDesc.oSubpasses[i].iDepthStencilAttachmentIndex >= 0 ? oDesc.oSubpasses[i].iDepthStencilAttachmentIndex : VK_ATTACHMENT_UNUSED;
+				oAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+				oSubpassInfo.pDepthStencilAttachment = new VkAttachmentReference(oAttachmentRef);
 
-				oSubpassInfo.pDepthStencilAttachment = nullptr;
-				if (oDesc.oSubpasses[i].iDepthStencilAttachmentIndex >= 0 && oDesc.bEnableDepth)
-				{
-					VkAttachmentReference oAttachmentRef{};
-					oAttachmentRef.attachment = oDesc.oSubpasses[i].iDepthStencilAttachmentIndex;
-					oAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-					oAttachmentRefs.push_back(oAttachmentRef);
+				VkAttachmentReference oColorAttachmentRef{};
+				oColorAttachmentRef.attachment = oDesc.oSubpasses[i].iColorAttachmentIndex >= 0 ? oDesc.oSubpasses[i].iColorAttachmentIndex : VK_ATTACHMENT_UNUSED;
+				oColorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+				oSubpassInfo.colorAttachmentCount = 1;
+				oSubpassInfo.pColorAttachments = new VkAttachmentReference(oColorAttachmentRef);
 
-					oSubpassInfo.pDepthStencilAttachment = new VkAttachmentReference(oAttachmentRef);
-				}
-
-				oSubpassInfo.colorAttachmentCount = 0;
-				oSubpassInfo.pColorAttachments = nullptr;
-				if (oDesc.oSubpasses[i].iColorAttachmentIndex >= 0 && oDesc.bEnableColor)
-				{
-					VkAttachmentReference oColorAttachmentRef{};
-					oColorAttachmentRef.attachment = oDesc.oSubpasses[i].iColorAttachmentIndex;
-					oColorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-					oAttachmentRefs.push_back(oColorAttachmentRef);
-
-					oSubpassInfo.colorAttachmentCount = 1;
-					oSubpassInfo.pColorAttachments = new VkAttachmentReference(oColorAttachmentRef);
-				}
-
-				oSubpassInfo.pResolveAttachments = nullptr;
-				if (oDesc.oSubpasses[i].iColorResolveAttachmentIndex >= 0)
-				{
-					VkAttachmentReference oColorAttachmentResolveRef{};
-					oColorAttachmentResolveRef.attachment = oDesc.oSubpasses[i].iColorResolveAttachmentIndex;
-					oColorAttachmentResolveRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-					oAttachmentRefs.push_back(oColorAttachmentResolveRef);
-
-					oSubpassInfo.pResolveAttachments = new VkAttachmentReference(oColorAttachmentResolveRef);
-				}
+				VkAttachmentReference oColorAttachmentResolveRef{};
+				oColorAttachmentResolveRef.attachment = oDesc.oSubpasses[i].iColorResolveAttachmentIndex >= 0 ? oDesc.oSubpasses[i].iColorResolveAttachmentIndex : VK_ATTACHMENT_UNUSED;
+				oColorAttachmentResolveRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+				oSubpassInfo.pResolveAttachments = new VkAttachmentReference(oColorAttachmentResolveRef);
 
 				oSubpasses.push_back(oSubpassInfo);
 
@@ -115,29 +62,15 @@ namespace Bta
 
 			VkRenderPassCreateInfo oRenderPassInfo{};
 			oRenderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-			std::vector<VkAttachmentDescription> oAttachments;
-
-			if (oDesc.bEnableColor)
-			{
-				oAttachments.push_back(oColorAttachment);
-			}
-			if (oDesc.bEnableDepth)
-			{
-				oAttachments.push_back(oDepthAttachment);
-			}
-			if (oDesc.eSample != VK_SAMPLE_COUNT_1_BIT)
-			{
-				oAttachments.push_back(oColorAttachmentResolve);
-			}
-
-			oRenderPassInfo.attachmentCount = (uint32_t)oAttachments.size();
-			oRenderPassInfo.pAttachments = oAttachments.data();
+			oRenderPassInfo.attachmentCount = (uint32_t)oDesc.oDescriptions.size();
+			oRenderPassInfo.pAttachments = oDesc.oDescriptions.data();
 			oRenderPassInfo.subpassCount = (uint32_t)oSubpasses.size();
 			oRenderPassInfo.pSubpasses = oSubpasses.data();
 			oRenderPassInfo.dependencyCount = (uint32_t)oDependencies.size();
 			oRenderPassInfo.pDependencies = oDependencies.data();
 
-			if (vkCreateRenderPass(*Bta::Graphic::Globals::g_pDevice->GetLogicalDevice(), &oRenderPassInfo, nullptr, &m_oRenderpass) != VK_SUCCESS)
+			const GraphicDevice* pDevice = Globals::g_pDevice;
+			if (vkCreateRenderPass(*pDevice->GetLogicalDevice(), &oRenderPassInfo, nullptr, &m_oRenderpass) != VK_SUCCESS)
 			{
 				throw std::runtime_error("Cannot create render pass");
 			}
@@ -145,7 +78,7 @@ namespace Bta
 
 		RenderPass::~RenderPass()
 		{
-			vkDestroyRenderPass(*Bta::Graphic::Globals::g_pDevice->GetLogicalDevice(), m_oRenderpass, nullptr);
+			vkDestroyRenderPass(*Globals::g_pDevice->GetLogicalDevice(), m_oRenderpass, nullptr);
 		}
 	}
 }

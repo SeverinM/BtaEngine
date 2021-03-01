@@ -7,6 +7,7 @@
 #include <vulkan/vulkan_core.h>
 #include "Buffer.h"
 #include "RenderPass.h"
+#include "Swapchain.h"
 
 namespace Bta
 {

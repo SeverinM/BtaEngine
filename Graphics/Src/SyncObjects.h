@@ -2,7 +2,6 @@
 #define H_SYNC_OBJECT
 #include "vulkan/vulkan_core.h"
 #include <vector>
-#include "GraphicWrapper.h"
 
 class SyncObjects
 {

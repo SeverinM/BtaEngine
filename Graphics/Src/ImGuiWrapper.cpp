@@ -1,9 +1,8 @@
 #include "ImGuiWrapper.h"
 #include "Globals.h"
-#include <chrono>
-
-#include "BasicWrapper.h"
 #include "RenderPass.h"
+#include "Output.h"
+#include "DescriptorPool.h"
 #include "CommandFactory.h"
 
 namespace Bta
@@ -13,7 +12,8 @@ namespace Bta
 		ImGuiWrapper::ImGuiWrapper(Desc& oDesc)
 		{
 			m_pCallback = oDesc.pCallback;
-			m_oCommandBuffer.resize(oDesc.pWrapper->m_pSwapchain->GetImageViews().size());
+
+			m_oCommandBuffer.resize(Globals::g_pOutput->GetSwapchain()->GetImageViews().size());
 
 			VkSubpassDependency oDependency{};
 			oDependency.srcSubpass = VK_SUBPASS_EXTERNAL;
@@ -28,17 +28,23 @@ namespace Bta
 			oSubDesc.iColorResolveAttachmentIndex = -1;
 			oSubDesc.iDepthStencilAttachmentIndex = -1;
 			oSubDesc.pDependency = &oDependency;
+			
+			VkAttachmentDescription oAttachmentDescription{};
+			oAttachmentDescription.format = Globals::g_pOutput->GetSwapchain()->GetFormat();
+			oAttachmentDescription.samples = VK_SAMPLE_COUNT_1_BIT;
+			oAttachmentDescription.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+			oAttachmentDescription.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+			oAttachmentDescription.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+			oAttachmentDescription.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+			oAttachmentDescription.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+			oAttachmentDescription.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 
 			RenderPass::Desc oPassDesc;
-			oPassDesc.bEnableColor = true;
-			oPassDesc.bEnableDepth = false;
-			oPassDesc.eSample = VK_SAMPLE_COUNT_1_BIT;
-			oPassDesc.eInitialLayoutColorAttachment = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-			oPassDesc.bClearColorAttachmentAtBegin = false;
 			oPassDesc.oSubpasses = { oSubDesc };
-			oPassDesc.bPresentable = true;
-			oPassDesc.eFormatColor = oDesc.pWrapper->GetSwapchain()->GetFormat();
-			m_pRenderpass = new RenderPass(oPassDesc);
+			oPassDesc.oDescriptions = { oAttachmentDescription };
+
+			m_pRenderpass = new RenderPass( oPassDesc );
+
 
 
 			// Setup Dear ImGui context
@@ -52,7 +58,7 @@ namespace Bta
 			ImGui::StyleColorsDark();
 			//ImGui::StyleColorsClassic();
 
-			ImGui_ImplGlfw_InitForVulkan(Bta::Graphic::Globals::g_pDevice->GetModifiableRenderSurface()->GetWindow(), true);
+			ImGui_ImplGlfw_InitForVulkan(Bta::Graphic::Globals::g_pOutput->GetRenderSurface()->GetWindow(), true);
 			ImGui_ImplVulkan_InitInfo init_info = {};
 			init_info.Instance = Bta::Graphic::Globals::g_oInstance;
 			init_info.PhysicalDevice = *Bta::Graphic::Globals::g_pDevice->GetPhysicalDevice();
@@ -60,10 +66,10 @@ namespace Bta
 			init_info.QueueFamily = Bta::Graphic::Globals::g_pDevice->GetGraphicQueueIndex();
 			init_info.Queue = *Bta::Graphic::Globals::g_pDevice->GetGraphicQueue();
 			init_info.PipelineCache = VK_NULL_HANDLE;
-			init_info.DescriptorPool = oDesc.pWrapper->m_pPool->GetPool();
+			init_info.DescriptorPool = Bta::Graphic::Globals::g_pPool->GetPool();
 			init_info.Allocator = nullptr;
 			init_info.MinImageCount = 2;
-			init_info.ImageCount = (uint32_t)oDesc.pWrapper->m_pSwapchain->GetImageViews().size();
+			init_info.ImageCount = (uint32_t)Globals::g_pOutput->GetSwapchain()->GetImageViews().size();
 			init_info.CheckVkResultFn = ImGuiWrapper::CheckError;
 			ImGui_ImplVulkan_Init(&init_info, *m_pRenderpass->GetRenderPass());
 
@@ -75,13 +81,13 @@ namespace Bta
 			oFactoryDesc.bResettable = true;
 			m_pFactory = new CommandFactory(oFactoryDesc);
 
-			for (int i = 0; i < oDesc.pWrapper->m_pSwapchain->GetImageViews().size(); i++)
+			for (int i = 0; i < Bta::Graphic::Globals::g_pOutput->GetSwapchain()->GetImageViews().size(); i++)
 			{
 				Framebuffer::Desc oFramebufferDesc;
 				oFramebufferDesc.pRenderPass = m_pRenderpass;
 
 				std::vector<VkImageView> oView;
-				oView.push_back(oDesc.pWrapper->m_pSwapchain->GetImageViews()[i]);
+				oView.push_back(Bta::Graphic::Globals::g_pOutput->GetSwapchain()->GetImageViews()[i]);
 				oFramebufferDesc.pImageView = &oView;
 
 				m_oFramebuffer.push_back(new Framebuffer(oFramebufferDesc));
@@ -108,18 +114,17 @@ namespace Bta
 
 		VkCommandBuffer* ImGuiWrapper::GetDrawCommand(Desc& oDesc)
 		{
-			Camera* pCamera = Globals::g_pCamera;
-			glm::vec3 vPos = pCamera->GetTransform()->GetPosition();
-			glm::vec3 vForward = pCamera->GetTransform()->GetForward();
-
 			ImGui_ImplVulkan_NewFrame();
 			ImGui_ImplGlfw_NewFrame();
 			ImGui::NewFrame();
-			m_pCallback(oDesc.pWrapper);
+			//TODO
+			
+			ImGui::Begin("Bta Debug");
+
 			ImGui::Render();
 
 			int iWidth, iHeight;
-			Bta::Graphic::Globals::g_pDevice->GetModifiableRenderSurface()->GetWindowSize(iWidth, iHeight);
+			Bta::Graphic::Globals::g_pOutput->GetRenderSurface()->GetWindowSize(iWidth, iHeight);
 
 			vkFreeCommandBuffers(*Bta::Graphic::Globals::g_pDevice->GetLogicalDevice(), *m_pFactory->GetCommandPool(), 1, &m_oCommandBuffer[oDesc.iImageIndex]);
 			m_oCommandBuffer[oDesc.iImageIndex] = m_pFactory->BeginSingleTimeCommands();

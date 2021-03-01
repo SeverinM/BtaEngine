@@ -1,6 +1,5 @@
 #ifndef H_DESCRIPTOR_WRAPPER
 #define H_DESCRIPTOR_WRAPPER
-#include "GraphicWrapper.h"
 #include "DescriptorPool.h"
 #include <unordered_map>
 #include <string>
@@ -17,23 +16,24 @@ namespace Bta
 			public:
 				struct MemorySlot
 				{
-					MemorySlot() : pData(nullptr), eType(DescriptorPool::E_NONE), sTag("") {};
+					MemorySlot() : pData(nullptr), eType(DescriptorPool::E_NONE), sTag(""), iOffset(0) {};
 					Buffer* pData;
 					DescriptorPool::E_BINDING_TYPE eType;
 					std::vector<size_t> oElementsSize;
 					std::string sTag;
+					uint32_t iOffset;
 				};
 				inline VkDescriptorSet* GetDescriptorSet() { return &m_oSet; }
 				inline const std::vector<MemorySlot>& GetSlots() { return m_oSlots; }
+				MemorySlot* GetSlotWithTag(std::string sTag);
 				bool FillSlot(int iIndex, Buffer* pBuffer);
-				bool FillSlotAtTag(Buffer* pBuffer, std::string sTag);
-				void CommitSlots(DescriptorPool* pPool);
+				bool FillSlotAtTag(Buffer* pBuffer, std::string sTag, int iOffset = 0);
+				bool CommitSlots(DescriptorPool* pPool);
 				~DescriptorSetWrapper();
 
 			protected:
 				DescriptorPool* m_pPool;
-				GraphicDevice* m_pDevice;
-				DescriptorSetWrapper() : m_pPool(nullptr), m_pDevice(nullptr), m_pLayoutFrom(nullptr) {};
+				DescriptorSetWrapper() : m_pPool(nullptr), m_pLayoutFrom(nullptr) {};
 				std::vector<MemorySlot> m_oSlots;
 				VkDescriptorSet m_oSet{};
 				VkDescriptorSetLayout* m_pLayoutFrom;
@@ -44,7 +44,6 @@ namespace Bta
 		{
 			public:
 
-				//0 = repeat last memory slot with undefined amount
 				typedef std::vector<size_t> BindingSizes;
 				struct Bindings
 				{
@@ -55,16 +54,16 @@ namespace Bta
 					std::string sTag;
 				};
 
-				DescriptorLayoutWrapper(std::vector <Bindings>& oBindings, GraphicDevice& oDevice);
+				DescriptorLayoutWrapper(std::vector<Bindings>& oBindings);
 				~DescriptorLayoutWrapper();
 
-				DescriptorSetWrapper* InstantiateDescriptorSet(DescriptorPool& oPool, GraphicDevice& oDevice);
+				DescriptorSetWrapper* InstantiateDescriptorSet(DescriptorPool& oPool);
 				static VkDescriptorType GetDescriptorType(DescriptorPool::E_BINDING_TYPE eType);
 
 				inline VkDescriptorSetLayout* GetLayout() { return m_pLayout; }
 
 				typedef std::unordered_map<VkShaderStageFlags, std::string> ShaderMap;
-				static DescriptorLayoutWrapper* ParseShaderFiles(ShaderMap& oMap, GraphicDevice* pDevice);
+				static DescriptorLayoutWrapper* ParseShaderFiles(ShaderMap& oMap);
 
 			protected:
 				static std::unordered_map<int, Bindings> ParseShaderFile(std::string sFilename);

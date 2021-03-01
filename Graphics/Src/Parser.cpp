@@ -10,6 +10,7 @@
 #include "GraphicDevice.h"
 #include "CommandFactory.h"
 #include "StringUtils.h"
+#include "Output.h"
 
 namespace Bta
 {
@@ -46,7 +47,6 @@ namespace Bta
 			oDesc.eAspect = c.eAspect;
 			oDesc.eSampleFlag = VK_SAMPLE_COUNT_1_BIT;
 			oDesc.eTiling = VK_IMAGE_TILING_OPTIMAL;
-			oDesc.pFactory = Bta::Graphic::Globals::g_pFactory;
 
 			for (int i = 2; i < oSubStrings.size(); i++)
 			{
@@ -175,9 +175,21 @@ namespace Bta
 			oRenderDesc.pCallback = nullptr;
 			//oDesc.pCallback = BasicWrapper::ResizeWindow;
 
+			Swapchain::Desc oSwapDesc;
+			oSwapDesc.eColorspace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
+			oSwapDesc.eImagesFormat = VK_FORMAT_B8G8R8A8_SRGB;
+			oSwapDesc.ePresentMode = VkPresentModeKHR::VK_PRESENT_MODE_MAILBOX_KHR;
+			oSwapDesc.iImageLayers = 1;
+
+			Output::Desc oOutputDesc;
+			oOutputDesc.pRenderSurface = new Window::RenderSurface(oRenderDesc);
+			oSwapDesc.pRenderSurface = oOutputDesc.pRenderSurface;
+			oOutputDesc.oSwapDesc = oSwapDesc;
+
 			GraphicDevice::Desc oGraphicDeviceDesc;
 			oGraphicDeviceDesc.bEnableAnisotropy = true;
 			oGraphicDeviceDesc.pInstance = &Bta::Graphic::Globals::g_oInstance;
+			oGraphicDeviceDesc.pSurface = oOutputDesc.pRenderSurface;
 
 			std::vector<const char*> oDeviceExtensions;
 			for (Value& oExtensionValue : oValue["GraphicDevice"]["Extensions"].GetArray())
@@ -185,9 +197,9 @@ namespace Bta
 				oDeviceExtensions.push_back(oExtensionValue.GetString());
 			}
 			oGraphicDeviceDesc.oExtensions = oDeviceExtensions;
-			oGraphicDeviceDesc.pSurface = new Window::RenderSurface(oRenderDesc);
 			oGraphicDeviceDesc.bEnableAnisotropy = oValue["GraphicDevice"]["Features"]["Anisotropy"].GetBool();
 			Bta::Graphic::Globals::g_pDevice = new GraphicDevice(oGraphicDeviceDesc);
+			Bta::Graphic::Globals::g_pOutput = new Output(oOutputDesc);
 
 			CommandFactory::Desc oFactoryDesc{};
 			oFactoryDesc.bResettable = oValue["CommandFactory"]["Resettable"].GetBool();
@@ -197,21 +209,6 @@ namespace Bta
 			oPoolDesc.iMaxSet = oValue["DescriptorPool"]["MaxSet"].GetInt();
 			oPoolDesc.iSize = oValue["DescriptorPool"]["Size"].GetInt();
 			Bta::Graphic::Globals::g_pPool = new DescriptorPool(oPoolDesc);
-
-			Camera::Desc oCamDesc;
-			oCamDesc.fAngleDegree = oValue["Outputs"][0]["Camera"]["InitialFOVAngleDegree"].GetFloat();
-			oCamDesc.fFarPlane = oValue["Outputs"][0]["Camera"]["FarPlane"].GetFloat();
-			oCamDesc.fNearPlane = oValue["Outputs"][0]["Camera"]["NearPlane"].GetFloat();
-			oCamDesc.fRatio = oValue["Outputs"][0]["Camera"]["Ratio"].GetFloat();
-
-			std::vector<float> oUpWorld = ParseVector<3>(oValue["Outputs"][0]["Camera"]["UpCamera"]);
-			std::vector<float> oInitialPosition = ParseVector<3>(oValue["Outputs"][0]["Camera"]["InitialPosition"]);
-			std::vector<float> oInitialLookAt = ParseVector<3>(oValue["Outputs"][0]["Camera"]["InitialLookAt"]);
-			oCamDesc.mInitialMatrix = glm::lookAt(glm::vec3(oInitialPosition[0], oInitialPosition[1], oInitialPosition[2]),
-				glm::vec3(oInitialLookAt[0], oInitialLookAt[1], oInitialLookAt[2]),
-				glm::vec3(oUpWorld[0], oUpWorld[1], oUpWorld[2]));
-
-			Bta::Graphic::Globals::g_pCamera = new Camera(oCamDesc);
 
 			s_bInitialized = true;
 		}
@@ -289,11 +286,11 @@ namespace Bta
 			}
 
 			RenderPass::Desc oDesc;
-			oDesc.bPresentable = oValue["Presentable"].GetBool();
-			oDesc.bClearColorAttachmentAtBegin = (1 & oValue["ClearAttachmentMask"].GetInt() ? true : false);
+			//oDesc.bPresentable = oValue["Presentable"].GetBool();
+			/*oDesc.bClearColorAttachmentAtBegin = (1 & oValue["ClearAttachmentMask"].GetInt() ? true : false);
 			oDesc.bEnableColor = (1 & oValue["AttachmentMask"].GetInt() ? true : false);
 			oDesc.bEnableDepth = ((1 << 1) & oValue["AttachmentMask"].GetInt() ? true : false);
-			oDesc.oSubpasses = oSubPasses;
+			oDesc.oSubpasses = oSubPasses;*/
 
 			return oDesc;
 		}

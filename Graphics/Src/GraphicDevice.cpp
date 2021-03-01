@@ -1,7 +1,7 @@
 #include "GraphicDevice.h"
 #include <set>
 #include "Globals.h"
-#include "BasicWrapper.h"
+#include "Output.h"
 
 namespace Bta
 {
@@ -142,7 +142,6 @@ namespace Bta
 		{
 			m_iGraphicQueueIndex = -1;
 			m_iPresentQueueIndex = -1;
-			m_pRenderSurface = oDesc.pSurface;
 			int iMaxScore = 0;
 
 			uint32_t iPhysicalDeviceCount = 0;
@@ -158,7 +157,7 @@ namespace Bta
 
 			for (auto& oPhysicalDevice : oDevices)
 			{
-				int iScore = RateDevice(&oPhysicalDevice, oDesc.oExtensions, *(m_pRenderSurface->GetSurface()), m_iGraphicQueueIndex, m_iPresentQueueIndex);
+				int iScore = RateDevice(&oPhysicalDevice, oDesc.oExtensions, *(oDesc.pSurface->GetSurface() ), m_iGraphicQueueIndex, m_iPresentQueueIndex);
 
 				if (iScore > iMaxScore)
 				{

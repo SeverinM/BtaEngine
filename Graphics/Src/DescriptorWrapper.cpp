@@ -3,13 +3,14 @@
 #include <fstream>
 #include "StringUtils.h"
 #include "VectorUtils.h"
-#include "GLM/glm.hpp"
+#include "Globals.h"
+#include "GraphicDevice.h"
 
 namespace Bta
 {
 	namespace Graphic
 	{
-		DescriptorLayoutWrapper::DescriptorLayoutWrapper(std::vector<Bindings>& oBindings, GraphicDevice& oDevice)
+		DescriptorLayoutWrapper::DescriptorLayoutWrapper(std::vector<Bindings>& oBindings)
 		{
 			m_oAllBindings = oBindings;
 			std::vector<VkDescriptorSetLayoutBinding> oDescriptorBindings;
@@ -32,7 +33,7 @@ namespace Bta
 			oLayoutCreateInfo.pBindings = oDescriptorBindings.data();
 
 			m_pLayout = new VkDescriptorSetLayout();
-			if (vkCreateDescriptorSetLayout(*oDevice.GetLogicalDevice(), &oLayoutCreateInfo, nullptr, m_pLayout) != VK_SUCCESS)
+			if (vkCreateDescriptorSetLayout(*Globals::g_pDevice->GetLogicalDevice(), &oLayoutCreateInfo, nullptr, m_pLayout) != VK_SUCCESS)
 			{
 				throw std::runtime_error("Error creating set layout");
 			}
@@ -42,7 +43,7 @@ namespace Bta
 		{
 		}
 
-		DescriptorSetWrapper* DescriptorLayoutWrapper::InstantiateDescriptorSet(DescriptorPool& oPool, GraphicDevice& oDevice)
+		DescriptorSetWrapper* DescriptorLayoutWrapper::InstantiateDescriptorSet(DescriptorPool& oPool)
 		{
 			DescriptorSetWrapper* pDescriptor = new DescriptorSetWrapper();
 			pDescriptor->m_oSet = VkDescriptorSet();
@@ -60,7 +61,6 @@ namespace Bta
 
 			pDescriptor->m_bDelete = false;
 			pDescriptor->m_pPool = &oPool;
-			pDescriptor->m_pDevice = &oDevice;
 			oPool.CreateDescriptorSet(pDescriptor->m_oSet, *m_pLayout);
 
 			return pDescriptor;
@@ -86,7 +86,7 @@ namespace Bta
 			return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 		}
 
-		DescriptorLayoutWrapper* DescriptorLayoutWrapper::ParseShaderFiles(ShaderMap& oMap, GraphicDevice* pDevice)
+		DescriptorLayoutWrapper* DescriptorLayoutWrapper::ParseShaderFiles(ShaderMap& oMap)
 		{
 			std::vector<DescriptorLayoutWrapper::Bindings> oBindings;
 
@@ -120,7 +120,7 @@ namespace Bta
 				}
 			}
 
-			return new DescriptorLayoutWrapper(oBindings, *pDevice);
+			return new DescriptorLayoutWrapper(oBindings);
 		}
 
 		std::unordered_map<int, DescriptorLayoutWrapper::Bindings> DescriptorLayoutWrapper::ParseShaderFile(std::string sFilename)
@@ -206,6 +206,16 @@ namespace Bta
 			return oOutput;
 		}
 
+		DescriptorSetWrapper::MemorySlot* DescriptorSetWrapper::GetSlotWithTag(std::string sTag)
+		{
+			for (MemorySlot& oSlot : m_oSlots)
+			{
+				if (oSlot.sTag == sTag)
+					return &oSlot;
+			}
+			return nullptr;
+		}
+
 		bool DescriptorSetWrapper::FillSlot(int iIndex, Buffer* pBuffer)
 		{
 			if (iIndex < 0 || iIndex >= m_oSlots.size())
@@ -218,12 +228,13 @@ namespace Bta
 			return true;
 		}
 
-		bool DescriptorSetWrapper::FillSlotAtTag(Buffer* pBuffer, std::string sTag)
+		bool DescriptorSetWrapper::FillSlotAtTag(Buffer* pBuffer, std::string sTag, int iOffset)
 		{
 			for (MemorySlot& oSlot : m_oSlots)
 			{
 				if (oSlot.sTag == sTag)
 				{
+					oSlot.iOffset = iOffset;
 					oSlot.pData = pBuffer;
 					return true;
 				}
@@ -231,11 +242,11 @@ namespace Bta
 			return false;
 		}
 
-		void DescriptorSetWrapper::CommitSlots(DescriptorPool* pPool)
+		bool DescriptorSetWrapper::CommitSlots(DescriptorPool* pPool)
 		{
 			if (m_bDelete)
 			{
-				vkFreeDescriptorSets(*m_pDevice->GetLogicalDevice(), pPool->GetPool(), 1, &m_oSet);
+				vkFreeDescriptorSets(*Globals::g_pDevice->GetLogicalDevice(), pPool->GetPool(), 1, &m_oSet);
 				pPool->CreateDescriptorSet(m_oSet, *m_pLayoutFrom);
 			}
 
@@ -243,17 +254,19 @@ namespace Bta
 			{
 				if (oSlot.pData == nullptr)
 				{
-					throw std::runtime_error("A slot was not initialized");
+					return false;
 				}
 			}
 
 			pPool->WriteDescriptor(this);
 			m_bDelete = true;
+
+			return true;
 		}
 
 		DescriptorSetWrapper::~DescriptorSetWrapper()
 		{
-			vkFreeDescriptorSets(*m_pDevice->GetLogicalDevice(), m_pPool->GetPool(), 1, &m_oSet);
+			vkFreeDescriptorSets(*Globals::g_pDevice->GetLogicalDevice(), m_pPool->GetPool(), 1, &m_oSet);
 		}
 	}
 }
