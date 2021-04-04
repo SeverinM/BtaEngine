@@ -21,6 +21,7 @@ namespace Bta
 			TransformComponent() : AbstractComponent(nullptr)
 			{
 				m_vLocalPosition = glm::vec3();
+				m_vLocalScale = glm::vec3(1);
 			};
 
 			glm::vec3 GetWorldScale() const;

@@ -24,7 +24,7 @@ namespace Bta
 				VkSampleCountFlagBits GetSampleCount() { return VK_SAMPLE_COUNT_1_BIT; }
 				RenderPass* GetRenderPass() { return m_pRenderpass; }
 				RenderBatch(RenderBatch::Desc oDesc);
-				VkCommandBuffer GetCommandBuffer(Framebuffer* pBuffer);
+				VkCommandBuffer* GetCommandBuffer(Framebuffer* pBuffer);
 				std::vector<SubRenderBatch*> GetSubBatches() { return m_oSubBatches; }
 
 			private:

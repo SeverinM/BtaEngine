@@ -27,44 +27,6 @@ namespace Bta
 			vkDestroyCommandPool(*Bta::Graphic::Globals::g_pDevice->GetLogicalDevice(), m_oCommandPool, nullptr);
 		}
 
-		VkCommandBuffer CommandFactory::BeginSingleTimeCommands()
-		{
-			VkCommandBufferAllocateInfo oAllocateInfo{};
-			oAllocateInfo.commandPool = m_oCommandPool;
-			oAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-			oAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-			oAllocateInfo.commandBufferCount = 1;
-
-			VkCommandBuffer oCommandBuffer;
-			if (vkAllocateCommandBuffers(*Bta::Graphic::Globals::g_pDevice->GetLogicalDevice(), &oAllocateInfo, &oCommandBuffer) != VK_SUCCESS)
-			{
-				throw std::runtime_error("Error allocating command buffer");
-			}
-
-			VkCommandBufferBeginInfo beginInfo{};
-			beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-			beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-			vkBeginCommandBuffer(oCommandBuffer, &beginInfo);
-
-			return oCommandBuffer;
-		}
-
-		void CommandFactory::EndSingleTimeCommands(VkCommandBuffer& oCommandBuffer)
-		{
-			vkEndCommandBuffer(oCommandBuffer);
-
-			VkSubmitInfo oSubmit{};
-			oSubmit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-			oSubmit.commandBufferCount = 1;
-			oSubmit.pCommandBuffers = &oCommandBuffer;
-
-			vkQueueSubmit(*Bta::Graphic::Globals::g_pDevice->GetGraphicQueue(), 1, &oSubmit, VK_NULL_HANDLE);
-			vkQueueWaitIdle(*Bta::Graphic::Globals::g_pDevice->GetGraphicQueue());
-
-			vkFreeCommandBuffers(*Bta::Graphic::Globals::g_pDevice->GetLogicalDevice(), m_oCommandPool, 1, &oCommandBuffer);
-		}
-
 		VkCommandBuffer* CommandFactory::CreateCommand()
 		{
 			VkCommandBuffer* pCmdBuffer = new VkCommandBuffer();
@@ -81,6 +43,48 @@ namespace Bta
 			}
 
 			return pCmdBuffer;
+		}
+
+		VkCommandBuffer* CommandFactory::BeginSingleTimeCommands()
+		{
+			VkCommandBufferAllocateInfo oAllocateInfo{};
+			oAllocateInfo.commandPool = m_oCommandPool;
+			oAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+			oAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+			oAllocateInfo.commandBufferCount = 1;
+
+			VkCommandBuffer* pCommandBuffer = new VkCommandBuffer();
+			if (vkAllocateCommandBuffers(*Bta::Graphic::Globals::g_pDevice->GetLogicalDevice(), &oAllocateInfo, pCommandBuffer) != VK_SUCCESS)
+			{
+				throw std::runtime_error("Error allocating command buffer");
+			}
+
+			VkCommandBufferBeginInfo beginInfo{};
+			beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+			beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+			vkBeginCommandBuffer(*pCommandBuffer, &beginInfo);
+
+			return pCommandBuffer;
+		}
+
+		void CommandFactory::EndSingleTimeCommands(VkCommandBuffer& oCommandBuffer)
+		{
+			vkEndCommandBuffer(oCommandBuffer);
+
+			VkSubmitInfo oSubmit{};
+			oSubmit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+			oSubmit.commandBufferCount = 1;
+			oSubmit.pCommandBuffers = &oCommandBuffer;
+
+			vkQueueSubmit(*Bta::Graphic::Globals::g_pDevice->GetGraphicQueue(), 1, &oSubmit, VK_NULL_HANDLE);
+			FreeSingleTimeCommand(oCommandBuffer);
+		}
+
+		void CommandFactory::FreeSingleTimeCommand(VkCommandBuffer& oCommandBuffer)
+		{
+			vkQueueWaitIdle(*Bta::Graphic::Globals::g_pDevice->GetGraphicQueue());
+			vkFreeCommandBuffers(*Bta::Graphic::Globals::g_pDevice->GetLogicalDevice(), m_oCommandPool, 1, &oCommandBuffer);
 		}
 
 		VkCommandBuffer CommandFactory::CreateDrawCommand(DrawDesc& oDesc)

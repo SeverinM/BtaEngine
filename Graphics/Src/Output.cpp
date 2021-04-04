@@ -3,6 +3,7 @@
 #include "Globals.h"
 #include "RenderBatch.h"
 #include "Texture.h"
+#include "CommandFactory.h"
 
 namespace Bta
 {
@@ -75,10 +76,12 @@ namespace Bta
 			oSubmit.pWaitDstStageMask = oWaitStages;
 			
 			std::vector<VkCommandBuffer> oCmdsBuffer;
+			std::vector<VkCommandBuffer*> oCmdsToDelete;
 			for ( RenderBatch* pRenderBatch : oBatches )
 			{
-				VkCommandBuffer oBuffer = pRenderBatch->GetCommandBuffer(m_oFramebuffers[iInFlightIndex]);
-				oCmdsBuffer.push_back(oBuffer);
+				VkCommandBuffer* pCommand = pRenderBatch->GetCommandBuffer(m_oFramebuffers[iInFlightIndex]);
+				oCmdsBuffer.push_back(*pCommand);
+				oCmdsToDelete.push_back(pCommand);
 			}
 
 			oSubmit.commandBufferCount = oCmdsBuffer.size();
@@ -89,6 +92,12 @@ namespace Bta
 			//If you remove this line the code will never wait
 			vkResetFences(*Globals::g_pDevice->GetLogicalDevice(), 1, &m_oInFlightFrames[iInFlightIndex]);
 			vkQueueSubmit(*Globals::g_pDevice->GetGraphicQueue(), 1, &oSubmit, m_oInFlightFrames[iInFlightIndex]);
+
+			for (VkCommandBuffer* pCommand : oCmdsToDelete)
+			{
+				Globals::g_pFactory->FreeSingleTimeCommand(*pCommand);
+				delete pCommand;
+			}
 		}
 
 		void Output::GenerateFramebuffers(std::vector<VkFormat> oFormats, RenderBatch* pRender)
@@ -100,7 +109,10 @@ namespace Bta
 			{
 				std::vector<VkImageView> oViews;
 				Framebuffer::Desc oFramebufferDesc;
-				for (int j = 0; j < oFormats.size(); j++)
+
+				oViews.push_back(m_pSwapchain->GetImageViews()[i]);
+
+				for (int j = 1; j < oFormats.size(); j++)
 				{
 					Image::Desc oImgDesc;
 					oImgDesc.bEnableMip = false;

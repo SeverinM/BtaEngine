@@ -73,9 +73,9 @@ namespace Bta
 			init_info.CheckVkResultFn = ImGuiWrapper::CheckError;
 			ImGui_ImplVulkan_Init(&init_info, *m_pRenderpass->GetRenderPass());
 
-			VkCommandBuffer oCommandBuffer = Bta::Graphic::Globals::g_pFactory->BeginSingleTimeCommands();
-			ImGui_ImplVulkan_CreateFontsTexture(oCommandBuffer);
-			Bta::Graphic::Globals::g_pFactory->EndSingleTimeCommands(oCommandBuffer);
+			VkCommandBuffer* pCommandBuffer = Bta::Graphic::Globals::g_pFactory->BeginSingleTimeCommands();
+			ImGui_ImplVulkan_CreateFontsTexture(*pCommandBuffer);
+			Bta::Graphic::Globals::g_pFactory->EndSingleTimeCommands(*pCommandBuffer);
 
 			CommandFactory::Desc oFactoryDesc;
 			oFactoryDesc.bResettable = true;
@@ -92,6 +92,7 @@ namespace Bta
 
 				m_oFramebuffer.push_back(new Framebuffer(oFramebufferDesc));
 			}
+			delete pCommandBuffer;
 		}
 
 		ImGuiWrapper::~ImGuiWrapper()
@@ -127,7 +128,7 @@ namespace Bta
 			Bta::Graphic::Globals::g_pOutput->GetRenderSurface()->GetWindowSize(iWidth, iHeight);
 
 			vkFreeCommandBuffers(*Bta::Graphic::Globals::g_pDevice->GetLogicalDevice(), *m_pFactory->GetCommandPool(), 1, &m_oCommandBuffer[oDesc.iImageIndex]);
-			m_oCommandBuffer[oDesc.iImageIndex] = m_pFactory->BeginSingleTimeCommands();
+			m_oCommandBuffer[oDesc.iImageIndex] = *m_pFactory->BeginSingleTimeCommands();
 
 			VkRenderPassBeginInfo oBegin{};
 			oBegin.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;

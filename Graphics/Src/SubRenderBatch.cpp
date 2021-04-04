@@ -8,6 +8,7 @@
 #include "MeshComponent.h"
 #include <numeric>
 #include "../../Core/Src/TransformComponent.h"
+#include "CameraComponent.h"
 //#include "GLM/glm.hpp"
 
 namespace Bta
@@ -18,6 +19,7 @@ namespace Bta
 		{
 			m_oDesc = oDesc;
 			SetCamera(oDesc.pCamera);
+			m_bEnabled = true;
 		}
 
 		void SubRenderBatch::CreatePipeline(RenderBatch* m_pBatch, int iIndex)
@@ -99,7 +101,7 @@ namespace Bta
 
 		void SubRenderBatch::FillCommandBuffer(VkCommandBuffer& oCommandBuffer)
 		{
-			if (m_bEnabled)
+			if (!m_bEnabled)
 			{
 				return;
 			}
@@ -139,7 +141,7 @@ namespace Bta
 				std::cout << "You should add camera first" << std::endl;
 				return nullptr;
 			}
-				
+			
 			DescriptorSetWrapper* pSetWrapper = m_pPipeline->GetDescriptorSetLayout()->InstantiateDescriptorSet(*Globals::g_pPool);
 			Core::Entity* pOwner = pComponent->GetOwner();
 			MaterialComponent* pMat = new MaterialComponent(pSetWrapper, pOwner);
@@ -155,23 +157,28 @@ namespace Bta
 				{	
 					if (oSlot.sTag == TAG_V)
 					{
-						pMat->AddGPUMemory(m_oCameraV,oSlot.sTag);
+						pMat->AddGPUMemory(*m_pCamera->GetMemoryBindingV() ,oSlot.sTag);
 					}
 					else if ( oSlot.sTag == TAG_P)
 					{
-						pMat->AddGPUMemory(m_oCameraP, oSlot.sTag);
+						pMat->AddGPUMemory(*m_pCamera->GetMemoryBindingP(), oSlot.sTag);
+					}
+					else if (oSlot.sTag == TAG_VP)
+					{
+						m_pCamera->GetMemoryBindingP()->m_iElementSize *= 2;
+						pMat->AddGPUMemory(*m_pCamera->GetMemoryBindingP(), oSlot.sTag);
 					}
 					else
 					{
 						int iSizeAll = oSlot.oElementsSize[0];
-						GPUMemoryBinding oBinding(DescriptorPool::E_BINDING_TYPE::E_STORAGE_BUFFER ? VK_BUFFER_USAGE_STORAGE_BUFFER_BIT : VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-							iSizeAll);
-
+						GPUMemoryBinding oBinding( VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, iSizeAll);
 						pMat->AddGPUMemory(oBinding, oSlot.sTag);
 					}
 				}
 			}
 
+			m_oAllMeshes[pComponent] = pSetWrapper;
+			RefreshModels();
 			return pMat;
 		}
 

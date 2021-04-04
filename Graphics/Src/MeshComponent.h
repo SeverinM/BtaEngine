@@ -36,23 +36,17 @@ namespace Bta
 					m_pGPUVertices(nullptr),
 					m_pGPUIndices(nullptr),
 					m_iAllocatedIndexCount(0),
-					m_iAllocatedVerticeCount(0),
-					m_iTrueIndexCount(0),
-					m_iTrueVerticeCount(0) {};
+					m_iAllocatedVerticeCount(0) {};
 
 				void Init() override
 				{
 					m_iAllocatedVerticeCount = 50;
-					m_iTrueVerticeCount = 0;
-
 					m_iAllocatedIndexCount = 50;
-					m_iTrueIndexCount = 0;
-
 					AllocateGPUMemory(m_iAllocatedIndexCount, m_iAllocatedVerticeCount);
 				}
 				constexpr int GetVerticeSize()
 				{
-					return (sizeof(glm::vec3) + sizeof(glm::vec3) + sizeof(glm::vec2) + sizeof(glm::vec4));
+					return sizeof(glm::vec3) + sizeof(glm::vec3) + sizeof(glm::vec2) + sizeof(glm::vec4);
 				}
 
 				void AddVertice(Vertice oVert, int iIndex);
@@ -70,9 +64,11 @@ namespace Bta
 
 				GPUMemoryBinding* GetVerticeBinding() { return m_pGPUVertices; }
 				GPUMemoryBinding* GetIndexBinding() { return m_pGPUIndices; }
+				void RefreshVerticeBinding(int iIndex = 0);
+				void RefreshIndicesBinding(int iIndex = 0);
 
-				int GetVerticeCount() { return m_iTrueVerticeCount; }
-				int GetIndicesCount() { return m_iTrueIndexCount; }
+				int GetVerticeCount() { return m_oVertices.size(); }
+				int GetIndicesCount() { return m_oIndexes.size(); }
 
 			protected:
 				std::list<Vertice> m_oVertices;
@@ -82,10 +78,7 @@ namespace Bta
 				GPUMemoryBinding* m_pGPUIndices;
 
 				int m_iAllocatedVerticeCount;
-				int m_iTrueVerticeCount;
-
 				int m_iAllocatedIndexCount;
-				int m_iTrueIndexCount;
 		};
 	}
 }

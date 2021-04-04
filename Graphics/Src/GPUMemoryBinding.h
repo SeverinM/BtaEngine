@@ -8,9 +8,8 @@ namespace Bta
 {
 	namespace Graphic
 	{
-		class GPUMemoryBinding
+		struct GPUMemoryBinding
 		{
-			public:
 				GPUMemoryBinding(Buffer* pBuffer, uint64_t iOffset, uint64_t iElementSize)
 					: m_pBuffer(pBuffer), m_iOffset(iOffset), m_iElementSize(iElementSize),m_pData(nullptr), m_bMemoryResponsible(false) {}
 
@@ -100,7 +99,6 @@ namespace Bta
 					m_pBuffer->CopyFromMemory(m_pData, m_iOffset, m_iElementSize);
 				}
 
-			private:
 				Buffer* m_pBuffer;
 				uint64_t m_iOffset;
 				uint64_t m_iElementSize;

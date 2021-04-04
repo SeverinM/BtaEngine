@@ -14,13 +14,14 @@ namespace Bta
 			friend Entity;
 			protected:
 				Entity* m_pOwner;
-
-			public:
-				virtual void Init() = 0;
-				AbstractComponent(Entity* pOwner)
+				bool m_bInit;
+				AbstractComponent(Entity* pOwner) : m_bInit(false)
 				{
 					m_pOwner = pOwner;
 				}
+
+			public:
+				virtual void Init(){}
 
 				Entity* GetOwner()
 				{

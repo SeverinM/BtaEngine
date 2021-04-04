@@ -20,9 +20,10 @@ namespace Bta
 			CommandFactory(Desc oDesc);
 			~CommandFactory();
 
-			VkCommandBuffer BeginSingleTimeCommands();
+			VkCommandBuffer* BeginSingleTimeCommands();
 			void EndSingleTimeCommands(VkCommandBuffer& oCommandBuffer);
 			VkCommandBuffer* CreateCommand();
+			void FreeSingleTimeCommand(VkCommandBuffer& oCommandBuffer);
 
 			struct SubDrawDesc
 			{

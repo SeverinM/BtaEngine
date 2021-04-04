@@ -16,7 +16,6 @@ namespace Bta
 				struct Desc
 				{
 					Desc() : pViewportOverride(nullptr), pScissorOverride(nullptr), eDepthTestMethod(VK_COMPARE_OP_LESS), eCulling(VK_CULL_MODE_NONE), eFillMode(VK_POLYGON_MODE_FILL), eVerticesAssemblyMode(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST), fLineWidth(1.0f) {};
-
 					DescriptorLayoutWrapper* pInputDatas;
 					std::vector<std::string> oShaderFilenames;
 					VkVertexInputBindingDescription oBindingDescription;

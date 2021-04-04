@@ -122,7 +122,7 @@ namespace Bta
 
 		void Image::SendCopyCommand(BasicBuffer* pBuffer)
 		{
-			VkCommandBuffer oCommandBuffer = Bta::Graphic::Globals::g_pFactory->BeginSingleTimeCommands();
+			VkCommandBuffer* pCommandBuffer = Bta::Graphic::Globals::g_pFactory->BeginSingleTimeCommands();
 
 			VkBufferImageCopy oRegion{};
 			oRegion.bufferOffset = 0;
@@ -137,9 +137,10 @@ namespace Bta
 			oRegion.imageOffset = { 0,0,0 };
 			oRegion.imageExtent = { (uint32_t)m_iWidth, (uint32_t)m_iHeight, 1 };
 
-			vkCmdCopyBufferToImage(oCommandBuffer, *pBuffer->GetBuffer(), m_oImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &oRegion);
+			vkCmdCopyBufferToImage(*pCommandBuffer, *pBuffer->GetBuffer(), m_oImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &oRegion);
 
-			Bta::Graphic::Globals::g_pFactory->EndSingleTimeCommands(oCommandBuffer);
+			Bta::Graphic::Globals::g_pFactory->EndSingleTimeCommands(*pCommandBuffer);
+			delete pCommandBuffer;
 		}
 
 		void Image::GenerateMipsInterface(MipDesc& oDesc)
@@ -155,15 +156,15 @@ namespace Bta
 
 		void BasicBuffer::SendCopyCommand(BasicBuffer* pDst, CommandFactory* pFactory)
 		{
-			VkCommandBuffer oCommandBuffer = pFactory->BeginSingleTimeCommands();
+			VkCommandBuffer* pCommandBuffer = pFactory->BeginSingleTimeCommands();
 			VkBufferCopy oCopyRegion{};
 			oCopyRegion.srcOffset = 0;
 			oCopyRegion.dstOffset = 0;
 			oCopyRegion.size = GetTrueMemorySize();
 
-			vkCmdCopyBuffer(oCommandBuffer, *m_pBuffer, *pDst->GetBuffer(), 1, &oCopyRegion);
+			vkCmdCopyBuffer(*pCommandBuffer, *m_pBuffer, *pDst->GetBuffer(), 1, &oCopyRegion);
 
-			pFactory->EndSingleTimeCommands(oCommandBuffer);
+			pFactory->EndSingleTimeCommands(*pCommandBuffer);
 		}
 
 		void BasicBuffer::Reallocate(uint32_t iUnitCount, VkDeviceSize iUnitSize)
@@ -197,7 +198,7 @@ namespace Bta
 
 			vkBindBufferMemory(*Globals::g_pDevice->GetLogicalDevice(), *pBuffer, *pMemory, 0);
 
-			VkCommandBuffer oCommandBuffer = Globals::g_pFactory->BeginSingleTimeCommands();
+			VkCommandBuffer* pCommandBuffer = Globals::g_pFactory->BeginSingleTimeCommands();
 			VkBufferCopy oCopyRegion{};
 			oCopyRegion.srcOffset = 0;
 			oCopyRegion.dstOffset = 0;
@@ -206,8 +207,8 @@ namespace Bta
 			m_iUnitCount = iUnitCount;
 			m_iSizeUnit = iUnitSize;
 
-			vkCmdCopyBuffer(oCommandBuffer, *m_pBuffer, *pBuffer, 1, &oCopyRegion);
-			Globals::g_pFactory->EndSingleTimeCommands(oCommandBuffer);
+			vkCmdCopyBuffer(*pCommandBuffer, *m_pBuffer, *pBuffer, 1, &oCopyRegion);
+			Globals::g_pFactory->EndSingleTimeCommands(*pCommandBuffer);
 
 			vkFreeMemory(*Bta::Graphic::Globals::g_pDevice->GetLogicalDevice(), *m_pMemory, nullptr);
 			vkDestroyBuffer(*Bta::Graphic::Globals::g_pDevice->GetLogicalDevice(), *m_pBuffer, nullptr);
@@ -215,6 +216,7 @@ namespace Bta
 			m_pMemory = pMemory;
 			m_pBuffer = pBuffer;
 			m_iMemorySize = oMemoryRequirements.size;
+			delete* pCommandBuffer;
 
 		}
 
@@ -282,7 +284,7 @@ namespace Bta
 			Image* pCubemap = new Image(oImgDesc);
 			pCubemap->TransitionLayout(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1);
 
-			VkCommandBuffer oCommandBuffer = Bta::Graphic::Globals::g_pFactory->BeginSingleTimeCommands();
+			VkCommandBuffer* pCommandBuffer = Bta::Graphic::Globals::g_pFactory->BeginSingleTimeCommands();
 
 			for (int i = 0; i < 6; i++)
 			{
@@ -301,7 +303,7 @@ namespace Bta
 				oBarrier.subresourceRange.layerCount = 1;
 				oBarrier.subresourceRange.levelCount = 1;
 
-				vkCmdPipelineBarrier(oCommandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &oBarrier);
+				vkCmdPipelineBarrier(*pCommandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &oBarrier);
 
 				VkImageBlit oBlit{};
 				oBlit.srcOffsets[0] = { 0,0,0 };
@@ -318,7 +320,7 @@ namespace Bta
 				oBlit.dstSubresource.baseArrayLayer = i;
 				oBlit.dstSubresource.layerCount = 1;
 
-				vkCmdBlitImage(oCommandBuffer, *oImages[i]->GetImage(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, *pCubemap->GetImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &oBlit, VK_FILTER_LINEAR);
+				vkCmdBlitImage(*pCommandBuffer, *oImages[i]->GetImage(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, *pCubemap->GetImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &oBlit, VK_FILTER_LINEAR);
 
 				VkImageMemoryBarrier oBarrierAfter{};
 				oBarrierAfter.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -335,19 +337,20 @@ namespace Bta
 				oBarrierAfter.subresourceRange.layerCount = 1;
 				oBarrierAfter.subresourceRange.levelCount = 1;
 
-				vkCmdPipelineBarrier(oCommandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &oBarrierAfter);
+				vkCmdPipelineBarrier(*pCommandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &oBarrierAfter);
 			}
 
-			Bta::Graphic::Globals::g_pFactory->EndSingleTimeCommands(oCommandBuffer);
+			Bta::Graphic::Globals::g_pFactory->EndSingleTimeCommands(*pCommandBuffer);
 
 			pCubemap->TransitionLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
+			delete pCommandBuffer;
 
 			return pCubemap;
 		}
 
 		void Image::TransitionLayout(VkImageLayout eOldLayout, VkImageLayout eNewLayout, int iMipLevel)
 		{
-			VkCommandBuffer oCommandBuffer = Bta::Graphic::Globals::g_pFactory->BeginSingleTimeCommands();
+			VkCommandBuffer* pCommandBuffer = Bta::Graphic::Globals::g_pFactory->BeginSingleTimeCommands();
 
 			VkImageMemoryBarrier oBarrier{};
 			oBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -388,9 +391,10 @@ namespace Bta
 			//5th = memory barrier
 			//6th = buffer memory barrier
 			//7th = image memory barrier
-			vkCmdPipelineBarrier(oCommandBuffer, oSourceStage, oDestinationStage, 0, 0, nullptr, 0, nullptr, 1, &oBarrier);
+			vkCmdPipelineBarrier(*pCommandBuffer, oSourceStage, oDestinationStage, 0, 0, nullptr, 0, nullptr, 1, &oBarrier);
 
-			Bta::Graphic::Globals::g_pFactory->EndSingleTimeCommands(oCommandBuffer);
+			Bta::Graphic::Globals::g_pFactory->EndSingleTimeCommands(*pCommandBuffer);
+			delete pCommandBuffer;
 		}
 
 		Image* Image::CreateFromBuffer(FromBufferDesc& oDesc)
@@ -446,7 +450,7 @@ namespace Bta
 				throw std::runtime_error("Texture image does not support linear blit");
 			}
 
-			VkCommandBuffer oCommandBuffer = Bta::Graphic::Globals::g_pFactory->BeginSingleTimeCommands();
+			VkCommandBuffer* pCommandBuffer = Bta::Graphic::Globals::g_pFactory->BeginSingleTimeCommands();
 
 			VkImageMemoryBarrier oBarrier{};
 			oBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -469,7 +473,7 @@ namespace Bta
 				oBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 				oBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
 
-				vkCmdPipelineBarrier(oCommandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &oBarrier);
+				vkCmdPipelineBarrier(*pCommandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &oBarrier);
 
 				VkImageBlit oBlit{};
 				oBlit.srcOffsets[0] = { 0,0,0 };
@@ -485,14 +489,14 @@ namespace Bta
 				oBlit.dstSubresource.baseArrayLayer = 0;
 				oBlit.dstSubresource.layerCount = 1;
 
-				vkCmdBlitImage(oCommandBuffer, m_oImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, m_oImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &oBlit, VK_FILTER_LINEAR);
+				vkCmdBlitImage(*pCommandBuffer, m_oImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, m_oImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &oBlit, VK_FILTER_LINEAR);
 
 				oBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
 				oBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 				oBarrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
 				oBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
-				vkCmdPipelineBarrier(oCommandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &oBarrier);
+				vkCmdPipelineBarrier(*pCommandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &oBarrier);
 
 				if (iMipWidth > 1) iMipWidth /= 2;
 				if (iMipHeight > 1) iMipHeight /= 2;
@@ -504,9 +508,10 @@ namespace Bta
 			oBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 			oBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
-			vkCmdPipelineBarrier(oCommandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &oBarrier);
+			vkCmdPipelineBarrier(*pCommandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &oBarrier);
 
-			Bta::Graphic::Globals::g_pFactory->EndSingleTimeCommands(oCommandBuffer);
+			Bta::Graphic::Globals::g_pFactory->EndSingleTimeCommands(*pCommandBuffer);
+			delete pCommandBuffer;
 		}
 
 		Image::Image(Desc& oDesc)

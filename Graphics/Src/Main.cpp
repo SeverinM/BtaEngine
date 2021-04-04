@@ -8,6 +8,8 @@
 #include <vector>
 #include "CameraComponent.h"
 #include "Texture.h"
+#include "CommandFactory.h"
+#include "MaterialComponent.h"
 
 int main()
 {
@@ -18,18 +20,21 @@ int main()
 
 	Bta::Core::Entity* pEntity = new Bta::Core::Entity(nullptr);
 	Bta::Graphic::MeshComponent oComponent(pEntity);
+	oComponent.AllocateGPUMemory(50,0);
 	pEntity->FindFirstComponent<Bta::Core::TransformComponent>()->SetPosition(glm::vec3(0, 1, 0), false);
 
 	Bta::Graphic::Vertice oVert;
-	oVert.vColor = glm::vec4(0, 0, 0, 1);
+	oVert.vColor = glm::vec4(255.0f, 255.0f, 255.0f, 1);
 	oVert.vNormal = glm::vec3(0, 1, 0);
 	oVert.vUV = glm::vec2(0, 0);
 	oVert.vPosition = glm::vec3(0.2f, 0, -1);
-	oComponent.AddVertice(oVert, -1);
+	oComponent.AddVertice(oVert, 0);
+	oVert.vColor = glm::vec4(2.0f, 205.0f, 155.0f, 1);
 	oVert.vPosition = glm::vec3(-1, -1, 2);
-	oComponent.AddVertice(oVert, -1);
+	oComponent.AddVertice(oVert, 1);
+	oVert.vColor = glm::vec4(2.0f, 5.0f, 125.0f, 1);
 	oVert.vPosition = glm::vec3(-1, 1, -2);
-	oComponent.AddVertice(oVert, -1);
+	oComponent.AddVertice(oVert, 2);
 
 	Bta::Graphic::CameraComponent::Desc oCamDesc;
 	oCamDesc.bEnablePerspective = true;
@@ -60,13 +65,18 @@ int main()
 	oDesc.oSubBatches.push_back(oSubDesc);
 
 	Bta::Graphic::RenderBatch oRenderBatch(oDesc);
-	oRenderBatch.GetSubBatches()[0]->AddMesh(&oComponent);
+	Bta::Graphic::MaterialComponent* pMat = oRenderBatch.GetSubBatches()[0]->AddMesh(&oComponent);
+	pMat->CommitChange();
 
 	Bta::Graphic::Globals::g_pOutput->GenerateFramebuffers({ Bta::Graphic::Globals::g_pOutput->GetSwapchain()->GetFormat(),VK_FORMAT_D32_SFLOAT }, &oRenderBatch);
-	Bta::Graphic::Globals::g_pOutput->RenderOneFrame( { &oRenderBatch });
 
-	int a;
+	while (!glfwWindowShouldClose(Bta::Graphic::Globals::g_pOutput->GetRenderSurface()->GetModifiableWindow()))
+	{
+		glfwPollEvents();
+		Bta::Graphic::Globals::g_pOutput->RenderOneFrame({ &oRenderBatch });
+		Bta::Graphic::Globals::g_pOutput->Present();
+		Bta::Graphic::Globals::g_pOutput->NextFrame();
+	}
 
-	std::cin >> a;
 	return 0;
 }

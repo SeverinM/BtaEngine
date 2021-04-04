@@ -12,6 +12,12 @@ namespace Bta
 			m_fFOVDegrees = oDesc.fFOVDegrees;
 			m_fRatio = oDesc.fRatio;
 			m_bEnablePerspective = oDesc.bEnablePerspective;
+
+			if (!m_bInit)
+			{
+				Init();
+				m_bInit = true;
+			}
 		}
 
 		CameraComponent::~CameraComponent()

@@ -25,6 +25,11 @@ namespace Bta
 					m_pWrapper = pWrapper;
 				}
 
+				void CommitChange()
+				{
+					m_pWrapper->CommitSlots(Globals::g_pPool);
+				}
+
 				void Init() override {};
 
 				void AddTexture(Texture* pText, std::string sName)

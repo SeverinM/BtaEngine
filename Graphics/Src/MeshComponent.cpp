@@ -1,4 +1,5 @@
 #include "MeshComponent.h"
+#include <algorithm>
 
 namespace Bta
 {
@@ -7,9 +8,12 @@ namespace Bta
 
 		void MeshComponent::AddVertice(Vertice oVert, int iIndex)
 		{
-			if (iIndex < 0 || iIndex >= m_oVertices.size())
+			if (iIndex < 0 || iIndex > m_oVertices.size())
 			{
-				iIndex = m_oVertices.size() - 1;
+				iIndex = m_oVertices.size();
+
+				if (iIndex < 0)
+					iIndex = 0;
 			}
 
 			std::list<Vertice>::iterator pItVert = m_oVertices.begin();
@@ -20,23 +24,17 @@ namespace Bta
 
 			m_oVertices.insert(pItVert, oVert);
 
-			m_iTrueVerticeCount++;
 			if (m_pGPUVertices != nullptr)
 			{
 				int iOffset = GetVerticeSize() * iIndex;
-				if (m_iTrueVerticeCount >= m_iAllocatedVerticeCount)
+				if (m_oVertices.size() >= m_iAllocatedVerticeCount)
 				{
 					m_iAllocatedVerticeCount *= 2;
 					BasicBuffer* pBasicBuffer = (BasicBuffer*)m_pGPUVertices->GetBuffer();
 					pBasicBuffer->Reallocate(m_iAllocatedVerticeCount, GetVerticeSize());
 				}
 
-				for (int i = iIndex; i < m_iTrueVerticeCount; i++)
-				{
-					Vertice oVert = *pItVert;
-					m_pGPUVertices->GetBuffer()->CopyFromMemory(&oVert, GetVerticeSize() * i, GetVerticeSize());
-					pItVert++;
-				}
+				RefreshVerticeBinding(std::max(iIndex - 1, 0));
 			}
 		}
 
@@ -54,18 +52,10 @@ namespace Bta
 			}
 
 			m_oVertices.erase(pItVertice);
-			m_iTrueVerticeCount--;
 
 			if (m_pGPUVertices != nullptr)
 			{
-				int iOffset = GetVerticeSize() * iIndex;
-
-				for (int i = iIndex; i < m_iTrueVerticeCount; i++)
-				{
-					Vertice oVert = *pItVertice;
-					m_pGPUVertices->GetBuffer()->CopyFromMemory(&oVert, GetVerticeSize() * i, GetVerticeSize());
-					pItVertice++;
-				}
+				RefreshVerticeBinding(std::max(iIndex - 1, 0));
 			}
 		}
 
@@ -121,23 +111,17 @@ namespace Bta
 
 			m_oIndexes.insert(pItIndex, iValue);
 
-			m_iTrueIndexCount++;
 			if (m_pGPUIndices != nullptr)
 			{
 				int iOffset = sizeof(IndexType) * iIndex;
-				if (m_iTrueIndexCount >= m_iAllocatedIndexCount)
+				if (m_oIndexes.size() >= m_iAllocatedIndexCount)
 				{
 					m_iAllocatedVerticeCount *= 2;
 					BasicBuffer* pBasicBuffer = (BasicBuffer*)m_pGPUIndices->GetBuffer();
 					pBasicBuffer->Reallocate(m_iAllocatedIndexCount, sizeof(IndexType));
 				}
 
-				for (int i = iIndex; i < m_iTrueVerticeCount; i++)
-				{
-					IndexType iValue = *pItIndex;
-					m_pGPUVertices->GetBuffer()->CopyFromMemory(&iValue, sizeof(IndexType) * i, sizeof(IndexType));
-					pItIndex++;
-				}
+				RefreshIndicesBinding(std::max(iIndex - 1, 0));
 			}
 		}
 
@@ -156,15 +140,9 @@ namespace Bta
 
 			m_oIndexes.erase(pItIndex);
 
-			m_iTrueIndexCount--;
 			if (m_pGPUIndices != nullptr)
 			{
-				for (int i = iIndex; i < m_iTrueVerticeCount; i++)
-				{
-					IndexType iValue = *pItIndex;
-					m_pGPUVertices->GetBuffer()->CopyFromMemory(&iValue, sizeof(IndexType) * i, sizeof(IndexType));
-					pItIndex++;
-				}
+				RefreshIndicesBinding(std::max(iIndex - 1, 0));
 			}
 		}
 
@@ -250,6 +228,45 @@ namespace Bta
 
 			m_iAllocatedIndexCount = iIndexCount;
 			m_iAllocatedVerticeCount = iVerticeCount;
+		}
+
+		void MeshComponent::RefreshVerticeBinding(int iIndex /*= 0*/)
+		{
+			uint32_t iOffset = 0;
+			std::list<Vertice>::iterator pIt = m_oVertices.begin();
+
+			for (int i = 0; i < iIndex; i++)
+			{
+				pIt++;
+				iOffset += GetVerticeSize();
+			}
+
+			while (pIt != m_oVertices.end())
+			{
+				Vertice oVert = *pIt;
+				m_pGPUVertices->m_pBuffer->CopyFromMemory(&oVert, iOffset, GetVerticeSize());
+				iOffset += GetVerticeSize();
+				pIt++;
+			}
+		}
+
+		void MeshComponent::RefreshIndicesBinding(int iIndex /*= 0*/)
+		{
+			uint32_t iOffset = 0;
+			std::list<uint32_t>::iterator pIt = m_oIndexes.begin();
+
+			for (int i = 0; i < iIndex; i++)
+			{
+				pIt++;
+			}
+
+			while (pIt != m_oIndexes.end())
+			{
+				uint32_t iValue = *pIt;
+				m_pGPUVertices->m_pBuffer->CopyFromMemory(&iValue, iOffset,sizeof(uint32_t) );
+				iOffset += sizeof(uint32_t);
+				pIt++;
+			}
 		}
 
 	}
