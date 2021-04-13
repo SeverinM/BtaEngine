@@ -43,12 +43,9 @@ namespace Bta
 			private:
 				void FillCommandBuffer(VkCommandBuffer& oBuffer);
 				void CreatePipeline(RenderBatch* m_pBatch, int iIndex);
-				void RefreshModels();
 
 				Pipeline* m_pPipeline;
 				CameraComponent* m_pCamera;
-				GPUMemoryBinding m_oCameraV;
-				GPUMemoryBinding m_oCameraP;
 				SubRenderBatch::Desc m_oDesc;
 				bool m_bEnabled;
 				std::unordered_map<MeshComponent*, DescriptorSetWrapper*> m_oAllMeshes;

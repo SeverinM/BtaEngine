@@ -7,9 +7,8 @@
 #include "MaterialComponent.h"
 #include "MeshComponent.h"
 #include <numeric>
-#include "../../Core/Src/TransformComponent.h"
+#include "TransformComponentGPU.h"
 #include "CameraComponent.h"
-//#include "GLM/glm.hpp"
 
 namespace Bta
 {
@@ -65,38 +64,20 @@ namespace Bta
 
 			oInput.binding = 0;
 			oInput.location = 2;
-			oInput.format = VK_FORMAT_R32G32B32A32_SFLOAT;
-			oInput.offset = sizeof(glm::vec3) * 2;
+			oInput.format = VK_FORMAT_R32G32_SFLOAT;
+			oInput.offset = (sizeof(glm::vec3) * 2);
 			oInputs.push_back(oInput);
 
 			oInput.binding = 0;
 			oInput.location = 3;
-			oInput.format = VK_FORMAT_R32G32_SFLOAT;
-			oInput.offset = (sizeof(glm::vec3) * 2) + sizeof(glm::vec4);
+			oInput.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+			oInput.offset = (sizeof(glm::vec3) * 2) + sizeof(glm::vec2);
 			oInputs.push_back(oInput);
 
 			oDesc.oBindingDescription = oBindingDescription;
 			oDesc.oAttributeDescriptions = oInputs;
 
 			m_pPipeline = new Pipeline(oDesc);
-		}
-
-		void SubRenderBatch::RefreshModels()
-		{
-			for (std::unordered_map<MeshComponent*, DescriptorSetWrapper*>::iterator it = m_oAllMeshes.begin(); it != m_oAllMeshes.end(); it++)
-			{
-				DescriptorSetWrapper::MemorySlot* pSlot = it->second->GetSlotWithTag(TAG_M);
-				if (pSlot == nullptr)
-					return;
-
-				Buffer* pBuffer = pSlot->pData;
-
-				if (pBuffer == nullptr)
-					return;
-
-				glm::mat4x4 mMat = it->first->GetOwner()->FindFirstComponent<Core::TransformComponent>()->GetModelMatrix();
-				pBuffer->CopyFromMemory(&mMat);
-			}
 		}
 
 		void SubRenderBatch::FillCommandBuffer(VkCommandBuffer& oCommandBuffer)
@@ -127,8 +108,8 @@ namespace Bta
 				}
 				else
 				{
-					vkCmdDraw(oCommandBuffer, pMesh->GetIndicesCount(), 1, 0, 0);
-				}
+					vkCmdDraw(oCommandBuffer, pMesh->GetVerticeCount(), 1, 0, 0);
+				};
 
 				pMeshIt++;
 			}
@@ -168,6 +149,10 @@ namespace Bta
 						m_pCamera->GetMemoryBindingP()->m_iElementSize *= 2;
 						pMat->AddGPUMemory(*m_pCamera->GetMemoryBindingP(), oSlot.sTag);
 					}
+					else if (oSlot.sTag == TAG_M)
+					{
+						pMat->AddGPUMemory(*pOwner->FindFirstComponent<TransformComponentGPU>()->GetMemoryBinding(), oSlot.sTag);
+					}
 					else
 					{
 						int iSizeAll = oSlot.oElementsSize[0];
@@ -178,7 +163,6 @@ namespace Bta
 			}
 
 			m_oAllMeshes[pComponent] = pSetWrapper;
-			RefreshModels();
 			return pMat;
 		}
 

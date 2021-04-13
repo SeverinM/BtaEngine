@@ -67,7 +67,6 @@ namespace Bta
 				template<typename Type>
 				void SetValue(Type oValue)
 				{
-					static_assert(sizeof(Type) <= m_iElementSize - m_iOffset, "Incorrect template size");
 					DestroyData<Type>();
 					m_pData = new Type(oValue);
 					m_bMemoryResponsible = true;
@@ -77,7 +76,6 @@ namespace Bta
 				template<typename Type>
 				void SetValue(Type* pValue)
 				{
-					static_assert(sizeof(Type) == m_iElementSize, "Incorrect template size");
 					DestroyData<Type>();
 					m_pData = pValue;
 					m_bMemoryResponsible = false;

@@ -20,7 +20,7 @@ namespace Bta
 				DescriptorSetWrapper* m_pWrapper;
 
 			public:
-				MaterialComponent(DescriptorSetWrapper* pWrapper, Core::Entity* pOwner) : AbstractComponent(pOwner)
+				MaterialComponent(DescriptorSetWrapper* pWrapper, Core::Entity* pOwner)
 				{
 					m_pWrapper = pWrapper;
 				}

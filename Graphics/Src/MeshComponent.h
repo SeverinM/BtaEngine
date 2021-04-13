@@ -28,11 +28,9 @@ namespace Bta
 
 		class MeshComponent : public Core::AbstractComponent
 		{
-			typedef uint32_t IndexType;
-
 			public:
+				typedef uint32_t IndexType;
 				MeshComponent(Core::Entity* pOwner) :
-					AbstractComponent(pOwner),
 					m_pGPUVertices(nullptr),
 					m_pGPUIndices(nullptr),
 					m_iAllocatedIndexCount(0),
@@ -41,8 +39,8 @@ namespace Bta
 				void Init() override
 				{
 					m_iAllocatedVerticeCount = 50;
-					m_iAllocatedIndexCount = 50;
-					AllocateGPUMemory(m_iAllocatedIndexCount, m_iAllocatedVerticeCount);
+					m_iAllocatedIndexCount = 0;
+					AllocateGPUMemory(m_iAllocatedVerticeCount, m_iAllocatedIndexCount);
 				}
 				constexpr int GetVerticeSize()
 				{

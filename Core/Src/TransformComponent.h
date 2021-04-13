@@ -18,7 +18,7 @@ namespace Bta
 
 		public:
 			void Init() override {};
-			TransformComponent() : AbstractComponent(nullptr)
+			TransformComponent()
 			{
 				m_vLocalPosition = glm::vec3();
 				m_vLocalScale = glm::vec3(1);
@@ -28,7 +28,9 @@ namespace Bta
 			glm::vec3 GetWorldPosition() const;
 			glm::quat GetWorldRotation() const;
 			glm::mat4x4 GetModelMatrix() const;
-			void SetPosition(glm::vec3 vNewPosition, bool bRelative);
+			virtual void SetPosition(glm::vec3 vNewPosition, bool bRelative);
+
+			virtual ~TransformComponent() {};
 		};
 	}
 }

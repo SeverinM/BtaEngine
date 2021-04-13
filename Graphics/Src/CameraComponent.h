@@ -32,7 +32,7 @@ namespace Bta
 					bool bEnablePerspective;
 				};
 
-				CameraComponent(CameraComponent::Desc oDesc, Core::Entity* pOwner);
+				CameraComponent(CameraComponent::Desc oDesc);
 				~CameraComponent();
 
 				void Init() override;

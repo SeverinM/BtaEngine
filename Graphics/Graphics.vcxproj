@@ -171,6 +171,7 @@
     <ClCompile Include="Src\Swapchain.cpp" />
     <ClCompile Include="Src\SyncObjects.cpp" />
     <ClCompile Include="Src\Texture.cpp" />
+    <ClCompile Include="Src\TransformComponentGPU.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\imconfig.h" />
@@ -191,6 +192,7 @@
     <ClInclude Include="Src\GPUMemoryBinding.h" />
     <ClInclude Include="Src\GPUMemoryInterface.h" />
     <ClInclude Include="Src\GraphicDevice.h" />
+    <ClInclude Include="Src\GraphicUtils.h" />
     <ClInclude Include="Src\ImGuiWrapper.h" />
     <ClInclude Include="Src\MaterialComponent.h" />
     <ClInclude Include="Src\MeshComponent.h" />
@@ -205,6 +207,7 @@
     <ClInclude Include="Src\Swapchain.h" />
     <ClInclude Include="Src\SyncObjects.h" />
     <ClInclude Include="Src\Texture.h" />
+    <ClInclude Include="Src\TransformComponentGPU.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Core\Core.vcxproj">

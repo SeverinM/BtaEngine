@@ -26,10 +26,10 @@ namespace Bta
 		void Entity::AddExistingComponent(AbstractComponent* pComponent)
 		{
 			m_oComponents.push_back(pComponent);
+			pComponent->m_pOwner = this;
 
 			if ( !pComponent->m_bInit )
 				pComponent->Init();
-			pComponent->m_pOwner = this;
 		}
 
 		template<typename Type>

@@ -1,5 +1,5 @@
 #include "Parser.h"
-#include "../../Core/Src/TransformComponent.h"
+#include "./TransformComponentGPU.h"
 #include "Buffer.h"
 #include "Globals.h"
 #include "RenderBatch.h"
@@ -20,20 +20,22 @@ int main()
 
 	Bta::Core::Entity* pEntity = new Bta::Core::Entity(nullptr);
 	Bta::Graphic::MeshComponent oComponent(pEntity);
-	oComponent.AllocateGPUMemory(50,0);
-	pEntity->FindFirstComponent<Bta::Core::TransformComponent>()->SetPosition(glm::vec3(0, 1, 0), false);
+	Bta::Graphic::TransformComponentGPU oTransformGPU;
+	pEntity->AddExistingComponent(&oComponent);
+	pEntity->AddExistingComponent(&oTransformGPU);
+	pEntity->FindFirstComponent<Bta::Graphic::TransformComponentGPU>()->SetPosition(glm::vec3(0, 1, 0), false);
 
 	Bta::Graphic::Vertice oVert;
-	oVert.vColor = glm::vec4(255.0f, 255.0f, 255.0f, 1);
-	oVert.vNormal = glm::vec3(0, 1, 0);
-	oVert.vUV = glm::vec2(0, 0);
-	oVert.vPosition = glm::vec3(0.2f, 0, -1);
+	oVert.vColor = glm::vec4(0.0f,0.0f, 1, 1);
+	oVert.vNormal = glm::vec3(0.f, 1.f, 0.f);
+	oVert.vUV = glm::vec2(0.f, 0);
+	oVert.vPosition = glm::vec3(0.f, 4.f, 0.f);
 	oComponent.AddVertice(oVert, 0);
-	oVert.vColor = glm::vec4(2.0f, 205.0f, 155.0f, 1);
-	oVert.vPosition = glm::vec3(-1, -1, 2);
+	oVert.vColor = glm::vec4(0.0f, 1, 0.0f, 1);
+	oVert.vPosition = glm::vec3(1,4,0);
 	oComponent.AddVertice(oVert, 1);
-	oVert.vColor = glm::vec4(2.0f, 5.0f, 125.0f, 1);
-	oVert.vPosition = glm::vec3(-1, 1, -2);
+	oVert.vColor = glm::vec4(1, 0.0f, 0.0f, 1);
+	oVert.vPosition = glm::vec3(0,4,1);
 	oComponent.AddVertice(oVert, 2);
 
 	Bta::Graphic::CameraComponent::Desc oCamDesc;
@@ -44,7 +46,8 @@ int main()
 	oCamDesc.fRatio = 1;
 
 	Bta::Core::Entity* pEntityCam = new Bta::Core::Entity(nullptr);
-	Bta::Graphic::CameraComponent oCamComponent(oCamDesc, pEntityCam);
+	Bta::Graphic::CameraComponent oCamComponent(oCamDesc);
+	pEntityCam->AddExistingComponent(&oCamComponent);
 
 	Bta::Graphic::RenderBatch::Desc oDesc;
 	oDesc.iSampleCount = VK_SAMPLE_COUNT_1_BIT;

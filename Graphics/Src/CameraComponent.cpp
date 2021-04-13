@@ -5,19 +5,13 @@ namespace Bta
 {
 	namespace Graphic
 	{
-		CameraComponent::CameraComponent(CameraComponent::Desc oDesc, Core::Entity* pOwner) : AbstractComponent(pOwner), m_pMemoryBindingV(nullptr), m_pMemoryBindingP(nullptr)
+		CameraComponent::CameraComponent(CameraComponent::Desc oDesc) :  m_pMemoryBindingV(nullptr), m_pMemoryBindingP(nullptr)
 		{
 			m_fFarPlane = oDesc.fFarPlane;
 			m_fNearPlane = oDesc.fNearPlane;
 			m_fFOVDegrees = oDesc.fFOVDegrees;
 			m_fRatio = oDesc.fRatio;
 			m_bEnablePerspective = oDesc.bEnablePerspective;
-
-			if (!m_bInit)
-			{
-				Init();
-				m_bInit = true;
-			}
 		}
 
 		CameraComponent::~CameraComponent()

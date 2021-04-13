@@ -20,7 +20,7 @@ namespace Bta
 				VkAttachmentDescription oDescription{};
 				oDescription.format = oDesc.oFramebufferLayout[i];
 				oDescription.samples = oDesc.iSampleCount;
-				oDescription.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+				oDescription.loadOp = i == 1 ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_LOAD;
 				oDescription.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 				oDescription.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 				oDescription.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -91,7 +91,7 @@ namespace Bta
 			if ((Framebuffer::E_DEPTH & pFramebuffer->GetAttachmentFlags()) != 0)
 			{
 				VkClearValue oClearDepth;
-				oClearDepth.depthStencil = { 1.0f, 0 };
+				oClearDepth.depthStencil = { 1.0f, 1 };
 				oClear.push_back(oClearDepth);
 			}
 
