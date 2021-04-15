@@ -216,8 +216,6 @@ namespace Bta
 			m_pMemory = pMemory;
 			m_pBuffer = pBuffer;
 			m_iMemorySize = oMemoryRequirements.size;
-			delete* pCommandBuffer;
-
 		}
 
 		Image* Image::CreateFromFile(std::string sFilename, FromFileDesc& oDesc)

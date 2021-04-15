@@ -180,7 +180,7 @@ namespace Bta
 			if (m_pGPUIndices != nullptr)
 			{
 				IndexType iValue = *pItIndex;
-				m_pGPUVertices->GetBuffer()->CopyFromMemory(&iValue, sizeof(IndexType) * iIndex, sizeof(IndexType));
+				m_pGPUIndices->GetBuffer()->CopyFromMemory(&iValue, sizeof(IndexType) * iIndex, sizeof(IndexType));
 			}
 		}
 
@@ -206,13 +206,11 @@ namespace Bta
 		{
 			if ( m_pGPUVertices != nullptr )
 			{
-				delete m_pGPUVertices->GetBuffer();
 				delete m_pGPUVertices;
 			}
 
 			if ( m_pGPUIndices != nullptr )
 			{
-				delete m_pGPUIndices->GetBuffer();
 				delete m_pGPUIndices;
 			}
 
@@ -228,6 +226,8 @@ namespace Bta
 
 			m_iAllocatedIndexCount = iIndexCount;
 			m_iAllocatedVerticeCount = iVerticeCount;
+			m_oVertices.resize(iVerticeCount);
+			m_oIndexes.resize(iIndexCount);
 		}
 
 		void MeshComponent::RefreshVerticeBinding(int iIndex /*= 0*/)

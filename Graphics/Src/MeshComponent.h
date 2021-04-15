@@ -38,9 +38,7 @@ namespace Bta
 
 				void Init() override
 				{
-					m_iAllocatedVerticeCount = 50;
-					m_iAllocatedIndexCount = 0;
-					AllocateGPUMemory(m_iAllocatedVerticeCount, m_iAllocatedIndexCount);
+					AllocateGPUMemory(50, 0);
 				}
 				constexpr int GetVerticeSize()
 				{

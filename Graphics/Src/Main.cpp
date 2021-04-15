@@ -10,6 +10,7 @@
 #include "Texture.h"
 #include "CommandFactory.h"
 #include "MaterialComponent.h"
+#include "GraphicUtils.h"
 
 int main()
 {
@@ -19,24 +20,25 @@ int main()
 	pParser->InitGlobals();
 
 	Bta::Core::Entity* pEntity = new Bta::Core::Entity(nullptr);
-	Bta::Graphic::MeshComponent oComponent(pEntity);
+	Bta::Graphic::MeshComponent oMeshComponent(pEntity);
 	Bta::Graphic::TransformComponentGPU oTransformGPU;
-	pEntity->AddExistingComponent(&oComponent);
+	pEntity->AddExistingComponent(&oMeshComponent);
 	pEntity->AddExistingComponent(&oTransformGPU);
-	pEntity->FindFirstComponent<Bta::Graphic::TransformComponentGPU>()->SetPosition(glm::vec3(0, 1, 0), false);
+	pEntity->FindFirstComponent<Bta::Graphic::TransformComponentGPU>()->SetPosition(glm::vec3(0.5f, 2, -0.5f), false);
 
-	Bta::Graphic::Vertice oVert;
-	oVert.vColor = glm::vec4(0.0f,0.0f, 1, 1);
-	oVert.vNormal = glm::vec3(0.f, 1.f, 0.f);
-	oVert.vUV = glm::vec2(0.f, 0);
-	oVert.vPosition = glm::vec3(0.f, 4.f, 0.f);
-	oComponent.AddVertice(oVert, 0);
-	oVert.vColor = glm::vec4(0.0f, 1, 0.0f, 1);
-	oVert.vPosition = glm::vec3(1,4,0);
-	oComponent.AddVertice(oVert, 1);
-	oVert.vColor = glm::vec4(1, 0.0f, 0.0f, 1);
-	oVert.vPosition = glm::vec3(0,4,1);
-	oComponent.AddVertice(oVert, 2);
+	Bta::Graphic::GraphicUtils::OutputMesh oBox = Bta::Graphic::GraphicUtils::CreateBox();
+	oMeshComponent.AllocateGPUMemory(oBox.vertices.size(), oBox.indices.size());
+
+	for (int i = 0; i < oBox.vertices.size(); i++)
+	{
+		oBox.vertices[i].vColor = glm::vec4( (rand() % 255) / (float)255, (rand() % 255) / (float)255, (rand() % 255) / (float)255 , 1.0f);
+		oMeshComponent.SetVertice(oBox.vertices[i], i);
+	}
+
+	for (int i = 0; i < oBox.indices.size(); i++)
+	{
+		oMeshComponent.SetIndex(oBox.indices[i], i);
+	}
 
 	Bta::Graphic::CameraComponent::Desc oCamDesc;
 	oCamDesc.bEnablePerspective = true;
@@ -68,7 +70,7 @@ int main()
 	oDesc.oSubBatches.push_back(oSubDesc);
 
 	Bta::Graphic::RenderBatch oRenderBatch(oDesc);
-	Bta::Graphic::MaterialComponent* pMat = oRenderBatch.GetSubBatches()[0]->AddMesh(&oComponent);
+	Bta::Graphic::MaterialComponent* pMat = oRenderBatch.GetSubBatches()[0]->AddMesh(&oMeshComponent);
 	pMat->CommitChange();
 
 	Bta::Graphic::Globals::g_pOutput->GenerateFramebuffers({ Bta::Graphic::Globals::g_pOutput->GetSwapchain()->GetFormat(),VK_FORMAT_D32_SFLOAT }, &oRenderBatch);
