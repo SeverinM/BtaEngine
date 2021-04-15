@@ -13,7 +13,7 @@ namespace Bta
 		{
 		protected:
 			glm::vec3 m_vLocalPosition;
-			glm::quat m_vLocalRotation;
+			glm::vec3 m_vLocalRotation;
 			glm::vec3 m_vLocalScale;
 
 		public:
@@ -22,6 +22,7 @@ namespace Bta
 			{
 				m_vLocalPosition = glm::vec3();
 				m_vLocalScale = glm::vec3(1);
+				m_vLocalRotation = glm::vec3();
 			};
 
 			glm::vec3 GetWorldScale() const;
@@ -29,6 +30,7 @@ namespace Bta
 			glm::quat GetWorldRotation() const;
 			glm::mat4x4 GetModelMatrix() const;
 			virtual void SetPosition(glm::vec3 vNewPosition, bool bRelative);
+			virtual void SetRotation(glm::vec3 vNewRotation, bool bRelative);
 
 			virtual ~TransformComponent() {};
 		};

@@ -78,6 +78,43 @@ int main()
 	while (!glfwWindowShouldClose(Bta::Graphic::Globals::g_pOutput->GetRenderSurface()->GetModifiableWindow()))
 	{
 		glfwPollEvents();
+
+		int state = glfwGetKey(Bta::Graphic::Globals::g_pOutput->GetRenderSurface()->GetModifiableWindow(), GLFW_KEY_UP);
+		if (state == GLFW_PRESS)
+		{
+			pEntity->FindFirstComponent<Bta::Graphic::TransformComponentGPU>()->SetPosition(glm::vec3(0, 0.001f, 0), true);
+		}
+
+		state = glfwGetKey(Bta::Graphic::Globals::g_pOutput->GetRenderSurface()->GetModifiableWindow(), GLFW_KEY_DOWN);
+		if (state == GLFW_PRESS)
+		{
+			pEntity->FindFirstComponent<Bta::Graphic::TransformComponentGPU>()->SetPosition(glm::vec3(0, -0.001f, 0), true);
+		}
+
+		state = glfwGetKey(Bta::Graphic::Globals::g_pOutput->GetRenderSurface()->GetModifiableWindow(), GLFW_KEY_LEFT);
+		if (state == GLFW_PRESS)
+		{
+			pEntity->FindFirstComponent<Bta::Graphic::TransformComponentGPU>()->SetPosition(glm::vec3(-0.001f, 0, 0), true);
+		}
+
+		state = glfwGetKey(Bta::Graphic::Globals::g_pOutput->GetRenderSurface()->GetModifiableWindow(), GLFW_KEY_RIGHT);
+		if (state == GLFW_PRESS)
+		{
+			pEntity->FindFirstComponent<Bta::Graphic::TransformComponentGPU>()->SetPosition(glm::vec3(0.001f, 0, 0), true);
+		}
+
+		state = glfwGetKey(Bta::Graphic::Globals::g_pOutput->GetRenderSurface()->GetModifiableWindow(), GLFW_KEY_RIGHT);
+		if (state == GLFW_PRESS)
+		{
+			pEntity->FindFirstComponent<Bta::Graphic::TransformComponentGPU>()->SetPosition(glm::vec3(0.001f, 0, 0), true);
+		}
+
+		state = glfwGetKey(Bta::Graphic::Globals::g_pOutput->GetRenderSurface()->GetModifiableWindow(), GLFW_KEY_SPACE);
+		if (state == GLFW_PRESS)
+		{
+			pEntity->FindFirstComponent<Bta::Graphic::TransformComponentGPU>()->SetRotation(glm::vec3(0.001f, 0, 0), true);
+		}
+
 		Bta::Graphic::Globals::g_pOutput->RenderOneFrame({ &oRenderBatch });
 		Bta::Graphic::Globals::g_pOutput->Present();
 		Bta::Graphic::Globals::g_pOutput->NextFrame();

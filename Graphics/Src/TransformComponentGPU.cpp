@@ -9,5 +9,11 @@ namespace Bta
 			m_pTransformComponent->SetPosition(vPosition, bRelative);
 			m_pModelMatrix->SetValue<glm::mat4x4>(m_pTransformComponent->GetModelMatrix());
 		}
+
+		void TransformComponentGPU::SetRotation(glm::vec3 vRotation, bool bRelative)
+		{
+			m_pTransformComponent->SetRotation(vRotation, bRelative);
+			m_pModelMatrix->SetValue<glm::mat4x4>(m_pTransformComponent->GetModelMatrix());
+		}
 	}
 }

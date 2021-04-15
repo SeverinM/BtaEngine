@@ -46,8 +46,10 @@ namespace Bta
 		{
 			glm::mat4x4 mOutput = glm::mat4x4(1.0f);
 			mOutput = glm::scale(mOutput, GetWorldScale());
-			//mOutput *= GetWorldRotation();
 			mOutput = glm::translate(mOutput, GetWorldPosition());
+			mOutput = glm::rotate(mOutput, m_vLocalRotation.x, glm::vec3(1, 0, 0));
+			mOutput = glm::rotate(mOutput, m_vLocalRotation.y, glm::vec3(0, 1, 0));
+			mOutput = glm::rotate(mOutput, m_vLocalRotation.z, glm::vec3(0, 0, 1));
 			return mOutput;
 		}
 
@@ -58,5 +60,14 @@ namespace Bta
 			else
 				m_vLocalPosition = vNewPosition;
 		}
+
+		void TransformComponent::SetRotation(glm::vec3 vNewRotation, bool bRelative)
+		{
+			if (bRelative)
+				m_vLocalRotation += vNewRotation;
+			else
+				m_vLocalPosition = vNewRotation;
+		}
+
 	}
 }
