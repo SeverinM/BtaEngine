@@ -4,6 +4,7 @@
 #include "imgui_impl_vulkan.h"
 #include "imgui_impl_glfw.h"
 #include "Framebuffer.h"
+#include <functional>
 
 namespace Bta
 {
@@ -15,8 +16,8 @@ namespace Bta
 
 		class ImGuiWrapper
 		{
-			typedef void(*ImGuiRenderCallBack)(void* pData);
 			public:
+				typedef std::function<void(void*)> ImGuiRenderCallBack;
 				struct Desc
 				{
 					int iImageIndex;
@@ -26,6 +27,7 @@ namespace Bta
 				~ImGuiWrapper();
 				VkCommandBuffer* GetDrawCommand(Desc& oDesc);
 				void Recreate(Desc& oDesc, int iMinImage);
+				void SetCallback(ImGuiRenderCallBack pCallback) { m_pCallback = pCallback; }
 				static void CheckError(VkResult eResult);
 				inline CommandFactory* GetFactory() { return m_pFactory; }
 

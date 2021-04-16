@@ -79,6 +79,7 @@ int main()
 	Bta::Graphic::Globals::g_pOutput->GenerateFramebuffers({ Bta::Graphic::Globals::g_pOutput->GetSwapchain()->GetFormat(),VK_FORMAT_D32_SFLOAT }, &oRenderBatch);
 
 	Bta::Graphic::ImGuiWrapper::Desc oImDesc;
+	oImDesc.pCallback = [&](void* pData) { ImGui::Text("Sample text"); };
 	Bta::Graphic::Globals::g_pImGui = new Bta::Graphic::ImGuiWrapper(oImDesc);
 
 	while (!glfwWindowShouldClose(Bta::Graphic::Globals::g_pOutput->GetRenderSurface()->GetModifiableWindow()))
