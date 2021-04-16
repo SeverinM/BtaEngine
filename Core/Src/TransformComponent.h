@@ -27,7 +27,7 @@ namespace Bta
 
 			glm::vec3 GetWorldScale() const;
 			glm::vec3 GetWorldPosition() const;
-			glm::quat GetWorldRotation() const;
+			glm::vec3 GetWorldRotation() const;
 			glm::mat4x4 GetModelMatrix() const;
 			virtual void SetPosition(glm::vec3 vNewPosition, bool bRelative);
 			virtual void SetRotation(glm::vec3 vNewRotation, bool bRelative);

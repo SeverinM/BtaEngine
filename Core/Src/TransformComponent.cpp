@@ -29,17 +29,17 @@ namespace Bta
 			return vPosition;
 		}
 
-		glm::quat TransformComponent::GetWorldRotation() const
+		glm::vec3 TransformComponent::GetWorldRotation() const
 		{
-			glm::quat mOutput = glm::quat();
+			glm::vec3 vOutput = m_vLocalRotation;
 
 			const Entity* pParent = m_pOwner->GetParent();
 			if (pParent == nullptr)
-				return m_vLocalPosition;
+				return m_vLocalRotation;
 
 			const TransformComponent* pParentTransform = pParent->FindFirstComponent<TransformComponent>();
-			mOutput *= pParentTransform->GetWorldRotation();
-			return mOutput;
+			vOutput += pParentTransform->GetWorldRotation();
+			return vOutput;
 		}
 
 		glm::mat4x4 TransformComponent::GetModelMatrix() const
@@ -47,9 +47,11 @@ namespace Bta
 			glm::mat4x4 mOutput = glm::mat4x4(1.0f);
 			mOutput = glm::scale(mOutput, GetWorldScale());
 			mOutput = glm::translate(mOutput, GetWorldPosition());
-			mOutput = glm::rotate(mOutput, m_vLocalRotation.x, glm::vec3(1, 0, 0));
-			mOutput = glm::rotate(mOutput, m_vLocalRotation.y, glm::vec3(0, 1, 0));
-			mOutput = glm::rotate(mOutput, m_vLocalRotation.z, glm::vec3(0, 0, 1));
+
+			glm::vec3 vRotation = GetWorldRotation();
+			mOutput = glm::rotate(mOutput, vRotation.x, glm::vec3(1, 0, 0));
+			mOutput = glm::rotate(mOutput, vRotation.y, glm::vec3(0, 1, 0));
+			mOutput = glm::rotate(mOutput, vRotation.z, glm::vec3(0, 0, 1));
 			return mOutput;
 		}
 
