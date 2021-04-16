@@ -4,6 +4,7 @@
 #include "RenderBatch.h"
 #include "Texture.h"
 #include "CommandFactory.h"
+#include "ImGuiWrapper.h"
 
 namespace Bta
 {
@@ -59,7 +60,7 @@ namespace Bta
 			VkResult eResult = vkQueuePresentKHR(*Globals::g_pDevice->GetPresentQueue(), &oPresentInfo);
 		}
 
-		void Output::RenderOneFrame(std::vector<RenderBatch*> oBatches)
+		void Output::RenderOneFrame(std::vector<RenderBatch*> oBatches, bool bIncludeImGui)
 		{
 			int iInFlightIndex = m_iCurrentFrame % m_iMaxInFlightFrames;
 
@@ -82,6 +83,14 @@ namespace Bta
 				VkCommandBuffer* pCommand = pRenderBatch->GetCommandBuffer(m_oFramebuffers[iInFlightIndex]);
 				oCmdsBuffer.push_back(*pCommand);
 				oCmdsToDelete.push_back(pCommand);
+			}
+
+			if (bIncludeImGui)
+			{
+				ImGuiWrapper::Desc oImDesc;
+				oImDesc.iImageIndex = iInFlightIndex;
+				VkCommandBuffer* pCommand = Bta::Graphic::Globals::g_pImGui->GetDrawCommand(oImDesc);
+				oCmdsBuffer.push_back(*pCommand);
 			}
 
 			oSubmit.commandBufferCount = oCmdsBuffer.size();

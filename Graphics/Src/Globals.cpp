@@ -1,5 +1,6 @@
 #include "Globals.h"
 #include "Output.h"
+#include "ImGuiWrapper.h"
 
 namespace Bta
 {
@@ -11,5 +12,6 @@ namespace Bta
 		DescriptorPool* Globals::g_pPool(nullptr);
 		CommandFactory* Globals::g_pFactory(nullptr);
 		Output* Globals::g_pOutput(nullptr);
+		ImGuiWrapper* Globals::g_pImGui(nullptr);
 	}
 }

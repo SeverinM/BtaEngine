@@ -11,7 +11,7 @@ namespace Bta
 	{
 		ImGuiWrapper::ImGuiWrapper(Desc& oDesc)
 		{
-			m_pCallback = oDesc.pCallback;
+			//m_pCallback = oDesc.pCallback;
 
 			m_oCommandBuffer.resize(Globals::g_pOutput->GetSwapchain()->GetImageViews().size());
 
@@ -44,8 +44,6 @@ namespace Bta
 			oPassDesc.oDescriptions = { oAttachmentDescription };
 
 			m_pRenderpass = new RenderPass( oPassDesc );
-
-
 
 			// Setup Dear ImGui context
 			IMGUI_CHECKVERSION();
@@ -118,9 +116,9 @@ namespace Bta
 			ImGui_ImplVulkan_NewFrame();
 			ImGui_ImplGlfw_NewFrame();
 			ImGui::NewFrame();
-			//TODO
 			
 			ImGui::Begin("Bta Debug");
+			ImGui::End();
 
 			ImGui::Render();
 

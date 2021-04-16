@@ -28,7 +28,7 @@ namespace Bta
 
 				void NextFrame();
 				void Present();
-				void RenderOneFrame(std::vector<RenderBatch*> oBatches);
+				void RenderOneFrame(std::vector<RenderBatch*> oBatches, bool bIncludeImGui = false );
 				void GenerateFramebuffers(std::vector<VkFormat> oFormats, RenderBatch* pRender);
 
 			protected:

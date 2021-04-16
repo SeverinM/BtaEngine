@@ -12,6 +12,7 @@ namespace Bta
 		class Camera;
 		class CommandFactory;
 		class Output;
+		class ImGuiWrapper;
 
 		struct Globals
 		{
@@ -21,6 +22,7 @@ namespace Bta
 			static DescriptorPool* g_pPool;
 			static Output* g_pOutput;
 			static CommandFactory* g_pFactory;
+			static ImGuiWrapper* g_pImGui;
 		};
 
 		static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback

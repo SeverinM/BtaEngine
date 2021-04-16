@@ -11,6 +11,7 @@
 #include "CommandFactory.h"
 #include "MaterialComponent.h"
 #include "GraphicUtils.h"
+#include "ImGuiWrapper.h"
 
 int main()
 {
@@ -55,7 +56,7 @@ int main()
 
 	Bta::Graphic::RenderBatch::Desc oDesc;
 	oDesc.iSampleCount = VK_SAMPLE_COUNT_1_BIT;
-	oDesc.bPresentable = true;
+	oDesc.bPresentable = false;
 	oDesc.oFramebufferLayout = { Bta::Graphic::Globals::g_pOutput->GetSwapchain()->GetFormat(), VK_FORMAT_D32_SFLOAT };
 	
 	Bta::Graphic::SubRenderBatch::Desc oSubDesc;
@@ -76,6 +77,9 @@ int main()
 	pMat->CommitChange();
 
 	Bta::Graphic::Globals::g_pOutput->GenerateFramebuffers({ Bta::Graphic::Globals::g_pOutput->GetSwapchain()->GetFormat(),VK_FORMAT_D32_SFLOAT }, &oRenderBatch);
+
+	Bta::Graphic::ImGuiWrapper::Desc oImDesc;
+	Bta::Graphic::Globals::g_pImGui = new Bta::Graphic::ImGuiWrapper(oImDesc);
 
 	while (!glfwWindowShouldClose(Bta::Graphic::Globals::g_pOutput->GetRenderSurface()->GetModifiableWindow()))
 	{
@@ -117,7 +121,7 @@ int main()
 			pEntityCam->FindFirstComponent<Bta::Graphic::TransformComponentGPU>()->SetRotation(glm::vec3(0, 0.001f, 0), true);
 		}
 
-		Bta::Graphic::Globals::g_pOutput->RenderOneFrame({ &oRenderBatch });
+		Bta::Graphic::Globals::g_pOutput->RenderOneFrame({ &oRenderBatch }, true);
 		Bta::Graphic::Globals::g_pOutput->Present();
 		Bta::Graphic::Globals::g_pOutput->NextFrame();
 	}
