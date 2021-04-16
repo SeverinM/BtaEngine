@@ -49,7 +49,9 @@ int main()
 
 	Bta::Core::Entity* pEntityCam = new Bta::Core::Entity(nullptr);
 	Bta::Graphic::CameraComponent oCamComponent(oCamDesc);
+	Bta::Graphic::TransformComponentGPU oGPUCam;
 	pEntityCam->AddExistingComponent(&oCamComponent);
+	pEntityCam->AddExistingComponent(&oGPUCam);
 
 	Bta::Graphic::RenderBatch::Desc oDesc;
 	oDesc.iSampleCount = VK_SAMPLE_COUNT_1_BIT;
@@ -107,6 +109,12 @@ int main()
 		if (state == GLFW_PRESS)
 		{
 			pEntity->FindFirstComponent<Bta::Graphic::TransformComponentGPU>()->SetRotation(glm::vec3(0.001f, 0, 0), true);
+		}
+
+		state = glfwGetKey(Bta::Graphic::Globals::g_pOutput->GetRenderSurface()->GetModifiableWindow(), GLFW_KEY_O);
+		if (state == GLFW_PRESS)
+		{
+			pEntityCam->FindFirstComponent<Bta::Graphic::TransformComponentGPU>()->SetRotation(glm::vec3(0, 0.001f, 0), true);
 		}
 
 		Bta::Graphic::Globals::g_pOutput->RenderOneFrame({ &oRenderBatch });

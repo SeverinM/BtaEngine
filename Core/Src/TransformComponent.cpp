@@ -55,6 +55,11 @@ namespace Bta
 			return mOutput;
 		}
 
+		glm::vec3 TransformComponent::GetForward()
+		{
+			return glm::quat(GetWorldRotation()) * glm::vec3(0, 0, 1);
+		}
+
 		void TransformComponent::SetPosition(glm::vec3 vNewPosition, bool bRelative)
 		{
 			if (bRelative)
