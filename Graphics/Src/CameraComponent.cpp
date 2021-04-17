@@ -43,7 +43,7 @@ namespace Bta
 		glm::mat4x4 CameraComponent::GetViewMatrix()
 		{
 			Core::TransformComponent* pTransform = m_pOwner->FindFirstComponent<Core::TransformComponent>();
-			return glm::lookAt(pTransform->GetWorldPosition(), pTransform->GetForward() + pTransform->GetWorldPosition(), glm::vec3(0, 1, 0));
+			return glm::lookAt(pTransform->GetWorldPosition(), pTransform->GetLocalDirection(glm::vec3(0,0,1))  + pTransform->GetWorldPosition(), glm::vec3(0, 1, 0));
 		}
 
 		glm::mat4x4 CameraComponent::GetProjectionMatrix()

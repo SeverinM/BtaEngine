@@ -5,6 +5,12 @@ namespace Bta
 {
 	namespace Core
 	{
+		glm::vec3 TransformComponent::GetLocalDirection(glm::vec3 vWorldDirection)
+		{
+			glm::vec4 vInput = glm::vec4(vWorldDirection.x,vWorldDirection.y,vWorldDirection.z,0) * glm::mat4_cast(m_vLocalQuat);
+			return glm::vec3(vInput.x, vInput.y, vInput.z);
+		}
+
 		glm::vec3 TransformComponent::GetWorldScale() const
 		{
 			glm::vec3 vScale = m_vLocalScale;
@@ -29,17 +35,9 @@ namespace Bta
 			return vPosition;
 		}
 
-		glm::vec3 TransformComponent::GetWorldRotation() const
+		glm::quat TransformComponent::GetWorldRotation() const
 		{
-			glm::vec3 vOutput = m_vLocalRotation;
-
-			const Entity* pParent = m_pOwner->GetParent();
-			if (pParent == nullptr)
-				return m_vLocalRotation;
-
-			const TransformComponent* pParentTransform = pParent->FindFirstComponent<TransformComponent>();
-			vOutput += pParentTransform->GetWorldRotation();
-			return vOutput;
+			return m_vLocalQuat;
 		}
 
 		glm::mat4x4 TransformComponent::GetModelMatrix() const
@@ -47,17 +45,8 @@ namespace Bta
 			glm::mat4x4 mOutput = glm::mat4x4(1.0f);
 			mOutput = glm::scale(mOutput, GetWorldScale());
 			mOutput = glm::translate(mOutput, GetWorldPosition());
-
-			glm::vec3 vRotation = GetWorldRotation();
-			mOutput = glm::rotate(mOutput, vRotation.x, glm::vec3(1, 0, 0));
-			mOutput = glm::rotate(mOutput, vRotation.y, glm::vec3(0, 1, 0));
-			mOutput = glm::rotate(mOutput, vRotation.z, glm::vec3(0, 0, 1));
+			mOutput *= glm::mat4_cast(GetWorldRotation());
 			return mOutput;
-		}
-
-		glm::vec3 TransformComponent::GetForward()
-		{
-			return glm::quat(GetWorldRotation()) * glm::vec3(0, 0, 1);
 		}
 
 		void TransformComponent::SetPosition(glm::vec3 vNewPosition, bool bRelative)
@@ -68,13 +57,12 @@ namespace Bta
 				m_vLocalPosition = vNewPosition;
 		}
 
-		void TransformComponent::SetRotation(glm::vec3 vNewRotation, bool bRelative)
+		void TransformComponent::SetRotation(glm::vec3 angleAxis, float value, bool bRelative)
 		{
 			if (bRelative)
-				m_vLocalRotation += vNewRotation;
+				m_vLocalQuat *= glm::angleAxis(value, angleAxis);
 			else
-				m_vLocalPosition = vNewRotation;
+				m_vLocalQuat = glm::angleAxis(value, angleAxis);
 		}
-
 	}
 }

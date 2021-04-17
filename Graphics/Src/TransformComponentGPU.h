@@ -27,7 +27,7 @@ namespace Bta
 				}
 
 				void SetPosition(glm::vec3 vPosition, bool bRelative);
-				void SetRotation(glm::vec3 vRotation, bool bRelative);
+				void SetRotation(glm::vec3 vAngleAxis, float fValue, bool bRelative);
 
 				GPUMemoryBinding* GetMemoryBinding() { return m_pModelMatrix; }
 
