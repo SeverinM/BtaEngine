@@ -26,8 +26,7 @@ namespace Bta
 					m_pModelMatrix->SetValue<glm::mat4x4>(m_pTransformComponent->GetModelMatrix());
 				}
 
-				void SetPosition(glm::vec3 vPosition, bool bRelative);
-				void SetRotation(glm::vec3 vAngleAxis, float fValue, bool bRelative, bool bWorldAxis);
+				void RefreshGPUMemory();
 
 				GPUMemoryBinding* GetMemoryBinding() { return m_pModelMatrix; }
 

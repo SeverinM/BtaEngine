@@ -33,6 +33,7 @@ namespace Bta
 			glm::mat4x4 GetModelMatrix() const;
 			virtual void SetPosition(glm::vec3 vNewPosition, bool bRelative);
 			virtual void SetRotation(glm::vec3 angleAxis, float value, bool bRelative, bool bWorldAxis);
+			virtual void SetForward(glm::vec3 vDirection);
 
 			virtual ~TransformComponent() {};
 		};

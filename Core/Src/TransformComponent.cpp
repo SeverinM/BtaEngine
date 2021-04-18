@@ -1,5 +1,7 @@
 #include "TransformComponent.h"
 #include "GLM/gtx/rotate_normalized_axis.hpp"
+#include "GLM/gtx/projection.hpp"
+#include <cmath>
 
 namespace Bta
 {
@@ -67,6 +69,18 @@ namespace Bta
 			}
 			else
 				m_vLocalQuat = glm::angleAxis(value, angleAxis);
+		}
+
+		void TransformComponent::SetForward(glm::vec3 vDirection)
+		{
+			//We only use x and y angle to reach ( 0,0,1 )
+			float fDotY = glm::dot(vDirection, glm::vec3(0,0,1));
+			float fAngleY = std::acos(fDotY);
+			vDirection = glm::proj(glm::vec3(0, 0, 1), glm::vec3(0, 1, 0));
+			float fDotX = glm::dot(vDirection, glm::vec3(0, 0, 1));
+			float fAngleX = std::acos(fDotX);
+
+			m_vLocalQuat = glm::quat(glm::vec3(fAngleX, fAngleY, 0));
 		}
 	}
 }
