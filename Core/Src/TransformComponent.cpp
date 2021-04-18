@@ -1,6 +1,7 @@
 #include "TransformComponent.h"
 #include "GLM/gtx/rotate_normalized_axis.hpp"
 #include "GLM/gtx/projection.hpp"
+#include "GLM/gtx/vector_angle.hpp"
 #include <cmath>
 
 namespace Bta
@@ -10,7 +11,7 @@ namespace Bta
 		glm::vec3 TransformComponent::GetLocalDirection(glm::vec3 vWorldDirection)
 		{
 			glm::vec4 vInput = glm::mat4_cast(m_vLocalQuat) * glm::vec4(vWorldDirection.x,vWorldDirection.y,vWorldDirection.z,0);
-			return glm::vec3(vInput.x, vInput.y, vInput.z);
+			return glm::vec3(vInput.x, -vInput.y, vInput.z);
 		}
 
 		glm::vec3 TransformComponent::GetWorldScale() const
@@ -73,12 +74,10 @@ namespace Bta
 
 		void TransformComponent::SetForward(glm::vec3 vDirection)
 		{
-			//We only use x and y angle to reach ( 0,0,1 )
-			float fDotY = glm::dot(vDirection, glm::vec3(0,0,1));
-			float fAngleY = std::acos(fDotY);
-			vDirection = glm::proj(glm::vec3(0, 0, 1), glm::vec3(0, 1, 0));
-			float fDotX = glm::dot(vDirection, glm::vec3(0, 0, 1));
-			float fAngleX = std::acos(fDotX);
+			glm::vec3 vProjX = glm::proj(vDirection, glm::vec3(0, 0, 1));
+			vProjX.y = vDirection.y;
+			float fAngleY = glm::angle(vDirection, vProjX);
+			float fAngleX = glm::angle(vProjX, glm::vec3(0, 0, 1));
 
 			m_vLocalQuat = glm::quat(glm::vec3(fAngleX, fAngleY, 0));
 		}

@@ -11,8 +11,10 @@ namespace Bta
 	{
 		ImGuiWrapper::ImGuiWrapper(Desc& oDesc)
 		{
-			if ( m_pCallback != nullptr)
+			if (oDesc.pCallback != nullptr)
 				m_pCallback = oDesc.pCallback;
+			else
+				m_pCallback = [](void* pData) {};
 
 			m_oCommandBuffer.resize(Globals::g_pOutput->GetSwapchain()->GetImageViews().size());
 
@@ -120,7 +122,7 @@ namespace Bta
 			
 			ImGui::Begin("Bta Debug");
 
-			m_pCallback = [](void* pData) {};
+			m_pCallback(nullptr);
 
 			ImGui::End();
 

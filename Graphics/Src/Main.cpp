@@ -25,7 +25,7 @@ int main()
 	Bta::Graphic::TransformComponentGPU oTransformGPU;
 	pEntity->AddExistingComponent(&oMeshComponent);
 	pEntity->AddExistingComponent(&oTransformGPU);
-	pEntity->FindFirstComponent<Bta::Core::TransformComponent>()->SetPosition(glm::vec3(0.5f, -0.5f, 2), false);
+	pEntity->FindFirstComponent<Bta::Core::TransformComponent>()->SetPosition(glm::vec3(0, 0, 5), false);
 	pEntity->FindFirstComponent < Bta::Graphic::TransformComponentGPU>()->RefreshGPUMemory();
 
 	Bta::Graphic::GraphicUtils::OutputMesh oBox = Bta::Graphic::GraphicUtils::CreateBox();
@@ -132,11 +132,7 @@ int main()
 		state = glfwGetKey(Bta::Graphic::Globals::g_pOutput->GetRenderSurface()->GetModifiableWindow(), GLFW_KEY_P);
 		if (state == GLFW_PRESS)
 		{
-			pEntity->FindFirstComponent<Bta::Core::TransformComponent>()->SetForward(glm::normalize(glm::vec3(1, 1, 1)));
-
-			glm::vec3 vLocalDirection = pEntity->FindFirstComponent<Bta::Core::TransformComponent>()->GetLocalDirection(glm::vec3(0, 0, 1));
-			std::cout << vLocalDirection.x << " / " << vLocalDirection.y << " / " << vLocalDirection.z << std::endl;
-
+			pEntity->FindFirstComponent<Bta::Core::TransformComponent>()->SetForward(glm::normalize(glm::vec3(0, 1, 1)));
 			pEntity->FindFirstComponent < Bta::Graphic::TransformComponentGPU>()->RefreshGPUMemory();
 		}
 
