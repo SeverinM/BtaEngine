@@ -15,9 +15,9 @@ namespace Bta
 				pCamComponent->RefreshGPUBindingV();
 		}
 
-		void TransformComponentGPU::SetRotation(glm::vec3 vAngleAxis, float fValue, bool bRelative)
+		void TransformComponentGPU::SetRotation(glm::vec3 vAngleAxis, float fValue, bool bRelative, bool bWorldAxis)
 		{
-			m_pTransformComponent->SetRotation(vAngleAxis,fValue,bRelative);
+			m_pTransformComponent->SetRotation(vAngleAxis,fValue,bRelative, bWorldAxis);
 			m_pModelMatrix->SetValue<glm::mat4x4>(m_pTransformComponent->GetModelMatrix());
 
 			CameraComponent* pCamComponent = m_pOwner->FindFirstComponent<CameraComponent>();

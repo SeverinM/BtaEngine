@@ -113,13 +113,13 @@ int main()
 		state = glfwGetKey(Bta::Graphic::Globals::g_pOutput->GetRenderSurface()->GetModifiableWindow(), GLFW_KEY_SPACE);
 		if (state == GLFW_PRESS)
 		{
-			pEntity->FindFirstComponent<Bta::Graphic::TransformComponentGPU>()->SetRotation(glm::vec3(1, 0, 0), 0.001f, true);
+			pEntity->FindFirstComponent<Bta::Graphic::TransformComponentGPU>()->SetRotation(glm::vec3(1, 0, 0), 0.001f, true, false);
 		}
 
 		state = glfwGetKey(Bta::Graphic::Globals::g_pOutput->GetRenderSurface()->GetModifiableWindow(), GLFW_KEY_O);
 		if (state == GLFW_PRESS)
 		{
-			pEntity->FindFirstComponent<Bta::Graphic::TransformComponentGPU>()->SetRotation(glm::vec3(0,1,0), 0.001f, true);
+			pEntity->FindFirstComponent<Bta::Graphic::TransformComponentGPU>()->SetRotation(glm::vec3(0,1,0), 0.001f, true, true);
 		}
 
 		Bta::Graphic::Globals::g_pOutput->RenderOneFrame({ &oRenderBatch }, true);

@@ -1,5 +1,5 @@
 #include "TransformComponent.h"
-
+#include "GLM/gtx/rotate_normalized_axis.hpp"
 
 namespace Bta
 {
@@ -7,7 +7,7 @@ namespace Bta
 	{
 		glm::vec3 TransformComponent::GetLocalDirection(glm::vec3 vWorldDirection)
 		{
-			glm::vec4 vInput = glm::vec4(vWorldDirection.x,vWorldDirection.y,vWorldDirection.z,0) * glm::mat4_cast(m_vLocalQuat);
+			glm::vec4 vInput = glm::mat4_cast(m_vLocalQuat) * glm::vec4(vWorldDirection.x,vWorldDirection.y,vWorldDirection.z,0);
 			return glm::vec3(vInput.x, vInput.y, vInput.z);
 		}
 
@@ -42,11 +42,10 @@ namespace Bta
 
 		glm::mat4x4 TransformComponent::GetModelMatrix() const
 		{
-			glm::mat4x4 mOutput = glm::mat4x4(1.0f);
-			mOutput = glm::scale(mOutput, GetWorldScale());
-			mOutput = glm::translate(mOutput, GetWorldPosition());
-			mOutput *= glm::mat4_cast(GetWorldRotation());
-			return mOutput;
+			glm::mat4 vTranslate = glm::translate(glm::mat4(1.0), GetWorldPosition());
+			glm::mat4 vRotate = glm::mat4_cast(GetWorldRotation());
+			glm::mat4 vScale = glm::scale(glm::mat4(1.0), GetWorldScale());
+			return vTranslate * vRotate * vScale;
 		}
 
 		void TransformComponent::SetPosition(glm::vec3 vNewPosition, bool bRelative)
@@ -57,10 +56,15 @@ namespace Bta
 				m_vLocalPosition = vNewPosition;
 		}
 
-		void TransformComponent::SetRotation(glm::vec3 angleAxis, float value, bool bRelative)
+		void TransformComponent::SetRotation(glm::vec3 angleAxis, float value, bool bRelative, bool bWorldAxis)
 		{
 			if (bRelative)
-				m_vLocalQuat *= glm::angleAxis(value, angleAxis);
+			{
+				if (bWorldAxis)
+					m_vLocalQuat = glm::angleAxis(value, angleAxis) * m_vLocalQuat;
+				else
+					m_vLocalQuat = m_vLocalQuat * glm::angleAxis(value, angleAxis);
+			}
 			else
 				m_vLocalQuat = glm::angleAxis(value, angleAxis);
 		}

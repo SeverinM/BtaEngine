@@ -23,6 +23,7 @@ namespace Bta
 				m_vLocalPosition = glm::vec3();
 				m_vLocalScale = glm::vec3(1);
 				m_vLocalQuat = glm::angleAxis(0.0f, glm::vec3(0, 0, 1));
+				m_vLocalQuat = glm::normalize(m_vLocalQuat);
 			};
 
 			glm::vec3 GetLocalDirection(glm::vec3 vWorldDirection);
@@ -31,7 +32,7 @@ namespace Bta
 			glm::quat GetWorldRotation() const;
 			glm::mat4x4 GetModelMatrix() const;
 			virtual void SetPosition(glm::vec3 vNewPosition, bool bRelative);
-			virtual void SetRotation(glm::vec3 angleAxis, float value, bool bRelative);
+			virtual void SetRotation(glm::vec3 angleAxis, float value, bool bRelative, bool bWorldAxis);
 
 			virtual ~TransformComponent() {};
 		};
