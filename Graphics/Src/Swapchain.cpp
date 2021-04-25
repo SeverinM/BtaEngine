@@ -143,6 +143,12 @@ namespace Bta
 			}
 			m_oViews.clear();
 
+			for (VkImage& oImage : m_oImages)
+			{
+				vkDestroyImage(*Bta::Graphic::Globals::g_pDevice->GetLogicalDevice(), oImage, nullptr);
+			}
+			m_oImages.clear();
+
 			vkDestroySwapchainKHR(*Bta::Graphic::Globals::g_pDevice->GetLogicalDevice(), m_oSwapchain, nullptr);
 		}
 

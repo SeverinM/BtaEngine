@@ -86,8 +86,7 @@ namespace Bta
 			{
 				return;
 			}
-
-			vkCmdBindPipeline(oCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, *m_pPipeline->GetPipeline());
+			vkCmdBindPipeline(oCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pPipeline->m_oPipeline);
 			std::unordered_map<MeshComponent*, DescriptorSetWrapper*>::iterator pMeshIt = m_oAllMeshes.begin();
 
 			while (pMeshIt != m_oAllMeshes.end())
@@ -97,14 +96,14 @@ namespace Bta
 				vkCmdBindDescriptorSets(oCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, *m_pPipeline->GetPipelineLayout(), 0, 1, pMat->GetDescriptorSet(), 0, nullptr);
 
 				VkDeviceSize oOffsets[] = { 0 };
-				BasicBuffer* pBasicBuffer = (BasicBuffer*)pMesh->GetVerticeBinding()->GetBuffer();
-				vkCmdBindVertexBuffers(oCommandBuffer, 0, 1, pBasicBuffer->GetBuffer(), oOffsets);
+				std::shared_ptr<BasicBuffer> xBasicBuffer = std::dynamic_pointer_cast<BasicBuffer>(pMesh->GetVerticeBinding()->GetBuffer());
+				vkCmdBindVertexBuffers(oCommandBuffer, 0, 1, xBasicBuffer->GetBuffer(), oOffsets);
 
 				if (pMesh->GetIndexBinding() != nullptr)
 				{
-					BasicBuffer* pBasicIndiceBuffer = (BasicBuffer*)pMesh->GetIndexBinding()->GetBuffer();
-					vkCmdBindIndexBuffer(oCommandBuffer, *pBasicIndiceBuffer->GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
-					vkCmdDrawIndexed(oCommandBuffer, pMesh->GetIndicesCount() , 1, 0, 0, 0);
+					std::shared_ptr<BasicBuffer> xBasicIndiceBuffer = std::dynamic_pointer_cast<BasicBuffer>(pMesh->GetIndexBinding()->GetBuffer());
+					vkCmdBindIndexBuffer(oCommandBuffer, *xBasicIndiceBuffer->GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
+					vkCmdDrawIndexed(oCommandBuffer, pMesh->GetIndicesCount(), 1, 0, 0, 0);
 				}
 				else
 				{

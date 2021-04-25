@@ -21,25 +21,25 @@ int main()
 	pParser->InitGlobals();
 
 	Bta::Core::Entity* pEntity = new Bta::Core::Entity(nullptr);
-	Bta::Graphic::MeshComponent oMeshComponent(pEntity);
-	Bta::Graphic::TransformComponentGPU oTransformGPU;
-	pEntity->AddExistingComponent(&oMeshComponent);
-	pEntity->AddExistingComponent(&oTransformGPU);
+	Bta::Graphic::MeshComponent* pMeshComponent = new Bta::Graphic::MeshComponent(pEntity);
+	Bta::Graphic::TransformComponentGPU* pTransformGPU = new Bta::Graphic::TransformComponentGPU();
+	pEntity->AddExistingComponent(pMeshComponent);
+	pEntity->AddExistingComponent(pTransformGPU);
 	pEntity->FindFirstComponent<Bta::Core::TransformComponent>()->SetPosition(glm::vec3(0, 0, 5), false);
 	pEntity->FindFirstComponent < Bta::Graphic::TransformComponentGPU>()->RefreshGPUMemory();
 
 	Bta::Graphic::GraphicUtils::OutputMesh oBox = Bta::Graphic::GraphicUtils::CreateBox();
-	oMeshComponent.AllocateGPUMemory(oBox.vertices.size(), oBox.indices.size());
+	pMeshComponent->AllocateGPUMemory(oBox.vertices.size(), oBox.indices.size());
 
 	for (int i = 0; i < oBox.vertices.size(); i++)
 	{
 		oBox.vertices[i].vColor = glm::vec4( (rand() % 255) / (float)255, (rand() % 255) / (float)255, (rand() % 255) / (float)255 , 1.0f);
-		oMeshComponent.SetVertice(oBox.vertices[i], i);
+		pMeshComponent->SetVertice(oBox.vertices[i], i);
 	}
 
 	for (int i = 0; i < oBox.indices.size(); i++)
 	{
-		oMeshComponent.SetIndex(oBox.indices[i], i);
+		pMeshComponent->SetIndex(oBox.indices[i], i);
 	}
 
 	Bta::Graphic::CameraComponent::Desc oCamDesc;
@@ -50,10 +50,10 @@ int main()
 	oCamDesc.fRatio = 1;
 
 	Bta::Core::Entity* pEntityCam = new Bta::Core::Entity(nullptr);
-	Bta::Graphic::CameraComponent oCamComponent(oCamDesc);
-	Bta::Graphic::TransformComponentGPU oGPUCam;
-	pEntityCam->AddExistingComponent(&oCamComponent);
-	pEntityCam->AddExistingComponent(&oGPUCam);
+	Bta::Graphic::CameraComponent* pCamComponent = new Bta::Graphic::CameraComponent(oCamDesc);
+	Bta::Graphic::TransformComponentGPU* pGPUCam = new Bta::Graphic::TransformComponentGPU();
+	pEntityCam->AddExistingComponent(pCamComponent);
+	pEntityCam->AddExistingComponent(pGPUCam);
 	Bta::Core::TransformComponent* pTransCam = pEntityCam->FindFirstComponent<Bta::Core::TransformComponent>();
 
 	Bta::Graphic::RenderBatch::Desc oDesc;
@@ -70,12 +70,12 @@ int main()
 	oSubDesc.eVerticesAssemblyMode = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 	oSubDesc.oCompiledShaderFiles = { "./Shader/vert.spv", "./Shader/frag.spv" };
 	oSubDesc.oShaderFiles = { "./Shader/Src/vs.vert", "./Shader/Src/fs.frag" };
-	oSubDesc.pCamera = &oCamComponent;
+	oSubDesc.pCamera = pCamComponent;
 	
 	oDesc.oSubBatches.push_back(oSubDesc);
 
 	Bta::Graphic::RenderBatch oRenderBatch(oDesc);
-	Bta::Graphic::MaterialComponent* pMat = oRenderBatch.GetSubBatches()[0]->AddMesh(&oMeshComponent);
+	Bta::Graphic::MaterialComponent* pMat = oRenderBatch.GetSubBatches()[0]->AddMesh(pMeshComponent);
 	pMat->CommitChange();
 
 	Bta::Graphic::Globals::g_pOutput->GenerateFramebuffers({ Bta::Graphic::Globals::g_pOutput->GetSwapchain()->GetFormat(),VK_FORMAT_D32_SFLOAT }, &oRenderBatch);
@@ -139,12 +139,26 @@ int main()
 		fYPos = fNewY;
 
 		if (bDirty)
-			oGPUCam.RefreshGPUMemory();
+			pGPUCam->RefreshGPUMemory();
 
-		Bta::Graphic::Globals::g_pOutput->RenderOneFrame({ &oRenderBatch }, true);
-		Bta::Graphic::Globals::g_pOutput->Present();
-		Bta::Graphic::Globals::g_pOutput->NextFrame();
+		bool bIsOk = Bta::Graphic::Globals::g_pOutput->RenderOneFrame({ &oRenderBatch }, true);
+
+		if (bIsOk)
+		{
+			Bta::Graphic::Globals::g_pOutput->Present();
+			Bta::Graphic::Globals::g_pOutput->NextFrame();
+		}
+		else
+		{
+			Bta::Graphic::Globals::g_pOutput->Recreate();
+			/*Bta::Graphic::Globals::g_pOutput->GenerateFramebuffers({ Bta::Graphic::Globals::g_pOutput->GetSwapchain()->GetFormat(),VK_FORMAT_D32_SFLOAT }, &oRenderBatch);
+			oRenderBatch.Recreate();
+			Bta::Graphic::Globals::g_pImGui->Recreate();*/
+		}
 	}
+
+	delete pEntity;
+	delete pEntityCam;
 
 	return 0;
 }

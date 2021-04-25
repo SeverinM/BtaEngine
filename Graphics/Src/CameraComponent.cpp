@@ -18,13 +18,11 @@ namespace Bta
 		{
 			if (m_pMemoryBindingV != nullptr)
 			{
-				delete m_pMemoryBindingV->GetBuffer();
 				delete m_pMemoryBindingV;
 			}
 
 			if (m_pMemoryBindingP != nullptr)
 			{
-				delete m_pMemoryBindingP->GetBuffer();
 				delete m_pMemoryBindingP;
 			}
 		}

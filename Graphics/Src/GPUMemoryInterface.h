@@ -4,6 +4,7 @@
 #include "Buffer.h"
 #include <list>
 #include <utility>
+#include <memory>
 
 namespace Bta
 {
@@ -14,13 +15,12 @@ namespace Bta
 			private:
 				static GPUMemory* s_pGpu;
 				GPUMemory() {};
-				std::list<Buffer*> m_oGPUDatas;
+				std::list< std::shared_ptr<Buffer>> m_oGPUDatas;
 
 			public:
 				static GPUMemory* GetInstance();
-				BasicBuffer* AllocateMemory(BasicBuffer::Desc oDesc);
-				Image* AllocateMemory(Image::Desc oDesc);
-				void FreeMemory(Buffer* pBuffer);
+				std::shared_ptr<BasicBuffer> AllocateMemory(BasicBuffer::Desc oDesc);
+				std::shared_ptr<Image> AllocateMemory(Image::Desc oDesc);
 		};
 	}
 }

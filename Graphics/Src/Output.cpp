@@ -12,6 +12,8 @@ namespace Bta
 	{
 		Output::Output(Desc oDesc) : m_iCurrentFrame(0)
 		{
+			m_bNeedResize = false;
+			m_oRecreateDesc = oDesc;
 			m_pSwapchain = new Swapchain(oDesc.oSwapDesc);
 			m_pSurface = oDesc.pRenderSurface;
 			m_iMaxInFlightFrames = m_pSwapchain->GetImageViews().size();
@@ -26,6 +28,8 @@ namespace Bta
 			m_oImageAcquiredSemaphore.resize(m_iMaxInFlightFrames);
 			m_oRenderFinishedSemaphore.resize(m_iMaxInFlightFrames);
 			m_oInFlightFrames.resize(m_iMaxInFlightFrames);
+
+			glfwSetFramebufferSizeCallback(m_pSurface->GetWindow(), OnResizeWindow);
 
 			for (int i = 0; i < m_iMaxInFlightFrames; i++)
 			{
@@ -44,29 +48,46 @@ namespace Bta
 			m_iCurrentFrame = (m_iCurrentFrame + 1) % m_pSwapchain->GetImageViews().size();
 		}
 
+		void Output::Recreate()
+		{
+			vkDeviceWaitIdle(*Globals::g_pDevice->GetLogicalDevice());
+			delete m_pSwapchain;
+			for (Framebuffer* pFramebuffer : m_oFramebuffers)
+			{
+				delete pFramebuffer;
+			}
+			m_oFramebuffers.clear();
+			m_pSwapchain = new Swapchain(m_oRecreateDesc.oSwapDesc);
+		}
+
 		void Output::Present()
 		{
-			const uint32_t iCurrentFrame = m_iCurrentFrame;
-
 			VkPresentInfoKHR oPresentInfo{};
 			oPresentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 			oPresentInfo.swapchainCount = 1;
 			oPresentInfo.pSwapchains = m_pSwapchain->GetSwapchain();
-			oPresentInfo.pImageIndices = &iCurrentFrame;
+			oPresentInfo.pImageIndices = &m_iCurrentFrame;
 			oPresentInfo.pResults = nullptr;
 			oPresentInfo.waitSemaphoreCount = 1;
-			oPresentInfo.pWaitSemaphores = &m_oRenderFinishedSemaphore[iCurrentFrame];
+			oPresentInfo.pWaitSemaphores = &m_oRenderFinishedSemaphore[m_iCurrentFrame];
 			
 			VkResult eResult = vkQueuePresentKHR(*Globals::g_pDevice->GetPresentQueue(), &oPresentInfo);
 		}
 
-		void Output::RenderOneFrame(std::vector<RenderBatch*> oBatches, bool bIncludeImGui)
+		bool Output::RenderOneFrame(std::vector<RenderBatch*> oBatches, bool bIncludeImGui)
 		{
+			if (m_bNeedResize)
+			{
+				m_bNeedResize = false;
+				return false;
+			}
+
 			int iInFlightIndex = m_iCurrentFrame % m_iMaxInFlightFrames;
 
 			vkWaitForFences(*Globals::g_pDevice->GetLogicalDevice(), 1, &m_oInFlightFrames[iInFlightIndex], VK_TRUE, UINT64_MAX);
 
 			uint32_t iReturnedImageIndex = 0;
+
 			VkResult eAcquireResult = vkAcquireNextImageKHR(*Globals::g_pDevice->GetLogicalDevice(), *m_pSwapchain->GetSwapchain(), UINT64_MAX, m_oImageAcquiredSemaphore[m_iCurrentFrame], VK_NULL_HANDLE, &iReturnedImageIndex);
 
 			VkSubmitInfo oSubmit{};
@@ -80,17 +101,16 @@ namespace Bta
 			std::vector<VkCommandBuffer*> oCmdsToDelete;
 			for ( RenderBatch* pRenderBatch : oBatches )
 			{
-				VkCommandBuffer* pCommand = pRenderBatch->GetCommandBuffer(m_oFramebuffers[iInFlightIndex]);
-				oCmdsBuffer.push_back(*pCommand);
-				oCmdsToDelete.push_back(pCommand);
+				VkCommandBuffer oCommand = pRenderBatch->GetCommandBuffer(m_oFramebuffers[iInFlightIndex]);
+				oCmdsBuffer.push_back(oCommand);
+				oCmdsToDelete.push_back(&oCommand);
 			}
 
 			if (bIncludeImGui)
 			{
 				ImGuiWrapper::Desc oImDesc;
 				oImDesc.iImageIndex = iInFlightIndex;
-				VkCommandBuffer* pCommand = Bta::Graphic::Globals::g_pImGui->GetDrawCommand(oImDesc);
-				oCmdsBuffer.push_back(*pCommand);
+				oCmdsBuffer.push_back(Bta::Graphic::Globals::g_pImGui->GetDrawCommand(oImDesc));
 			}
 
 			oSubmit.commandBufferCount = oCmdsBuffer.size();
@@ -105,8 +125,16 @@ namespace Bta
 			for (VkCommandBuffer* pCommand : oCmdsToDelete)
 			{
 				Globals::g_pFactory->FreeSingleTimeCommand(*pCommand);
-				delete pCommand;
 			}
+
+			if (bIncludeImGui)
+			{
+				Bta::Graphic::Globals::g_pImGui->GetFactory()->FreeSingleTimeCommand(oCmdsBuffer[oCmdsBuffer.size() - 1]);
+			}
+			oCmdsBuffer.clear();
+			oCmdsToDelete.clear();
+
+			return true;
 		}
 
 		void Output::GenerateFramebuffers(std::vector<VkFormat> oFormats, RenderBatch* pRender)
@@ -137,13 +165,17 @@ namespace Bta
 					Texture oText(oImgDesc, nullptr);
 					
 					oViews.push_back(*oText.GetImage()->GetImageView());
-					//TODO : keep ref
 				}		
 				
 				oFramebufferDesc.pImageView = &oViews;
 				oFramebufferDesc.pRenderPass = pRender->GetRenderPass();
 				m_oFramebuffers.push_back(new Framebuffer(oFramebufferDesc));
 			}
+		}
+
+		void Output::OnResizeWindow(GLFWwindow* pWindow, int iWidth, int iHeight)
+		{
+			Globals::g_pOutput->m_bNeedResize = true;
 		}
 
 	}

@@ -37,6 +37,7 @@ namespace Bta
 
 			public:
 				Entity(Entity* pParent);
+				~Entity();
 				void AddChild(Entity* m_pChildEntity);
 				void AddExistingComponent(AbstractComponent* pComponent);
 

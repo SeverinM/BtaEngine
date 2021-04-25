@@ -25,17 +25,17 @@ namespace Bta
 				};
 				ImGuiWrapper(Desc& oDesc);
 				~ImGuiWrapper();
-				VkCommandBuffer* GetDrawCommand(Desc& oDesc);
-				void Recreate(Desc& oDesc, int iMinImage);
+				VkCommandBuffer GetDrawCommand(Desc& oDesc);
+				void Recreate();
 				void SetCallback(ImGuiRenderCallBack pCallback) { m_pCallback = pCallback; }
 				static void CheckError(VkResult eResult);
 				inline CommandFactory* GetFactory() { return m_pFactory; }
 
 			protected:
+				Desc m_oRecreateDesc;
 				RenderPass* m_pRenderpass;
 				CommandFactory* m_pFactory;
 				std::vector<Framebuffer*> m_oFramebuffer;
-				std::vector<VkCommandBuffer> m_oCommandBuffer;
 				ImGuiRenderCallBack m_pCallback;
 		};
 	}

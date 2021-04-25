@@ -30,8 +30,8 @@ namespace Bta
 				if (m_oVertices.size() >= m_iAllocatedVerticeCount)
 				{
 					m_iAllocatedVerticeCount *= 2;
-					BasicBuffer* pBasicBuffer = (BasicBuffer*)m_pGPUVertices->GetBuffer();
-					pBasicBuffer->Reallocate(m_iAllocatedVerticeCount, GetVerticeSize());
+					std::shared_ptr<BasicBuffer> xBasicBuffer = std::dynamic_pointer_cast<BasicBuffer>(m_pGPUVertices->GetBuffer());
+					xBasicBuffer->Reallocate(m_iAllocatedVerticeCount, GetVerticeSize());
 				}
 
 				RefreshVerticeBinding(std::max(iIndex - 1, 0));
@@ -117,8 +117,8 @@ namespace Bta
 				if (m_oIndexes.size() >= m_iAllocatedIndexCount)
 				{
 					m_iAllocatedVerticeCount *= 2;
-					BasicBuffer* pBasicBuffer = (BasicBuffer*)m_pGPUIndices->GetBuffer();
-					pBasicBuffer->Reallocate(m_iAllocatedIndexCount, sizeof(IndexType));
+					std::shared_ptr<BasicBuffer> xBasicBuffer = std::dynamic_pointer_cast<BasicBuffer>(m_pGPUIndices->GetBuffer());
+					xBasicBuffer->Reallocate(m_iAllocatedIndexCount, sizeof(IndexType));
 				}
 
 				RefreshIndicesBinding(std::max(iIndex - 1, 0));
@@ -190,14 +190,12 @@ namespace Bta
 			{
 				if (m_pGPUVertices != nullptr)
 				{
-					delete m_pGPUVertices->GetBuffer();
 					delete m_pGPUVertices;
 				}
 			}
 			
 			if (m_pGPUIndices != nullptr)
 			{
-				delete m_pGPUIndices->GetBuffer();
 				delete m_pGPUIndices;
 			}			
 		}
@@ -244,7 +242,7 @@ namespace Bta
 			while (pIt != m_oVertices.end())
 			{
 				Vertice oVert = *pIt;
-				m_pGPUVertices->m_pBuffer->CopyFromMemory(&oVert, iOffset, GetVerticeSize());
+				m_pGPUVertices->m_xBuffer->CopyFromMemory(&oVert, iOffset, GetVerticeSize());
 				iOffset += GetVerticeSize();
 				pIt++;
 			}
@@ -263,7 +261,7 @@ namespace Bta
 			while (pIt != m_oIndexes.end())
 			{
 				uint32_t iValue = *pIt;
-				m_pGPUVertices->m_pBuffer->CopyFromMemory(&iValue, iOffset,sizeof(uint32_t) );
+				m_pGPUVertices->m_xBuffer->CopyFromMemory(&iValue, iOffset,sizeof(uint32_t) );
 				iOffset += sizeof(uint32_t);
 				pIt++;
 			}

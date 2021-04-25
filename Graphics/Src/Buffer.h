@@ -19,6 +19,7 @@ namespace Bta
 				E_VERTEX
 			};
 
+			virtual TypeBuffer GetTrueType() = 0;
 			static size_t GetMemorySize(VkFormat eFormat);
 			const VkDeviceMemory* GetMemory() { return m_pMemory; }
 			VkDeviceSize GetAllocatedMemorySize() { return m_iMemorySize; }
@@ -68,6 +69,7 @@ namespace Bta
 				const VkBuffer* GetBuffer() { return m_pBuffer; };
 				void SendCopyCommand(BasicBuffer* pDst, CommandFactory* pFactory);
 				void Reallocate(uint32_t iUnitCount, VkDeviceSize iUnitSize);
+				TypeBuffer GetTrueType() override { return Buffer::E_VERTEX; }
 
 			protected:
 				BasicBuffer(Desc& oDesc);
@@ -143,6 +145,8 @@ namespace Bta
 
 				void SendCopyCommand(BasicBuffer* pBuffer);
 				void GenerateMipsInterface(MipDesc& oDesc);
+
+				TypeBuffer GetTrueType() override { return Buffer::E_IMAGE; }
 
 			protected:
 

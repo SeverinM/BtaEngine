@@ -208,6 +208,13 @@ namespace Bta
 			}
 		}
 
+		void Pipeline::Recreate()
+		{
+			vkDestroyPipeline(*Bta::Graphic::Globals::g_pDevice->GetLogicalDevice(), m_oPipeline, nullptr);
+			vkDestroyPipelineLayout(*Bta::Graphic::Globals::g_pDevice->GetLogicalDevice(), m_oPipelineLayout, nullptr);
+			Create(*m_pRecreate);
+		}
+
 		void Pipeline::FillVerticesDescription(VkVertexInputBindingDescription& oBindingDescription, std::vector<VkVertexInputAttributeDescription>& oAttributeDescription, std::string sFilename)
 		{
 			oAttributeDescription.clear();

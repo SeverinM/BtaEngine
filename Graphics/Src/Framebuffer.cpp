@@ -34,11 +34,22 @@ namespace Bta
 			{
 				throw std::runtime_error("Failed to create framebuffer");
 			}
+
+			m_oImageViews = oDesc.pImageView;
 		}
 
 		Framebuffer::~Framebuffer()
 		{
 			vkDestroyFramebuffer(*Bta::Graphic::Globals::g_pDevice->GetLogicalDevice(), m_oFramebuffer, nullptr);
+
+			/*bool bFirst = true;
+			for (VkImageView& oImageView : *m_oImageViews)
+			{
+				if (bFirst)
+					bFirst = false;
+				else
+					vkDestroyImageView(*Bta::Graphic::Globals::g_pDevice->GetLogicalDevice(), oImageView, nullptr);
+			}*/
 		}
 	}
 }

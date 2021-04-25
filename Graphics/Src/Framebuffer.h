@@ -35,6 +35,7 @@ namespace Bta
 			protected:
 				int m_iAttachments;
 				VkFramebuffer m_oFramebuffer;
+				std::vector<VkImageView>* m_oImageViews;
 		};
 	}
 }

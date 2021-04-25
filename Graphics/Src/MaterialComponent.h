@@ -42,7 +42,7 @@ namespace Bta
 					m_oAllTextures[sName] = pText;
 
 					if ( pText != nullptr )
-						m_pWrapper->FillSlotAtTag(pText->GetImage(), sName);
+						m_pWrapper->FillSlotAtTag( std::dynamic_pointer_cast<Buffer>(pText->GetImage()).get(), sName);
 				}
 
 				void AddGPUMemory(GPUMemoryBinding oBinding, std::string sName)
@@ -54,8 +54,8 @@ namespace Bta
 
 					m_oAllVariables.insert({ {sName, oBinding} });
 
-					Buffer* pBuffer = oBinding.GetBuffer();
-					m_pWrapper->FillSlotAtTag(pBuffer, sName, oBinding.GetOffset());
+					std::shared_ptr<Buffer>xBuffer = oBinding.GetBuffer();
+					m_pWrapper->FillSlotAtTag(xBuffer.get(), sName, oBinding.GetOffset());
 				}
 
 				Texture* FetchTexture(std::string sName)

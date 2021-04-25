@@ -20,10 +20,9 @@ namespace Bta
 			CommandFactory(Desc oDesc);
 			~CommandFactory();
 
-			VkCommandBuffer* BeginSingleTimeCommands();
-			void EndSingleTimeCommands(VkCommandBuffer& oCommandBuffer);
-			VkCommandBuffer* CreateCommand();
-			void FreeSingleTimeCommand(VkCommandBuffer& oCommandBuffer);
+			VkCommandBuffer BeginSingleTimeCommands();
+			void EndSingleTimeCommands(VkCommandBuffer oCommandBuffer);
+			void FreeSingleTimeCommand(VkCommandBuffer oCommandBuffer);
 
 			struct SubDrawDesc
 			{
@@ -33,15 +32,6 @@ namespace Bta
 				VkDescriptorSet oDescriptorSet;
 				int iInstanceCount;
 			};
-
-			struct DrawDesc
-			{
-				RenderPass* pRenderpass;
-				Framebuffer* pFramebuffer;
-				std::vector<SubDrawDesc> oMultipleDraw;
-			};
-
-			VkCommandBuffer CreateDrawCommand(DrawDesc& oDesc);
 			const VkCommandPool* GetCommandPool() { return &m_oCommandPool; }
 
 		protected:

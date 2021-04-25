@@ -22,7 +22,7 @@ namespace Bta
 				Texture(Image::Desc oImgDesc, void* pBuffer);
 				~Texture();
 
-				Image* GetImage() { return m_pImage; }
+				std::shared_ptr<Image> GetImage() { return m_xImage; }
 
 				float GetValue(EChannel eChannel, int iX, int iY);
 				void SetValue(EChannel eChannel, int iX, int iY, float fValue);
@@ -33,7 +33,7 @@ namespace Bta
 				int m_iHeight;
 				unsigned char* m_pBuffer;
 				VkFormat m_eFormat;
-				Image* m_pImage;
+				std::shared_ptr<Image> m_xImage;
 		};
 	}
 }

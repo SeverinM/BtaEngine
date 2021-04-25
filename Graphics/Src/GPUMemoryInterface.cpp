@@ -15,30 +15,18 @@ namespace Bta
 			return s_pGpu;
 		}
 
-		BasicBuffer* GPUMemory::AllocateMemory(BasicBuffer::Desc oDesc)
+		std::shared_ptr<BasicBuffer> GPUMemory::AllocateMemory(BasicBuffer::Desc oDesc)
 		{
-			BasicBuffer* pBuffer = new BasicBuffer(oDesc);
-			m_oGPUDatas.push_back(pBuffer);
-			return pBuffer;
+			std::shared_ptr<BasicBuffer> xBuffer = std::shared_ptr<BasicBuffer>( new BasicBuffer(oDesc));
+			m_oGPUDatas.push_back(xBuffer);
+			return xBuffer;
 		}
 
-		Image* GPUMemory::AllocateMemory(Image::Desc oDesc)
+		std::shared_ptr<Image> GPUMemory::AllocateMemory(Image::Desc oDesc)
 		{
-			Image* pImage = new Image(oDesc);
-			m_oGPUDatas.push_back(pImage);
-			return pImage;
-		}
-
-		void GPUMemory::FreeMemory(Buffer* pBuffer)
-		{
-			std::list<Buffer*>::iterator it = std::find(m_oGPUDatas.begin(), m_oGPUDatas.end(),pBuffer);
-
-			if (it != m_oGPUDatas.end())
-			{
-				Buffer* pBuffer = (*it);
-				m_oGPUDatas.erase(it);
-				delete pBuffer;
-			}		
+			std::shared_ptr<Image> xImage = std::shared_ptr<Image>( new Image(oDesc) );
+			m_oGPUDatas.push_back(xImage);
+			return xImage;
 		}
 	}
 }

@@ -17,6 +17,15 @@ namespace Bta
 			AddExistingComponent(pTrsf);
 		}
 
+		Entity::~Entity()
+		{
+			for (AbstractComponent* pComponent : m_oComponents)
+			{
+				delete pComponent;
+			}
+			m_oComponents.clear();
+		}
+
 		void Entity::AddChild(Entity* m_pChildEntity)
 		{
 			m_oChildrens.push_back(m_pChildEntity);

@@ -65,9 +65,9 @@ namespace Bta
 			}
 		}
 
-		VkCommandBuffer* RenderBatch::GetCommandBuffer(Framebuffer* pFramebuffer)
+		VkCommandBuffer RenderBatch::GetCommandBuffer(Framebuffer* pFramebuffer)
 		{
-			VkCommandBuffer* pCommandBuffer = Globals::g_pFactory->BeginSingleTimeCommands();
+			VkCommandBuffer oCommandBuffer = Globals::g_pFactory->BeginSingleTimeCommands();
 			
 			VkRenderPassBeginInfo oRenderPassInfo{};
 			oRenderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -98,22 +98,32 @@ namespace Bta
 			oRenderPassInfo.clearValueCount = oClear.size();
 			oRenderPassInfo.pClearValues = oClear.data();
 
-			vkCmdBeginRenderPass(*pCommandBuffer, &oRenderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+			vkCmdBeginRenderPass(oCommandBuffer, &oRenderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
 			for (SubRenderBatch* pSubBatch : m_oSubBatches)
 			{
-				pSubBatch->FillCommandBuffer(*pCommandBuffer);
+				pSubBatch->FillCommandBuffer(oCommandBuffer);
 
-				if  (pSubBatch != m_oSubBatches[m_oSubBatches.size() - 1])
-					vkCmdNextSubpass(*pCommandBuffer,VK_SUBPASS_CONTENTS_INLINE);
+				if (pSubBatch != m_oSubBatches[m_oSubBatches.size() - 1])
+					vkCmdNextSubpass(oCommandBuffer, VK_SUBPASS_CONTENTS_INLINE);
 			}
 
-			vkCmdEndRenderPass(*pCommandBuffer);
-			if (vkEndCommandBuffer(*pCommandBuffer) != VK_SUCCESS)
+			vkCmdEndRenderPass(oCommandBuffer);
+			if (vkEndCommandBuffer(oCommandBuffer) != VK_SUCCESS)
 			{
 				throw std::runtime_error("Failed to record command");
 			}
-			return pCommandBuffer;
+
+			return oCommandBuffer;
 		}
+
+		void RenderBatch::Recreate()
+		{
+			for (SubRenderBatch* pSubRender : m_oSubBatches)
+			{
+				pSubRender->m_pPipeline->Recreate();
+			}
+		}
+
 	}
 }

@@ -24,7 +24,7 @@ namespace Bta
 				m_pBuffer = (unsigned char*)malloc(m_iHeight * m_iWidth * 4 * 4);
 			}
 
-			m_pImage = GPUMemory::GetInstance()->AllocateMemory(oImgDesc);
+			m_xImage = GPUMemory::GetInstance()->AllocateMemory(oImgDesc);
 		}
 
 		Texture::~Texture()
@@ -52,7 +52,7 @@ namespace Bta
 
 		void Texture::UpdateToGPU()
 		{
-			m_pImage->CopyFromMemory(m_pBuffer, 0, m_iWidth * m_iHeight * 4 * 4);
+			m_xImage->CopyFromMemory(m_pBuffer, 0, m_iWidth * m_iHeight * 4 * 4);
 		}
 	}
 }

@@ -44,6 +44,10 @@ namespace Bta
 				VkPipelineLayout* GetPipelineLayout() { return &m_oPipelineLayout; }
 				DescriptorLayoutWrapper* GetDescriptorSetLayout() { return m_pDescriptorLayout; }
 				VkPipeline* GetPipeline() { return &m_oPipeline; }
+				void Recreate();
+
+				//Temp
+				VkPipeline m_oPipeline;
 
 				static void FillVerticesDescription(VkVertexInputBindingDescription& oBindingDescription, std::vector<VkVertexInputAttributeDescription>& oAttributeDescription, std::string sFilename);
 
@@ -51,7 +55,6 @@ namespace Bta
 				VkShaderModule* CompileShader(std::string sFilename, GraphicDevice& oDevice);
 				DescriptorLayoutWrapper* m_pDescriptorLayout;
 				VkPipelineLayout m_oPipelineLayout;
-				VkPipeline m_oPipeline;
 				Desc* m_pRecreate;
 		};
 	}
